@@ -11,7 +11,7 @@ namespace api_bora_trampar.src.Repositories
     {
         public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
         {
-            List<BsonDocument> list = await appDbContext.Users.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            List<BsonDocument> list = await appDbContext.Categories.Aggregate<BsonDocument>(pipeline).ToListAsync();
             return list.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
         }
 

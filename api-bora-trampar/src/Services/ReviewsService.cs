@@ -8,7 +8,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class CategoryService(ICategoryRepository repository) : ICategoryService
+    public class ReviewsService(IReviewsRepository repository) : IReviewsService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
@@ -25,29 +25,32 @@ namespace api_bora_trampar.src.Services
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
-                        {"name", 1},
+                        {"profissional_id", 1},
+                        {"point", 1},
+                        {"notes", 1},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
                 ];
 
-                List<dynamic> categories = await repository.GetAllAsync(pipeline);
+                List<dynamic> reviews = await repository.GetAllAsync(pipeline);
 
-                return new(categories, 200, "Categorias listadas com sucesso");
+                return new(reviews, 200, "Avaliações listadas com sucesso");
             }
             catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        public async Task<ResponseApi<Category?>> GetByIdAsync(string id)
+
+        public async Task<ResponseApi<Reviews?>> GetByIdAsync(string id)
         {
             try
             {
-                Category? category = await repository.GetByIdAsync(id);
-                if (category is null) return new(null, 404, "Categoria não encontrado");
+                Reviews? review = await repository.GetByIdAsync(id);
+                if (review is null) return new(null, 404, "Avaliação não encontrada");
 
-                return new(category, 200, "Categoria buscado com sucesso");
+                return new(review, 200, "Avaliação buscada com sucesso");
             }
             catch (Exception ex)
             {
@@ -55,19 +58,20 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region CREATE
-        public async Task<ResponseApi<Category?>> CreateAsync(CreateCategoryRequest request)
+        public async Task<ResponseApi<Reviews?>> CreateAsync(CreateReviewsRequest request)
         {
-           try
+            try
             {
-                Category entity = ObjectMapper.Map<CreateCategoryRequest, Category>(request);
+                Reviews entity = ObjectMapper.Map<CreateReviewsRequest, Reviews>(request);
 
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
-                Category? category = await repository.CreateAsync(entity);
-                if (category is null) return new(null, 400, "Falha ao criar categoria");
+                Reviews? review = await repository.CreateAsync(entity);
+                if (review is null) return new(null, 400, "Falha ao criar avaliação");
 
-                return new(category, 201, "Categoria criada com sucesso");
+                return new(review, 201, "Avaliação criada com sucesso");
             }
             catch (Exception ex)
             {
@@ -75,18 +79,19 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region UPDATE
-        public async Task<ResponseApi<Category?>> UpdateAsync(UpdateCategoryRequest request)
+        public async Task<ResponseApi<Reviews?>> UpdateAsync(UpdateReviewsRequest request)
         {
             try
             {
-                Category entity = ObjectMapper.Map<UpdateCategoryRequest, Category>(request);
+                Reviews entity = ObjectMapper.Map<UpdateReviewsRequest, Reviews>(request);
 
-                entity.UpdatedAt = DateTime.Now;
-                Category? category = await repository.UpdateAsync(entity);
-                if (category is null) return new(null, 400, "Falha ao atualzar categoria");
+                entity.UpdatedAt = DateTime.UtcNow;
+                Reviews? review = await repository.UpdateAsync(entity);
+                if (review is null) return new(null, 400, "Falha ao atualizar avaliação");
 
-                return new(category, 200, "Categoria atualizado com sucesso");
+                return new(review, 200, "Avaliação atualizada com sucesso");
             }
             catch (Exception ex)
             {
@@ -94,21 +99,23 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region DELETE
-        public async Task<ResponseApi<Category?>> DeleteAsync(DeleteRequest request)
+        public async Task<ResponseApi<Reviews?>> DeleteAsync(DeleteRequest request)
         {
             try
             {
-                Category? existedCategory = await repository.GetByIdAsync(request.Id);
-                if (existedCategory is null) return new(null, 404, "Categoria não encontrado");
+                Reviews? existedReview = await repository.GetByIdAsync(request.Id);
+                if (existedReview is null) return new(null, 404, "Avaliação não encontrada");
 
-                existedCategory.Deleted = true;
-                existedCategory.DeletedAt = DateTime.Now;
+                existedReview.Deleted = true;
+                existedReview.DeletedAt = DateTime.UtcNow;
+                existedReview.DeletedBy = request.DeletedBy;
 
-                Category category = await repository.DeleteAsync(existedCategory);
-                if (category is null) return new(null, 400, "Falha ao excluir usuário");
+                Reviews review = await repository.DeleteAsync(existedReview);
+                if (review is null) return new(null, 400, "Falha ao excluir avaliação");
 
-                return new(category, 204, "Categoria excluida com sucesso");
+                return new(review, 204, "Avaliação excluída com sucesso");
             }
             catch (Exception ex)
             {

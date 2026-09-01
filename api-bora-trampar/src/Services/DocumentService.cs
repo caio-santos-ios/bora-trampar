@@ -8,7 +8,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class CategoryService(ICategoryRepository repository) : ICategoryService
+    public class DocumentService(IDocumentRepository repository) : IDocumentService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
@@ -26,28 +26,31 @@ namespace api_bora_trampar.src.Services
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"name", 1},
+                        {"number", 1},
+                        {"uri_file", 1},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
                 ];
 
-                List<dynamic> categories = await repository.GetAllAsync(pipeline);
+                List<dynamic> documents = await repository.GetAllAsync(pipeline);
 
-                return new(categories, 200, "Categorias listadas com sucesso");
+                return new(documents, 200, "Documentos listados com sucesso");
             }
             catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        public async Task<ResponseApi<Category?>> GetByIdAsync(string id)
+
+        public async Task<ResponseApi<Document?>> GetByIdAsync(string id)
         {
             try
             {
-                Category? category = await repository.GetByIdAsync(id);
-                if (category is null) return new(null, 404, "Categoria não encontrado");
+                Document? document = await repository.GetByIdAsync(id);
+                if (document is null) return new(null, 404, "Documento não encontrado");
 
-                return new(category, 200, "Categoria buscado com sucesso");
+                return new(document, 200, "Documento buscado com sucesso");
             }
             catch (Exception ex)
             {
@@ -55,19 +58,20 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region CREATE
-        public async Task<ResponseApi<Category?>> CreateAsync(CreateCategoryRequest request)
+        public async Task<ResponseApi<Document?>> CreateAsync(CreateDocumentRequest request)
         {
-           try
+            try
             {
-                Category entity = ObjectMapper.Map<CreateCategoryRequest, Category>(request);
+                Document entity = ObjectMapper.Map<CreateDocumentRequest, Document>(request);
 
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
-                Category? category = await repository.CreateAsync(entity);
-                if (category is null) return new(null, 400, "Falha ao criar categoria");
+                Document? document = await repository.CreateAsync(entity);
+                if (document is null) return new(null, 400, "Falha ao criar documento");
 
-                return new(category, 201, "Categoria criada com sucesso");
+                return new(document, 201, "Documento criado com sucesso");
             }
             catch (Exception ex)
             {
@@ -75,18 +79,19 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region UPDATE
-        public async Task<ResponseApi<Category?>> UpdateAsync(UpdateCategoryRequest request)
+        public async Task<ResponseApi<Document?>> UpdateAsync(UpdateDocumentRequest request)
         {
             try
             {
-                Category entity = ObjectMapper.Map<UpdateCategoryRequest, Category>(request);
+                Document entity = ObjectMapper.Map<UpdateDocumentRequest, Document>(request);
 
-                entity.UpdatedAt = DateTime.Now;
-                Category? category = await repository.UpdateAsync(entity);
-                if (category is null) return new(null, 400, "Falha ao atualzar categoria");
+                entity.UpdatedAt = DateTime.UtcNow;
+                Document? document = await repository.UpdateAsync(entity);
+                if (document is null) return new(null, 400, "Falha ao atualizar documento");
 
-                return new(category, 200, "Categoria atualizado com sucesso");
+                return new(document, 200, "Documento atualizado com sucesso");
             }
             catch (Exception ex)
             {
@@ -94,21 +99,23 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
         #region DELETE
-        public async Task<ResponseApi<Category?>> DeleteAsync(DeleteRequest request)
+        public async Task<ResponseApi<Document?>> DeleteAsync(DeleteRequest request)
         {
             try
             {
-                Category? existedCategory = await repository.GetByIdAsync(request.Id);
-                if (existedCategory is null) return new(null, 404, "Categoria não encontrado");
+                Document? existedDocument = await repository.GetByIdAsync(request.Id);
+                if (existedDocument is null) return new(null, 404, "Documento não encontrado");
 
-                existedCategory.Deleted = true;
-                existedCategory.DeletedAt = DateTime.Now;
+                existedDocument.Deleted = true;
+                existedDocument.DeletedAt = DateTime.UtcNow;
+                existedDocument.DeletedBy = request.DeletedBy;
 
-                Category category = await repository.DeleteAsync(existedCategory);
-                if (category is null) return new(null, 400, "Falha ao excluir usuário");
+                Document document = await repository.DeleteAsync(existedDocument);
+                if (document is null) return new(null, 400, "Falha ao excluir documento");
 
-                return new(category, 204, "Categoria excluida com sucesso");
+                return new(document, 204, "Documento excluído com sucesso");
             }
             catch (Exception ex)
             {

@@ -31,6 +31,24 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<ICategoryService, CategoryService>();
             builder.Services.AddTransient<ICategoryRepository, CategoryRepository>();
 
+            builder.Services.AddTransient<IServicesService, ServicesService>();
+            builder.Services.AddTransient<IServicesRepository, ServicesRepository>();
+
+            builder.Services.AddTransient<IAppointmentService, AppointmentService>();
+            builder.Services.AddTransient<IAppointmentRepository, AppointmentRepository>();
+
+            builder.Services.AddTransient<IApprovalService, ApprovalService>();
+            builder.Services.AddTransient<IApprovalRepository, ApprovalRepository>();
+
+            builder.Services.AddTransient<IDocumentService, DocumentService>();
+            builder.Services.AddTransient<IDocumentRepository, DocumentRepository>();
+
+            builder.Services.AddTransient<IPaymentService, PaymentService>();
+            builder.Services.AddTransient<IPaymentRepository, PaymentRepository>();
+
+            builder.Services.AddTransient<IReviewsService, ReviewsService>();
+            builder.Services.AddTransient<IReviewsRepository, ReviewsRepository>();
+
             Account account = new(
                 Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"),
                 Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"),

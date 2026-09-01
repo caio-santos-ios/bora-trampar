@@ -34,6 +34,12 @@ namespace api_bora_trampar.src.Configuration
 
         public IMongoCollection<User> Users => Database.GetCollection<User>("users");
         public IMongoCollection<Category> Categories => Database.GetCollection<Category>("categories");
+        public IMongoCollection<Models.Services> Services => Database.GetCollection<Models.Services>("services");
+        public IMongoCollection<Appointment> Appointments => Database.GetCollection<Appointment>("appointments");
+        public IMongoCollection<Approval> Approvals => Database.GetCollection<Approval>("approvals");
+        public IMongoCollection<Document> Documents => Database.GetCollection<Document>("documents");
+        public IMongoCollection<Payment> Payments => Database.GetCollection<Payment>("payments");
+        public IMongoCollection<Reviews> Reviews => Database.GetCollection<Reviews>("reviews");
     }
 }
 
