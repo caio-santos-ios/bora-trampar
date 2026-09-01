@@ -1,0 +1,28 @@
+flowchart LR
+    A([Cliente entra no app]) --> B[Seleciona uma categoria]
+    B --> C[Escolhe o serviço]
+    C --> D[Informa data e horário]
+    D --> E{Há profissionais disponíveis?}
+    E -- Não --> F[Altera data ou horário]
+    F --> D
+    E -- Sim --> G[Visualiza profissionais disponíveis]
+    G --> H[Escolhe um profissional]
+    H --> I[Revisa os detalhes]
+    I --> J[Confirma o agendamento]
+    J --> K[App gera cobrança Pix]
+    K --> L[Exibe QR Code e Pix copia e cola]
+    L --> M{Pagamento aprovado?}
+    M -- Não --> N[Aguarda pagamento ou trata erro]
+    N --> L
+    M -- Sim --> O([Agendamento confirmado])
+    O --> P[Cliente e profissional recebem atualização]
+
+    classDef startEnd fill:#0F766E,stroke:#115E59,color:#FFFFFF,stroke-width:2px;
+    classDef action fill:#E6FFFA,stroke:#0F766E,color:#134E4A,stroke-width:1.5px;
+    classDef decision fill:#FEF3C7,stroke:#D97706,color:#78350F,stroke-width:1.5px;
+    classDef payment fill:#DCFCE7,stroke:#16A34A,color:#14532D,stroke-width:2px;
+
+    class A,O startEnd;
+    class B,C,D,F,G,H,I,J,N,P action;
+    class E,M decision;
+    class K,L payment;
