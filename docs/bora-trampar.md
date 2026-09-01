@@ -79,6 +79,10 @@ Cada pedido deverá manter um histórico imutável das principais ocorrências: 
 O profissional deve conseguir configurar os serviços que oferece, manter sua disponibilidade, marcar o serviço como finalizado e responder às contestações recebidas. O administrador deve conseguir cadastrar categorias e serviços, moderar usuários, acompanhar agendamentos, analisar contestações, solicitar evidências, liberar repasses e autorizar reembolsos totais ou parciais.
 ## Telas do aplicativo
 Use a página ou subpáginas em `docs/telas-app` para registrar cada tela com objetivo, componentes, estados, navegação, regras e referências visuais.
+## Documentação complementar
+
+A especificação detalhada de verificação de identidade dos profissionais está em [docs/verificacao-profissionais.md](./verificacao-profissionais.md). Ela define os documentos aceitos, selfie, estados da verificação, revisão manual, controles contra uso de identidade de terceiros, proteção de dados e critérios de aceite do MVP.
+
 # Arquitetura técnica
 Registre a stack escolhida, a separação entre API, UI e aplicativo, o modelo de dados, autenticação, integrações externas, ambientes e estratégia de deploy.
 # Convenções de desenvolvimento
