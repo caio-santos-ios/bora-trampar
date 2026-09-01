@@ -2,7 +2,6 @@ using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Repositories
@@ -11,8 +10,20 @@ namespace api_bora_trampar.src.Repositories
     {
         public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
         {
-            List<BsonDocument> list = await appDbContext.Appointments.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            return list.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
+            var list = await appDbContext.Appointments
+                .Find(x => !x.Deleted)
+                .SortByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            return list.Select(a => (dynamic)new
+            {
+                id = a.Id,
+                customer_id = a.CustomerId,
+                profissional_id = a.ProfissionalId,
+                date = a.Date,
+                hour = a.Hour,
+                createdAt = a.CreatedAt
+            }).ToList();
         }
 
         public async Task<Appointment?> GetByIdAsync(string id)

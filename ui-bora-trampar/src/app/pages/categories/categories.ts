@@ -34,7 +34,7 @@ export class Categories implements OnInit {
   formData: CategoryItem = {
     id: '',
     name: '',
-    icon: 'fa-layer-group',
+    icon: 'fa-hammer',
     description: ''
   };
 
@@ -52,40 +52,7 @@ export class Categories implements OnInit {
     { label: 'Geral', value: 'fa-layer-group' }
   ];
 
-  categories: CategoryItem[] = [
-    {
-      id: 'cat_01',
-      name: 'Construção & Reformas',
-      icon: 'fa-hammer',
-      description: 'Pedreiros, mestre de obras, assentamento de pisos e reformas gerais',
-      servicesCount: 14,
-      createdAt: '2026-08-01T10:00:00Z'
-    },
-    {
-      id: 'cat_02',
-      name: 'Pintura Residencial & Predial',
-      icon: 'fa-paint-roller',
-      description: 'Pintores qualificados para ambientes internos, externos e texturas',
-      servicesCount: 8,
-      createdAt: '2026-08-02T11:30:00Z'
-    },
-    {
-      id: 'cat_03',
-      name: 'Instalações Elétricas',
-      icon: 'fa-bolt',
-      description: 'Eletricistas para reparos, quadros de força, tomadas e iluminação',
-      servicesCount: 11,
-      createdAt: '2026-08-03T14:00:00Z'
-    },
-    {
-      id: 'cat_04',
-      name: 'Limpeza & Cuidados',
-      icon: 'fa-broom',
-      description: 'Diaristas, faxina pós-obra, passadeiras e cuidadores',
-      servicesCount: 9,
-      createdAt: '2026-08-05T09:00:00Z'
-    }
-  ];
+  categories: CategoryItem[] = [];
 
   constructor(
     private toastr: ToastrService,
@@ -103,18 +70,19 @@ export class Categories implements OnInit {
 
     try {
       const response = await api.get('/api/categories');
-      if (response.data?.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
-        this.categories = response.data.result.map((cat: any) => ({
-          id: cat.id || cat._id,
-          name: cat.name,
-          icon: cat.icon || 'fa-layer-group',
-          description: cat.description || '',
-          servicesCount: cat.servicesCount || 0,
-          createdAt: cat.createdAt || new Date().toISOString()
-        }));
-      }
+      const resObj = response.data?.result || response.data?.data || response.data;
+      const list = Array.isArray(resObj) ? resObj : (Array.isArray(resObj?.data) ? resObj.data : []);
+
+      this.categories = list.map((cat: any) => ({
+        id: cat.id || cat._id,
+        name: cat.name,
+        icon: cat.icon || 'fa-layer-group',
+        description: cat.description || '',
+        servicesCount: cat.servicesCount || 0,
+        createdAt: cat.createdAt || cat.created_at || new Date().toISOString()
+      }));
     } catch {
-      // Keep demo categories fallback
+      this.categories = [];
     } finally {
       this.isLoading = false;
       this.cdr.detectChanges();
@@ -167,28 +135,7 @@ export class Categories implements OnInit {
           description: this.formData.description
         };
 
-        try {
-          const res = await api.post('/api/categories', payload);
-          const created = res.data?.result;
-          this.categories.unshift({
-            id: created?.id || 'cat_' + Date.now(),
-            name: this.formData.name,
-            icon: this.formData.icon,
-            description: this.formData.description,
-            servicesCount: 0,
-            createdAt: new Date().toISOString()
-          });
-        } catch {
-          this.categories.unshift({
-            id: 'cat_' + Date.now(),
-            name: this.formData.name,
-            icon: this.formData.icon,
-            description: this.formData.description,
-            servicesCount: 0,
-            createdAt: new Date().toISOString()
-          });
-        }
-
+        await api.post('/api/categories', payload);
         this.toastr.success('Categoria criada com sucesso!');
       } else {
         const payload = {
@@ -198,20 +145,15 @@ export class Categories implements OnInit {
           description: this.formData.description
         };
 
-        try {
-          await api.put('/api/categories', payload);
-        } catch {}
-
-        const index = this.categories.findIndex(c => c.id === this.formData.id);
-        if (index !== -1) {
-          this.categories[index] = { ...this.formData };
-        }
-
+        await api.put('/api/categories', payload);
         this.toastr.success('Categoria atualizada com sucesso!');
       }
+
       this.closeModal();
+      await this.loadCategories();
     } catch (err: any) {
-      this.toastr.error('Erro ao salvar categoria.');
+      const msg = err.response?.data?.message || 'Erro ao salvar categoria.';
+      this.toastr.error(msg);
     } finally {
       this.isSaving = false;
       this.cdr.detectChanges();
@@ -235,13 +177,10 @@ export class Categories implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      try {
-        await api.delete(`/api/categories/${this.categoryToDelete.id}`);
-      } catch {}
-
-      this.categories = this.categories.filter(c => c.id !== this.categoryToDelete!.id);
+      await api.delete(`/api/categories/${this.categoryToDelete.id}`);
       this.toastr.success('Categoria removida com sucesso!');
       this.closeDeleteModal();
+      await this.loadCategories();
     } catch {
       this.toastr.error('Erro ao excluir categoria.');
     } finally {

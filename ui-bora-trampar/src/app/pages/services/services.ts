@@ -46,12 +46,8 @@ export class Services implements OnInit {
 
   serviceToDelete: ServiceItem | null = null;
 
-  categoriesList: CategoryRef[] = [
-    { id: 'cat_01', name: 'Construção & Reformas' },
-    { id: 'cat_02', name: 'Pintura Residencial & Predial' },
-    { id: 'cat_03', name: 'Instalações Elétricas' },
-    { id: 'cat_04', name: 'Limpeza & Cuidados' }
-  ];
+  categoriesList: CategoryRef[] = [];
+  services: ServiceItem[] = [];
 
   availableIcons = [
     { label: 'Serviço Geral', value: 'fa-briefcase' },
@@ -63,49 +59,6 @@ export class Services implements OnInit {
     { label: 'Vassoura / Faxina', value: 'fa-broom' },
     { label: 'Coração / Babá', value: 'fa-heart' },
     { label: 'Engrenagem / Reparo', value: 'fa-gear' }
-  ];
-
-  services: ServiceItem[] = [
-    {
-      id: 'srv_01',
-      name: 'Assentamento de Pisos e Porcelanato',
-      categoryId: 'cat_01',
-      categoryName: 'Construção & Reformas',
-      icon: 'fa-hammer',
-      createdAt: '2026-08-01T12:00:00Z'
-    },
-    {
-      id: 'srv_02',
-      name: 'Pintura Completa de Paredes e Tetos',
-      categoryId: 'cat_02',
-      categoryName: 'Pintura Residencial & Predial',
-      icon: 'fa-paint-roller',
-      createdAt: '2026-08-02T13:00:00Z'
-    },
-    {
-      id: 'srv_03',
-      name: 'Instalação de Tomadas, Interruptores e Lustres',
-      categoryId: 'cat_03',
-      categoryName: 'Instalações Elétricas',
-      icon: 'fa-bolt',
-      createdAt: '2026-08-03T15:00:00Z'
-    },
-    {
-      id: 'srv_04',
-      name: 'Faxina Geral e Limpeza Pós-Obra',
-      categoryId: 'cat_04',
-      categoryName: 'Limpeza & Cuidados',
-      icon: 'fa-broom',
-      createdAt: '2026-08-05T10:00:00Z'
-    },
-    {
-      id: 'srv_05',
-      name: 'Reparo e Troca de Fiação Elétrica',
-      categoryId: 'cat_03',
-      categoryName: 'Instalações Elétricas',
-      icon: 'fa-bolt',
-      createdAt: '2026-08-06T14:30:00Z'
-    }
   ];
 
   constructor(
@@ -128,15 +81,21 @@ export class Services implements OnInit {
         api.get('/api/services')
       ]);
 
-      if (resCat.status === 'fulfilled' && resCat.value.data?.result) {
-        this.categoriesList = resCat.value.data.result.map((c: any) => ({
+      if (resCat.status === 'fulfilled' && resCat.value.data) {
+        const catData = resCat.value.data?.result || resCat.value.data?.data || resCat.value.data;
+        const catList = Array.isArray(catData) ? catData : (Array.isArray(catData?.data) ? catData.data : []);
+        this.categoriesList = catList.map((c: any) => ({
           id: c.id || c._id,
           name: c.name
         }));
+      } else {
+        this.categoriesList = [];
       }
 
-      if (resServ.status === 'fulfilled' && resServ.value.data?.result) {
-        this.services = resServ.value.data.result.map((s: any) => {
+      if (resServ.status === 'fulfilled' && resServ.value.data) {
+        const servData = resServ.value.data?.result || resServ.value.data?.data || resServ.value.data;
+        const servList = Array.isArray(servData) ? servData : (Array.isArray(servData?.data) ? servData.data : []);
+        this.services = servList.map((s: any) => {
           const cat = this.categoriesList.find(c => c.id === s.categoryId);
           return {
             id: s.id || s._id,
@@ -144,12 +103,14 @@ export class Services implements OnInit {
             categoryId: s.categoryId,
             categoryName: cat?.name || 'Geral',
             icon: s.icon || 'fa-briefcase',
-            createdAt: s.createdAt || new Date().toISOString()
+            createdAt: s.createdAt || s.created_at || new Date().toISOString()
           };
         });
+      } else {
+        this.services = [];
       }
     } catch {
-      // Fallback
+      this.services = [];
     } finally {
       this.isLoading = false;
       this.cdr.detectChanges();
@@ -172,11 +133,14 @@ export class Services implements OnInit {
   }
 
   openCreateModal() {
+    if (this.categoriesList.length === 0) {
+      this.toastr.warning('Cadastre ao menos uma categoria antes de adicionar serviços.');
+    }
     this.modalMode = 'create';
     this.formData = {
       id: '',
       name: '',
-      categoryId: this.categoriesList[0]?.id || 'cat_01',
+      categoryId: this.categoriesList[0]?.id || '',
       icon: 'fa-briefcase'
     };
     this.isModalOpen = true;
@@ -209,28 +173,7 @@ export class Services implements OnInit {
           icon: this.formData.icon
         };
 
-        try {
-          const res = await api.post('/api/services', payload);
-          const created = res.data?.result;
-          this.services.unshift({
-            id: created?.id || 'srv_' + Date.now(),
-            name: this.formData.name,
-            categoryId: this.formData.categoryId,
-            categoryName: this.getCategoryName(this.formData.categoryId),
-            icon: this.formData.icon,
-            createdAt: new Date().toISOString()
-          });
-        } catch {
-          this.services.unshift({
-            id: 'srv_' + Date.now(),
-            name: this.formData.name,
-            categoryId: this.formData.categoryId,
-            categoryName: this.getCategoryName(this.formData.categoryId),
-            icon: this.formData.icon,
-            createdAt: new Date().toISOString()
-          });
-        }
-
+        await api.post('/api/services', payload);
         this.toastr.success('Serviço cadastrado com sucesso!');
       } else {
         const payload = {
@@ -240,21 +183,12 @@ export class Services implements OnInit {
           icon: this.formData.icon
         };
 
-        try {
-          await api.put('/api/services', payload);
-        } catch {}
-
-        const index = this.services.findIndex(s => s.id === this.formData.id);
-        if (index !== -1) {
-          this.services[index] = {
-            ...this.formData,
-            categoryName: this.getCategoryName(this.formData.categoryId)
-          };
-        }
-
+        await api.put('/api/services', payload);
         this.toastr.success('Serviço atualizado com sucesso!');
       }
+
       this.closeModal();
+      await this.loadData();
     } catch {
       this.toastr.error('Erro ao salvar serviço.');
     } finally {
@@ -280,13 +214,10 @@ export class Services implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      try {
-        await api.delete(`/api/services/${this.serviceToDelete.id}`);
-      } catch {}
-
-      this.services = this.services.filter(s => s.id !== this.serviceToDelete!.id);
+      await api.delete(`/api/services/${this.serviceToDelete.id}`);
       this.toastr.success('Serviço removido com sucesso!');
       this.closeDeleteModal();
+      await this.loadData();
     } catch {
       this.toastr.error('Erro ao excluir serviço.');
     } finally {

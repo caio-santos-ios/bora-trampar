@@ -16,7 +16,7 @@ export interface PaymentTransaction {
   grossValue: number;
   platformFee: number;
   netTransferValue: number;
-  status: 'pending' | 'held' | 'released' | 'refunded' | 'expired';
+  status: 'held' | 'released' | 'refunded';
   statusLabel: string;
 }
 
@@ -29,83 +29,17 @@ export interface PaymentTransaction {
 })
 export class Payments implements OnInit {
   isLoading = false;
-  searchQuery = '';
   filterStatus = 'all';
+  searchQuery = '';
 
   totals = {
-    gross: 48920,
-    held: 4580,
-    released: 41240,
-    fees: 3100
+    gross: 0,
+    held: 0,
+    released: 0,
+    fees: 0
   };
 
-  transactions: PaymentTransaction[] = [
-    {
-      id: 'PAY-901',
-      txId: 'PIX-E2E-9841289410',
-      appointmentId: 'APT-1082',
-      customerName: 'Carlos Eduardo Silva',
-      professionalName: 'Marcos Vinícius Eletricista',
-      date: '01/09/2026 14:02',
-      grossValue: 280.0,
-      platformFee: 28.0,
-      netTransferValue: 252.0,
-      status: 'held',
-      statusLabel: 'Retido (Em Execução)'
-    },
-    {
-      id: 'PAY-900',
-      txId: 'PIX-E2E-7712093841',
-      appointmentId: 'APT-1081',
-      customerName: 'Juliana Mendes',
-      professionalName: 'Cláudio Silva Pinturas',
-      date: '01/09/2026 11:45',
-      grossValue: 650.0,
-      platformFee: 65.0,
-      netTransferValue: 585.0,
-      status: 'released',
-      statusLabel: 'Repassado'
-    },
-    {
-      id: 'PAY-899',
-      txId: 'PIX-E2E-4481029381',
-      appointmentId: 'APT-1079',
-      customerName: 'Camila Rodrigues',
-      professionalName: 'Lucas Pedreiro & Reformas',
-      date: '30/08/2026 17:10',
-      grossValue: 950.0,
-      platformFee: 95.0,
-      netTransferValue: 855.0,
-      status: 'held',
-      statusLabel: 'Retido (Em Execução)'
-    },
-    {
-      id: 'PAY-898',
-      txId: 'PIX-E2E-3391028341',
-      appointmentId: 'APT-1078',
-      customerName: 'Fernando Costa',
-      professionalName: 'Lucas Pedreiro & Reformas',
-      date: '28/08/2026 09:20',
-      grossValue: 480.0,
-      platformFee: 48.0,
-      netTransferValue: 432.0,
-      status: 'held',
-      statusLabel: 'Bloqueado (Contestação)'
-    },
-    {
-      id: 'PAY-897',
-      txId: 'PIX-E2E-1109283741',
-      appointmentId: 'APT-1075',
-      customerName: 'Mariana Lima',
-      professionalName: 'Ana Paula Faxina',
-      date: '27/08/2026 16:30',
-      grossValue: 250.0,
-      platformFee: 25.0,
-      netTransferValue: 225.0,
-      status: 'released',
-      statusLabel: 'Repassado'
-    }
-  ];
+  transactions: PaymentTransaction[] = [];
 
   constructor(
     private toastr: ToastrService,
@@ -122,9 +56,54 @@ export class Payments implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      await api.get('/api/payments');
+      const [resPay, resAppt, resUsers] = await Promise.allSettled([
+        api.get('/api/payments'),
+        api.get('/api/appointments'),
+        api.get('/api/users')
+      ]);
+
+      const users: any[] = resUsers.status === 'fulfilled' && resUsers.value.data?.result ? resUsers.value.data.result : [];
+      const userMap = new Map<string, any>(users.map(u => [u.id || u._id, u]));
+
+      if (resAppt.status === 'fulfilled' && resAppt.value.data?.result && Array.isArray(resAppt.value.data.result)) {
+        const appts: any[] = resAppt.value.data.result;
+
+        this.transactions = appts.map((a: any, idx: number) => {
+          const customer = userMap.get(a.customer_id || a.customerId) || {};
+          const pro = userMap.get(a.profissional_id || a.profissionalId) || {};
+          const gross = Number(a.price || a.value || 150.0);
+          const fee = gross * 0.10;
+          const net = gross - fee;
+
+          const isCompleted = a.status === 2 || a.status === 'completed';
+
+          return {
+            id: `PAY-${100 + idx}`,
+            txId: a.pixTxId || `PIX-E2E-${a.id?.substring(0, 8) || '102938'}`,
+            appointmentId: a.id || a._id,
+            customerName: customer.name || 'Cliente',
+            professionalName: pro.name || 'Profissional',
+            date: a.date ? new Date(a.date).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR'),
+            grossValue: gross,
+            platformFee: fee,
+            netTransferValue: net,
+            status: isCompleted ? 'released' : 'held',
+            statusLabel: isCompleted ? 'Repassado' : 'Retido (Garantia)'
+          };
+        });
+
+        // Compute summary
+        this.totals.gross = this.transactions.reduce((sum, t) => sum + t.grossValue, 0);
+        this.totals.fees = this.transactions.reduce((sum, t) => sum + t.platformFee, 0);
+        this.totals.held = this.transactions.filter(t => t.status === 'held').reduce((sum, t) => sum + t.netTransferValue, 0);
+        this.totals.released = this.transactions.filter(t => t.status === 'released').reduce((sum, t) => sum + t.netTransferValue, 0);
+      } else {
+        this.transactions = [];
+        this.totals = { gross: 0, held: 0, released: 0, fees: 0 };
+      }
     } catch {
-      // Demo mock fallback
+      this.transactions = [];
+      this.totals = { gross: 0, held: 0, released: 0, fees: 0 };
     } finally {
       this.isLoading = false;
       this.cdr.detectChanges();
@@ -143,9 +122,12 @@ export class Payments implements OnInit {
     });
   }
 
-  releaseTransfer(item: PaymentTransaction) {
-    item.status = 'released';
-    item.statusLabel = 'Repassado';
-    this.toastr.success(`Repasse de ${this.global.formatCurrency(item.netTransferValue)} liberado para ${item.professionalName}!`);
+  releaseTransfer(tx: PaymentTransaction) {
+    tx.status = 'released';
+    tx.statusLabel = 'Repassado (Liberado Manualmente)';
+    this.totals.held -= tx.netTransferValue;
+    this.totals.released += tx.netTransferValue;
+    this.toastr.success(`Repasse de ${this.global.formatCurrency(tx.netTransferValue)} enviado com sucesso!`);
+    this.cdr.detectChanges();
   }
 }

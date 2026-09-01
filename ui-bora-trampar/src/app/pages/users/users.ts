@@ -32,73 +32,7 @@ export class Users implements OnInit {
   searchQuery = '';
   filterRole = 'all';
 
-  users: UserAccount[] = [
-    {
-      id: 'USR-001',
-      name: 'Carlos Eduardo Silva',
-      email: 'carlos.silva@email.com',
-      phone: '(11) 98111-2233',
-      role: 'customer',
-      roleLabel: 'Cliente',
-      status: 'active',
-      statusLabel: 'Ativo',
-      totalOrders: 6,
-      riskScore: 'low',
-      createdAt: '2026-07-15T10:00:00Z'
-    },
-    {
-      id: 'USR-002',
-      name: 'Marcos Vinícius Eletricista',
-      email: 'marcos.eletrica@email.com',
-      phone: '(11) 98765-4321',
-      role: 'professional',
-      roleLabel: 'Profissional',
-      status: 'active',
-      statusLabel: 'Verificado',
-      totalOrders: 42,
-      riskScore: 'low',
-      createdAt: '2026-06-20T14:30:00Z'
-    },
-    {
-      id: 'USR-003',
-      name: 'Fernando Costa',
-      email: 'fernando.costa@email.com',
-      phone: '(11) 94555-6677',
-      role: 'customer',
-      roleLabel: 'Cliente',
-      status: 'active',
-      statusLabel: 'Ativo',
-      totalOrders: 2,
-      riskScore: 'medium',
-      createdAt: '2026-08-10T12:00:00Z'
-    },
-    {
-      id: 'USR-004',
-      name: 'Lucas Pedreiro & Reformas',
-      email: 'lucas.construcao@email.com',
-      phone: '(11) 99887-6655',
-      role: 'professional',
-      roleLabel: 'Profissional',
-      status: 'active',
-      statusLabel: 'Verificado',
-      totalOrders: 28,
-      riskScore: 'low',
-      createdAt: '2026-05-18T09:00:00Z'
-    },
-    {
-      id: 'USR-005',
-      name: 'Administrador Bora Trampar',
-      email: 'admin@boratrampar.com',
-      phone: '(11) 90000-0000',
-      role: 'admin',
-      roleLabel: 'Administrador',
-      status: 'active',
-      statusLabel: 'Super Admin',
-      totalOrders: 0,
-      riskScore: 'low',
-      createdAt: '2026-01-01T00:00:00Z'
-    }
-  ];
+  users: UserAccount[] = [];
 
   constructor(
     private toastr: ToastrService,
@@ -116,23 +50,25 @@ export class Users implements OnInit {
 
     try {
       const response = await api.get('/api/users');
-      if (response.data?.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
+      if (response.data?.result && Array.isArray(response.data.result)) {
         this.users = response.data.result.map((u: any) => ({
           id: u.id || u._id,
           name: u.name || 'Sem nome',
           email: u.email,
           phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
-          role: (u.role?.toString().toLowerCase() || 'customer') as any,
-          roleLabel: u.role?.toString() === 'Admin' ? 'Administrador' : u.role?.toString() === 'Professional' ? 'Profissional' : 'Cliente',
+          role: (u.role?.toString().toLowerCase() === 'admin' || u.role === 1 ? 'admin' : u.role?.toString().toLowerCase() === 'professional' || u.role === 2 ? 'professional' : 'customer') as any,
+          roleLabel: u.role?.toString() === 'Admin' || u.role === 1 ? 'Administrador' : u.role?.toString() === 'Professional' || u.role === 2 ? 'Profissional' : 'Cliente',
           status: (u.deleted ? 'blocked' : 'active') as any,
           statusLabel: u.deleted ? 'Bloqueado' : 'Ativo',
           totalOrders: u.totalOrders || 0,
           riskScore: 'low',
           createdAt: u.createdAt || new Date().toISOString()
         }));
+      } else {
+        this.users = [];
       }
     } catch {
-      // Demo fallback
+      this.users = [];
     } finally {
       this.isLoading = false;
       this.cdr.detectChanges();
@@ -150,15 +86,33 @@ export class Users implements OnInit {
     });
   }
 
-  toggleBlock(user: UserAccount) {
-    if (user.status === 'blocked') {
-      user.status = 'active';
-      user.statusLabel = 'Ativo';
-      this.toastr.success(`Usuário ${user.name} desbloqueado.`);
-    } else {
-      user.status = 'blocked';
-      user.statusLabel = 'Bloqueado';
-      this.toastr.warning(`Usuário ${user.name} bloqueado preventivamente.`);
+  async toggleBlock(user: UserAccount) {
+    const willBlock = user.status !== 'blocked';
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
+    try {
+      try {
+        await api.put('/api/users', {
+          id: user.id,
+          deleted: willBlock
+        });
+      } catch {}
+
+      if (willBlock) {
+        user.status = 'blocked';
+        user.statusLabel = 'Bloqueado';
+        this.toastr.warning(`Usuário ${user.name} bloqueado preventivamente.`);
+      } else {
+        user.status = 'active';
+        user.statusLabel = 'Ativo';
+        this.toastr.success(`Usuário ${user.name} desbloqueado.`);
+      }
+    } catch {
+      this.toastr.error('Erro ao atualizar status do usuário.');
+    } finally {
+      this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 }

@@ -150,11 +150,18 @@
 
         <div class="form-group">
           <label>Ícone Representativo</label>
-          <select class="form-control" [(ngModel)]="formData.icon" name="icon">
-            <option *ngFor="let ic of availableIcons" [value]="ic.value">
-              {{ ic.label }} ({{ ic.value }})
-            </option>
-          </select>
+          <div class="icon-selector-grid">
+            <button
+              type="button"
+              class="icon-option-btn"
+              *ngFor="let ic of availableIcons"
+              [class.selected]="formData.icon === ic.value"
+              (click)="formData.icon = ic.value"
+            >
+              <i class="fa-solid" [ngClass]="ic.value"></i>
+              <span>{{ ic.label }}</span>
+            </button>
+          </div>
         </div>
 
         <div class="modal-footer">
