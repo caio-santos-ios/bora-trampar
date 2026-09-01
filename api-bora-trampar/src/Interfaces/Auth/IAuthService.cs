@@ -7,5 +7,8 @@ namespace api_bora_trampar.src.Interfaces.Auth
     {
         Task<ResponseApi<dynamic>> LoginAsync(LoginRequest request);
         Task<ResponseApi<dynamic>> RegisterAsync(RegisterRequest request);
+        Task<ResponseApi<dynamic>> RefreshTokenAsync(RefreshTokenRequest request);
+        Task<ResponseApi<dynamic>> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<ResponseApi<dynamic>> ResetPasswordAsync(ResetPasswordRequest request);
     }
 }

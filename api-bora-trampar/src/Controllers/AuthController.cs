@@ -24,7 +24,34 @@ namespace api_bora_trampar.src.Controllers
             if (request == null) return BadRequest("Dados inválidos.");
 
             ResponseApi<dynamic> response = await service.RegisterAsync(request);
-            return StatusCode(response.StatusCode, new { response.Result });
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            if (request == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<dynamic> response = await service.RefreshTokenAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            if (request == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<dynamic> response = await service.ForgotPasswordAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (request == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<dynamic> response = await service.ResetPasswordAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
     }
 }

@@ -36,7 +36,7 @@
     </div>
   </div>
 
-  <app-loading *ngIf="isLoading"></app-loading>
+  <app-loading [isLoading]="isLoading"></app-loading>
 
   <!-- Users Table -->
   <div class="card" *ngIf="!isLoading">

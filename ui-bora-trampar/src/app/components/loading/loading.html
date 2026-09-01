@@ -1,6 +1,6 @@
-<div [class.loading-overlay]="isOverlay" [class.loading-inline]="!isOverlay">
-  <div class="spinner-container">
-    <div class="spinner"></div>
-    <span class="loading-text" *ngIf="message">{{ message }}</span>
+<div class="container-loading" *ngIf="isLoading">
+  <div class="loading-content">
+    <i class="fa-solid fa-spinner fa-spin loading-icon"></i>
+    <h4>Carregando...</h4>
   </div>
 </div>

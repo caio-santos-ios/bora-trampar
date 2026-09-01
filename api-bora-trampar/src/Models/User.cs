@@ -24,5 +24,11 @@ namespace api_bora_trampar.src.Models
         [BsonElement("role")]
         [BsonRepresentation(BsonType.String)]
         public RoleUserEnum Role { get; set; }
+
+        [BsonElement("password_reset_token")]
+        public string? PasswordResetToken { get; set; }
+
+        [BsonElement("password_reset_expires")]
+        public DateTime? PasswordResetExpires { get; set; }
     }
 }

@@ -6,5 +6,8 @@ namespace api_bora_trampar.src.Interfaces.Auth
     {
         Task<User?> RegisterAsync(User entity);
         Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByIdAsync(string id);
+        Task<User?> GetByResetTokenAsync(string token);
+        Task<User?> UpdateAsync(User entity);
     }
 }

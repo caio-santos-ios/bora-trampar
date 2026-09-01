@@ -6,9 +6,10 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './loading.html',
-  styleUrl: './loading.css'
+  styleUrls: ['./loading.css']
 })
 export class Loading {
-  @Input() message: string = 'Carregando dados...';
-  @Input() isOverlay: boolean = false;
+  constructor() {}
+  
+  @Input() isLoading = false;
 }
