@@ -5,28 +5,19 @@ namespace api_bora_trampar.src.Configuration
 {
     public class AppDbContext
     {
-        public static string? ConnectionString { get; set; }
-        public static string? DatabaseName { get; set; }
-        public static bool IsSSL { get; set; }
         private IMongoDatabase Database { get; }
 
         public AppDbContext()
         {
             try
             {
-                MongoClientSettings mongoClientSettings = MongoClientSettings.FromUrl(new MongoUrl(ConnectionString));
-                if (IsSSL)
-                {
-                    mongoClientSettings.SslSettings = new SslSettings
-                    {
-                        EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12
-                    };
-                }
+                string connectionString = Environment.GetEnvironmentVariable("MONGODB_CONNECTION") ?? "";
+                string databaseName = Environment.GetEnvironmentVariable("DATABASE_NAME") ?? "";
+                MongoClient client = new (connectionString);
                 
-                var mongoClient = new MongoClient(mongoClientSettings);
-                Database = mongoClient.GetDatabase(DatabaseName);
+                Database = client.GetDatabase(databaseName);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 throw new Exception($"Failed to connect to database. Error: {ex.Message}");
             }

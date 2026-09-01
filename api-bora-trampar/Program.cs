@@ -9,7 +9,6 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.AddBuilderConfiguration();
 builder.AddContext();
 builder.AddBuilderServices();
 
@@ -20,9 +19,9 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    string secretKey = Environment.GetEnvironmentVariable("SECRET_KEY") ?? "";
-    string issuer    = Environment.GetEnvironmentVariable("ISSUER")     ?? "";
-    string audience  = Environment.GetEnvironmentVariable("AUDIENCE")   ?? "";
+    string secretKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? "";
+    string issuer    = Environment.GetEnvironmentVariable("JWT_ISSUER")     ?? "";
+    string audience  = Environment.GetEnvironmentVariable("JWT_AUDIENCE")   ?? "";
 
     options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
     {
@@ -88,35 +87,6 @@ builder.Services.AddControllers(options =>
     };
 });
 
-// builder.Services.AddSwaggerGen(c =>
-// {
-//     c.CustomSchemaIds(type => type.FullName);
-
-//     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-//     {
-//         Name         = "Authorization",
-//         Type         = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-//         In           = Microsoft.OpenApi.Models.ParameterLocation.Header,
-//         Scheme       = "Bearer",
-//         BearerFormat = "JWT",
-//         Description  = "JWT Authorization header using the Bearer scheme. Example: 'Bearer {token}'"
-//     });
-
-//     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-//     {
-//         {
-//             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-//             {
-//                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
-//                 {
-//                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-//                     Id   = "Bearer"
-//                 }
-//             },
-//             Array.Empty<string>()
-//         }
-//     });
-// });
 
 string[] allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS") ?? "http://localhost:3000").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
@@ -133,12 +103,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
-
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
 
 app.UseHttpsRedirection();
 

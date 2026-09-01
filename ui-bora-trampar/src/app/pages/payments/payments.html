@@ -1,0 +1,178 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestão Financeira & Pix</h1>
+      <p class="page-subtitle">Acompanhamento das transações Pix, valores retidos e liberação de repasses</p>
+    </div>
+  </div>
+
+  <!-- Financial Summary Cards -->
+  <div class="kpi-grid">
+    <div class="kpi-card gold-border">
+      <div class="kpi-icon-wrap gold-icon">
+        <i class="fa-solid fa-receipt"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Volume Total Transacionado</span>
+        <h3 class="kpi-value">{{ global.formatCurrency(totals.gross) }}</h3>
+        <span class="kpi-subtext">Total Pix aprovados</span>
+      </div>
+    </div>
+
+    <div class="kpi-card warning-border">
+      <div class="kpi-icon-wrap amber-icon">
+        <i class="fa-solid fa-hand-holding-dollar"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Saldo Retido em Custódia</span>
+        <h3 class="kpi-value warning-text">{{ global.formatCurrency(totals.held) }}</h3>
+        <span class="kpi-subtext">Serviços em andamento / contestados</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap green-icon">
+        <i class="fa-solid fa-money-bill-transfer"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Repasses Concluídos</span>
+        <h3 class="kpi-value" style="color: var(--status-active);">{{ global.formatCurrency(totals.released) }}</h3>
+        <span class="kpi-subtext">Transferido aos profissionais</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap blue-icon">
+        <i class="fa-solid fa-percent"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Receita da Plataforma (Taxa)</span>
+        <h3 class="kpi-value">{{ global.formatCurrency(totals.fees) }}</h3>
+        <span class="kpi-subtext">Taxa de intermediação</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por TxID, cliente, profissional ou pedido..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          Todos
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'held'" (click)="filterStatus = 'held'">
+          Retidos (Custódia)
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'released'" (click)="filterStatus = 'released'">
+          Repassados
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'refunded'" (click)="filterStatus = 'refunded'">
+          Reembolsados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Transactions Table -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>TxID Pix</th>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Profissional</th>
+            <th>Data/Hora</th>
+            <th>Valor Bruto</th>
+            <th>Taxa App (10%)</th>
+            <th>Líquido Profissional</th>
+            <th>Status</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td><code class="tx-code">{{ item.txId }}</code></td>
+            <td><strong class="gold-text">{{ item.appointmentId }}</strong></td>
+            <td>{{ item.customerName }}</td>
+            <td>{{ item.professionalName }}</td>
+            <td>{{ item.date }}</td>
+            <td><strong>{{ global.formatCurrency(item.grossValue) }}</strong></td>
+            <td><span style="color: var(--text-muted);">{{ global.formatCurrency(item.platformFee) }}</span></td>
+            <td><strong class="gold-text">{{ global.formatCurrency(item.netTransferValue) }}</strong></td>
+            <td>
+              <span class="status-badge" [ngClass]="item.status === 'released' ? 'active' : item.status === 'held' ? 'pending' : 'inactive'">
+                {{ item.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button
+                *ngIf="item.status === 'held'"
+                class="btn-success btn-sm"
+                (click)="releaseTransfer(item)"
+                title="Liberar repasse imediatamente ao profissional"
+              >
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>Liberar Repasse</span>
+              </button>
+              <span *ngIf="item.status === 'released'" style="color: var(--status-active); font-size: 13px; font-weight: 700;">
+                <i class="fa-solid fa-check-double"></i> Concluído
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div>
+            <strong class="gold-text">{{ item.appointmentId }}</strong>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ item.txId }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.status === 'released' ? 'active' : item.status === 'held' ? 'pending' : 'inactive'">
+            {{ item.statusLabel }}
+          </span>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Profissional</span>
+            <span class="mobile-card-field-value">{{ item.professionalName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Cliente</span>
+            <span class="mobile-card-field-value">{{ item.customerName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Valor Bruto</span>
+            <span class="mobile-card-field-value">{{ global.formatCurrency(item.grossValue) }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Líquido Profissional</span>
+            <span class="mobile-card-field-value gold-text">{{ global.formatCurrency(item.netTransferValue) }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions" *ngIf="item.status === 'held'">
+          <button class="btn-success btn-sm" (click)="releaseTransfer(item)">
+            <i class="fa-solid fa-paper-plane"></i> Liberar Repasse
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

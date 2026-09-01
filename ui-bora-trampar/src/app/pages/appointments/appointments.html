@@ -1,0 +1,210 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestão de Agendamentos</h1>
+      <p class="page-subtitle">Acompanhamento operacional de pedidos, prestadores, clientes e status</p>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por ID, cliente, profissional ou serviço..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          Todos ({{ appointments.length }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'">
+          Confirmados
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'">
+          Em Execução
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'">
+          Concluídos
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'">
+          Pendente Pix
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'">
+          Contestados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Appointments Table -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID Pedido</th>
+            <th>Cliente</th>
+            <th>Profissional</th>
+            <th>Serviço</th>
+            <th>Data Agendada</th>
+            <th>Valor Bruto</th>
+            <th>Status</th>
+            <th style="text-align: right;">Detalhes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td><strong class="gold-text">{{ item.id }}</strong></td>
+            <td>
+              <div class="cell-main">{{ item.customerName }}</div>
+              <div class="cell-sub">{{ item.customerPhone }}</div>
+            </td>
+            <td>
+              <div class="cell-main">{{ item.professionalName }}</div>
+              <div class="cell-sub">{{ item.professionalPhone }}</div>
+            </td>
+            <td><strong>{{ item.serviceName }}</strong></td>
+            <td>{{ item.date }} às {{ item.hour }}</td>
+            <td><strong class="gold-text">{{ global.formatCurrency(item.value) }}</strong></td>
+            <td>
+              <span class="status-badge" [ngClass]="item.status">
+                {{ item.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-primary btn-sm" (click)="viewDetails(item)">
+                <i class="fa-solid fa-eye"></i>
+                <span>Ver Pedido</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="8" class="empty-state-cell">
+              <i class="fa-solid fa-folder-open empty-icon"></i>
+              <p>Nenhum agendamento encontrado para estes filtros.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div>
+            <strong class="gold-text">{{ item.id }}</strong>
+            <div style="font-size: 14px; font-weight: 700; margin-top: 2px;">{{ item.serviceName }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.status">{{ item.statusLabel }}</span>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Cliente</span>
+            <span class="mobile-card-field-value">{{ item.customerName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Profissional</span>
+            <span class="mobile-card-field-value">{{ item.professionalName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data e Hora</span>
+            <span class="mobile-card-field-value">{{ item.date }} {{ item.hour }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Valor</span>
+            <span class="mobile-card-field-value">{{ global.formatCurrency(item.value) }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions">
+          <button class="btn-primary btn-sm" (click)="viewDetails(item)">
+            <i class="fa-solid fa-eye"></i> Ver Pedido
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Details Modal -->
+  <div class="modal-overlay" *ngIf="isDetailsModalOpen && selectedItem">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2>Detalhes do Agendamento {{ selectedItem.id }}</h2>
+          <span class="protocol-sub">Criado em {{ global.formatDateTime(selectedItem.createdAt) }}</span>
+        </div>
+        <button class="btn-close" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="details-body">
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-briefcase"></i> Serviço & Execução</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Serviço Solicitado</label>
+              <span>{{ selectedItem.serviceName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Data & Horário</label>
+              <span>{{ selectedItem.date }} às {{ selectedItem.hour }}</span>
+            </div>
+            <div class="info-item">
+              <label>Endereço de Atendimento</label>
+              <span>{{ selectedItem.address }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status Atual</label>
+              <span class="status-badge" [ngClass]="selectedItem.status">{{ selectedItem.statusLabel }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-users"></i> Partes Envolvidas</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Cliente</label>
+              <span>{{ selectedItem.customerName }} ({{ selectedItem.customerPhone }})</span>
+            </div>
+            <div class="info-item">
+              <label>Profissional</label>
+              <span>{{ selectedItem.professionalName }} ({{ selectedItem.professionalPhone }})</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-money-bill-wave"></i> Cobrança Pix</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Valor Total do Pedido</label>
+              <span class="gold-text" style="font-size: 18px; font-weight: 800;">
+                {{ global.formatCurrency(selectedItem.value) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Status do Pix</label>
+              <span>{{ selectedItem.paymentMethod }}</span>
+            </div>
+            <div class="info-item" *ngIf="selectedItem.pixTxId">
+              <label>Código da Transação Pix</label>
+              <code>{{ selectedItem.pixTxId }}</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,271 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Verificação de Identidade</h1>
+      <p class="page-subtitle">Moderação de documentos oficiais (RG/CNH) e selfies de presença dos profissionais</p>
+    </div>
+  </div>
+
+  <!-- Filters Row -->
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por profissional, documento ou categoria..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'all'"
+          (click)="filterStatus = 'all'"
+        >
+          Todos ({{ verifications.length }})
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'analysis'"
+          (click)="filterStatus = 'analysis'"
+        >
+          Em Análise
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'approved'"
+          (click)="filterStatus = 'approved'"
+        >
+          Aprovados
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'correction'"
+          (click)="filterStatus = 'correction'"
+        >
+          Correção
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'rejected'"
+          (click)="filterStatus = 'rejected'"
+        >
+          Reprovados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Table View -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Profissional</th>
+            <th>Categoria</th>
+            <th>Documento</th>
+            <th>Envio</th>
+            <th>Status</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td><strong class="gold-text">{{ item.id }}</strong></td>
+            <td>
+              <div class="pro-cell">
+                <div class="avatar-circle">{{ item.professionalName[0] }}</div>
+                <div>
+                  <div class="pro-name">{{ item.professionalName }}</div>
+                  <div class="pro-sub">{{ item.phone }} • {{ item.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="category-tag">{{ item.category }}</span></td>
+            <td><strong>{{ item.documentType }}:</strong> {{ item.documentNumber }}</td>
+            <td>{{ global.formatDateTime(item.submittedAt) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="item.status">
+                {{ item.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-primary btn-sm" (click)="openDetails(item)">
+                <i class="fa-solid fa-eye"></i>
+                <span>Analisar</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="7" class="empty-state-cell">
+              <i class="fa-solid fa-folder-open empty-icon"></i>
+              <p>Nenhuma verificação encontrada para os filtros selecionados.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div>
+            <strong class="gold-text">{{ item.id }}</strong>
+            <div class="pro-name" style="margin-top: 4px;">{{ item.professionalName }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.status">{{ item.statusLabel }}</span>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Categoria</span>
+            <span class="mobile-card-field-value">{{ item.category }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Documento</span>
+            <span class="mobile-card-field-value">{{ item.documentType }}: {{ item.documentNumber }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Contato</span>
+            <span class="mobile-card-field-value">{{ item.phone }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data de Envio</span>
+            <span class="mobile-card-field-value">{{ global.formatDateTime(item.submittedAt) }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions">
+          <button class="btn-primary btn-sm" (click)="openDetails(item)">
+            <i class="fa-solid fa-eye"></i>
+            <span>Ver Documentos</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Review Modal -->
+  <div class="modal-overlay" *ngIf="isModalOpen && selectedItem">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2>Análise de Documentos — {{ selectedItem.professionalName }}</h2>
+          <span class="protocol-sub">Protocolo: {{ selectedItem.id }} • {{ selectedItem.category }}</span>
+        </div>
+        <button class="btn-close" (click)="closeDetails()">&times;</button>
+      </div>
+
+      <div class="doc-review-body">
+        <!-- Professional Info Summary -->
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Profissional</label>
+            <span>{{ selectedItem.professionalName }}</span>
+          </div>
+          <div class="info-item">
+            <label>Telefone</label>
+            <span>{{ selectedItem.phone }}</span>
+          </div>
+          <div class="info-item">
+            <label>Tipo Documento</label>
+            <span>{{ selectedItem.documentType }} ({{ selectedItem.documentNumber }})</span>
+          </div>
+          <div class="info-item">
+            <label>Status Atual</label>
+            <span class="status-badge" [ngClass]="selectedItem.status">{{ selectedItem.statusLabel }}</span>
+          </div>
+        </div>
+
+        <!-- Evidence Gallery -->
+        <h3 class="section-subtitle"><i class="fa-solid fa-images"></i> Evidências e Prova de Vida</h3>
+        <div class="evidence-grid">
+          <div class="evidence-card" *ngIf="selectedItem.selfieUrl">
+            <div class="evidence-tag"><i class="fa-solid fa-camera"></i> Selfie (Presença)</div>
+            <img [src]="selectedItem.selfieUrl" alt="Selfie" class="evidence-img" />
+          </div>
+
+          <div class="evidence-card" *ngIf="selectedItem.rgFrontUrl">
+            <div class="evidence-tag"><i class="fa-solid fa-id-card"></i> {{ selectedItem.documentType }} Frente</div>
+            <img [src]="selectedItem.rgFrontUrl" alt="Documento Frente" class="evidence-img" />
+          </div>
+
+          <div class="evidence-card" *ngIf="selectedItem.rgBackUrl">
+            <div class="evidence-tag"><i class="fa-solid fa-id-card"></i> {{ selectedItem.documentType }} Verso</div>
+            <img [src]="selectedItem.rgBackUrl" alt="Documento Verso" class="evidence-img" />
+          </div>
+        </div>
+
+        <!-- Audit trail notes if already reviewed -->
+        <div class="audit-box" *ngIf="selectedItem.reviewedBy">
+          <h4><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Auditoria</h4>
+          <p><strong>Revisado por:</strong> {{ selectedItem.reviewedBy }} em {{ selectedItem.reviewedAt }}</p>
+          <p *ngIf="selectedItem.reviewNotes"><strong>Observação/Justificativa:</strong> {{ selectedItem.reviewNotes }}</p>
+        </div>
+      </div>
+
+      <div class="modal-footer review-footer">
+        <button class="btn-secondary" (click)="closeDetails()">Fechar</button>
+        <button class="btn-danger" (click)="openActionModal('reject')">
+          <i class="fa-solid fa-xmark"></i>
+          <span>Reprovar</span>
+        </button>
+        <button class="btn-warning" (click)="openActionModal('correction')">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Solicitar Correção</span>
+        </button>
+        <button class="btn-success" (click)="openActionModal('approve')">
+          <i class="fa-solid fa-check"></i>
+          <span>Aprovar Cadastro</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Justification Modal -->
+  <div class="modal-overlay" *ngIf="isActionModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <span *ngIf="actionType === 'approve'">Confirmar Aprovação</span>
+          <span *ngIf="actionType === 'correction'">Solicitar Correção de Documentos</span>
+          <span *ngIf="actionType === 'reject'">Confirmar Reprovação</span>
+        </h2>
+        <button class="btn-close" (click)="closeActionModal()">&times;</button>
+      </div>
+
+      <div class="form-group" *ngIf="actionType !== 'approve'">
+        <label>Motivo / Justificativa Obrigatória:</label>
+        <textarea
+          class="form-control"
+          rows="4"
+          placeholder="Descreva o motivo com clareza para o profissional (ex: foto ilegível, documento expirado)..."
+          [(ngModel)]="actionJustification"
+        ></textarea>
+      </div>
+
+      <div class="alert-box" *ngIf="actionType === 'approve'">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Ao aprovar, o profissional ficará ativo e elegível para receber agendamentos de clientes na plataforma.</span>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeActionModal()">Cancelar</button>
+        <button
+          [class.btn-success]="actionType === 'approve'"
+          [class.btn-warning]="actionType === 'correction'"
+          [class.btn-danger]="actionType === 'reject'"
+          (click)="confirmAction()"
+        >
+          Confirmar Decisão
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

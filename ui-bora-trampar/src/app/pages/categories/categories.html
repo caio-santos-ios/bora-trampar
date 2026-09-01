@@ -1,0 +1,168 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Categorias de Serviços</h1>
+      <p class="page-subtitle">Gerenciamento do catálogo principal de especialidades da plataforma</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Nova Categoria</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Card -->
+  <div class="card search-card">
+    <div class="search-box">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Filtrar categorias por nome ou descrição..."
+        [(ngModel)]="searchQuery"
+      />
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Categories Table -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Ícone</th>
+            <th>Nome da Categoria</th>
+            <th>Descrição</th>
+            <th>Serviços Vinculados</th>
+            <th>Data Cadastro</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td>
+              <div class="cat-icon-badge">
+                <i class="fa-solid" [ngClass]="item.icon"></i>
+              </div>
+            </td>
+            <td><strong class="cat-name">{{ item.name }}</strong></td>
+            <td><span class="desc-text">{{ item.description || '-' }}</span></td>
+            <td><span class="count-badge">{{ item.servicesCount || 0 }} serviços</span></td>
+            <td>{{ global.formatDate(item.createdAt || '') }}</td>
+            <td style="text-align: right;">
+              <button class="btn-icon" (click)="openEditModal(item)" title="Editar">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="btn-icon delete-icon" (click)="confirmDelete(item)" title="Excluir">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="6" class="empty-state-cell">
+              <i class="fa-solid fa-folder-open empty-icon"></i>
+              <p>Nenhuma categoria encontrada.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div class="mobile-cat-title">
+            <div class="cat-icon-badge sm">
+              <i class="fa-solid" [ngClass]="item.icon"></i>
+            </div>
+            <strong>{{ item.name }}</strong>
+          </div>
+          <span class="count-badge">{{ item.servicesCount || 0 }} serv.</span>
+        </div>
+        <p class="desc-text" *ngIf="item.description">{{ item.description }}</p>
+        <div class="mobile-card-actions">
+          <button class="btn-secondary btn-sm" (click)="openEditModal(item)">
+            <i class="fa-solid fa-pen-to-square"></i> Editar
+          </button>
+          <button class="btn-danger btn-sm" (click)="confirmDelete(item)">
+            <i class="fa-solid fa-trash-can"></i> Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" *ngIf="isModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ modalMode === 'create' ? 'Nova Categoria' : 'Editar Categoria' }}</h2>
+        <button class="btn-close" (click)="closeModal()">&times;</button>
+      </div>
+
+      <form (ngSubmit)="saveCategory()">
+        <div class="form-group">
+          <label>Nome da Categoria *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ex: Construção & Reformas"
+            [(ngModel)]="formData.name"
+            name="name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Ícone Representativo</label>
+          <select class="form-control" [(ngModel)]="formData.icon" name="icon">
+            <option *ngFor="let ic of availableIcons" [value]="ic.value">
+              {{ ic.label }} ({{ ic.value }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Descrição Opcional</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Breve descrição da categoria..."
+            [(ngModel)]="formData.description"
+            name="description"
+          ></textarea>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check"></i>
+            <span>{{ modalMode === 'create' ? 'Criar Categoria' : 'Salvar Alterações' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" *ngIf="isDeleteModalOpen && categoryToDelete">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Excluir Categoria</h2>
+        <button class="btn-close" (click)="closeDeleteModal()">&times;</button>
+      </div>
+      <p>Tem certeza de que deseja excluir a categoria <strong>{{ categoryToDelete.name }}</strong>?</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+        Esta ação desativará a categoria na plataforma.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger" (click)="executeDelete()">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>

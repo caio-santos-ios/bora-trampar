@@ -1,0 +1,30 @@
+<div class="layout-container">
+  <app-sidebar [isOpen]="isSidebarOpen" (closeSidebar)="closeSidebar()"></app-sidebar>
+  
+  <div class="sidebar-backdrop" *ngIf="isSidebarOpen" (click)="closeSidebar()"></div>
+
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="btn-hamburger" (click)="toggleSidebar()">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+
+      <div class="topbar-breadcrumb">
+        <span class="platform-name">Bora Trampar</span>
+        <span class="divider">/</span>
+        <span class="active-env">Produção</span>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="system-status-indicator">
+          <span class="pulse-dot"></span>
+          <span class="status-text">API Online</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

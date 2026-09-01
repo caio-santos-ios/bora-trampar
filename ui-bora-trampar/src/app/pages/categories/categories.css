@@ -1,0 +1,74 @@
+.search-card {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.search-box {
+  position: relative;
+  max-width: 440px;
+}
+
+.search-box i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.search-box input {
+  padding-left: 38px;
+}
+
+.cat-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(253, 191, 15, 0.15);
+  color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.cat-icon-badge.sm {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.cat-name {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.desc-text {
+  color: var(--text-muted);
+  font-size: 13px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.count-badge {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.delete-icon:hover {
+  color: #ef4444 !important;
+}
+
+.mobile-cat-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,0 +1,239 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Mediação de Contestações</h1>
+      <p class="page-subtitle">Proteção contra má-fé, análise de evidências e autorização de repasses ou reembolsos</p>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por protocolo, cliente, profissional ou pedido..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          Todas ({{ disputes.length }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'under_review'" (click)="filterStatus = 'under_review'">
+          Em Análise
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'released_pro'" (click)="filterStatus = 'released_pro'">
+          Liberadas ao Pro
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'refunded_full'" (click)="filterStatus = 'refunded_full'">
+          Reembolsadas
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Table View -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Protocolo</th>
+            <th>Pedido</th>
+            <th>Cliente Reclamante</th>
+            <th>Profissional Contestado</th>
+            <th>Valor Retido</th>
+            <th>Data Abertura</th>
+            <th>Status Mediação</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td><strong class="gold-text">{{ item.id }}</strong></td>
+            <td><strong>{{ item.appointmentId }}</strong></td>
+            <td>{{ item.customerName }}</td>
+            <td>{{ item.professionalName }}</td>
+            <td><strong class="gold-text">{{ global.formatCurrency(item.totalValue) }}</strong></td>
+            <td>{{ global.formatDateTime(item.openedAt) }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="item.status === 'released_pro' ? 'active' : item.status === 'under_review' ? 'pending' : 'correction'">
+                {{ item.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-primary btn-sm" (click)="openDetails(item)">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Mediar Caso</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="8" class="empty-state-cell">
+              <i class="fa-solid fa-shield-halved empty-icon"></i>
+              <p>Nenhuma contestação pendente de mediação.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div>
+            <strong class="gold-text">{{ item.id }}</strong> ({{ item.appointmentId }})
+            <div style="font-size: 14px; font-weight: 700; margin-top: 4px;">{{ item.serviceName }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.status === 'released_pro' ? 'active' : 'pending'">{{ item.statusLabel }}</span>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Cliente</span>
+            <span class="mobile-card-field-value">{{ item.customerName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Profissional</span>
+            <span class="mobile-card-field-value">{{ item.professionalName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Valor em Custódia</span>
+            <span class="mobile-card-field-value gold-text">{{ global.formatCurrency(item.totalValue) }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data de Abertura</span>
+            <span class="mobile-card-field-value">{{ global.formatDateTime(item.openedAt) }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions">
+          <button class="btn-primary btn-sm" (click)="openDetails(item)">
+            <i class="fa-solid fa-scale-balanced"></i> Mediar Caso
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mediation Modal -->
+  <div class="modal-overlay" *ngIf="isModalOpen && selectedItem">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2>Caso de Mediação: {{ selectedItem.id }}</h2>
+          <span class="protocol-sub">Pedido: {{ selectedItem.appointmentId }} • {{ selectedItem.serviceName }}</span>
+        </div>
+        <button class="btn-close" (click)="closeDetails()">&times;</button>
+      </div>
+
+      <div class="mediation-body">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Valor em Custódia</label>
+            <span class="gold-text" style="font-size: 18px; font-weight: 800;">
+              {{ global.formatCurrency(selectedItem.totalValue) }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label>Cliente</label>
+            <span>{{ selectedItem.customerName }}</span>
+          </div>
+          <div class="info-item">
+            <label>Profissional</label>
+            <span>{{ selectedItem.professionalName }}</span>
+          </div>
+          <div class="info-item">
+            <label>Status da Mediação</label>
+            <span class="status-badge" [ngClass]="selectedItem.status === 'released_pro' ? 'active' : 'pending'">
+              {{ selectedItem.statusLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div class="dispute-claims">
+          <div class="claim-box customer-claim">
+            <h4><i class="fa-solid fa-circle-exclamation"></i> Alegação do Cliente</h4>
+            <p>{{ selectedItem.reason }}</p>
+            <div class="evidence-preview" *ngIf="selectedItem.customerEvidenceUrl">
+              <span class="evidence-title">Foto Anexada como Evidência:</span>
+              <img [src]="selectedItem.customerEvidenceUrl" alt="Evidência Cliente" class="claim-img" />
+            </div>
+          </div>
+
+          <div class="claim-box pro-claim" *ngIf="selectedItem.proNotes">
+            <h4><i class="fa-solid fa-user-tie"></i> Resposta do Profissional</h4>
+            <p>{{ selectedItem.proNotes }}</p>
+          </div>
+        </div>
+
+        <div class="audit-box" *ngIf="selectedItem.adminDecision">
+          <h4><i class="fa-solid fa-gavel"></i> Decisão Administrativa Registrada</h4>
+          <p><strong>Decidido por:</strong> {{ selectedItem.decidedBy }} em {{ selectedItem.decidedAt }}</p>
+          <p><strong>Parecer:</strong> {{ selectedItem.adminDecision }}</p>
+        </div>
+      </div>
+
+      <div class="modal-footer review-footer">
+        <button class="btn-secondary" (click)="closeDetails()">Fechar</button>
+        <button class="btn-warning" (click)="openDecisionModal('info_requested')">
+          <i class="fa-solid fa-question"></i>
+          <span>Pedir Informações</span>
+        </button>
+        <button class="btn-danger" (click)="openDecisionModal('refunded_full')">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>Reembolsar Cliente</span>
+        </button>
+        <button class="btn-secondary" (click)="openDecisionModal('refunded_partial')">
+          <i class="fa-solid fa-percent"></i>
+          <span>Reembolso Parcial</span>
+        </button>
+        <button class="btn-success" (click)="openDecisionModal('released_pro')">
+          <i class="fa-solid fa-check-double"></i>
+          <span>Liberar ao Profissional</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply Decision Modal -->
+  <div class="modal-overlay" *ngIf="isDecisionModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>
+          <span *ngIf="decisionType === 'released_pro'">Liberar Pagamento ao Profissional</span>
+          <span *ngIf="decisionType === 'refunded_full'">Reembolso Total ao Cliente</span>
+          <span *ngIf="decisionType === 'refunded_partial'">Reembolso Parcial</span>
+          <span *ngIf="decisionType === 'info_requested'">Solicitar Mais Informações</span>
+        </h2>
+        <button class="btn-close" (click)="closeDecisionModal()">&times;</button>
+      </div>
+
+      <div class="form-group" *ngIf="decisionType === 'refunded_partial'">
+        <label>Percentual de Reembolso ao Cliente (%)</label>
+        <input type="number" class="form-control" [(ngModel)]="partialRefundPercentage" min="10" max="90" step="5" />
+      </div>
+
+      <div class="form-group">
+        <label>Parecer / Justificativa Administrativa Registrada *</label>
+        <textarea
+          class="form-control"
+          rows="4"
+          placeholder="Fundamente a decisão que ficará gravada no histórico imutável do agendamento..."
+          [(ngModel)]="decisionJustification"
+          required
+        ></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDecisionModal()">Cancelar</button>
+        <button class="btn-primary" (click)="applyDecision()">Confirmar Decisão</button>
+      </div>
+    </div>
+  </div>
+</div>

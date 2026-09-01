@@ -1,0 +1,185 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Serviços da Plataforma</h1>
+      <p class="page-subtitle">Configuração dos tipos específicos de serviços e suas respectivas categorias</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Novo Serviço</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filters-card">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar serviço por nome..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="category-select-wrap">
+        <select class="form-control" [(ngModel)]="selectedCategoryFilter">
+          <option value="all">Todas as Categorias</option>
+          <option *ngFor="let cat of categoriesList" [value]="cat.id">
+            {{ cat.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <!-- Services Table -->
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Ícone</th>
+            <th>Nome do Serviço</th>
+            <th>Categoria Vinculada</th>
+            <th>Data de Criação</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td>
+              <div class="service-icon-badge">
+                <i class="fa-solid" [ngClass]="item.icon"></i>
+              </div>
+            </td>
+            <td><strong class="service-name">{{ item.name }}</strong></td>
+            <td>
+              <span class="category-pill">
+                <i class="fa-solid fa-layer-group"></i>
+                {{ item.categoryName }}
+              </span>
+            </td>
+            <td>{{ global.formatDate(item.createdAt || '') }}</td>
+            <td style="text-align: right;">
+              <button class="btn-icon" (click)="openEditModal(item)" title="Editar">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="btn-icon delete-icon" (click)="confirmDelete(item)" title="Excluir">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="5" class="empty-state-cell">
+              <i class="fa-solid fa-folder-open empty-icon"></i>
+              <p>Nenhum serviço encontrado.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div class="mobile-service-title">
+            <div class="service-icon-badge sm">
+              <i class="fa-solid" [ngClass]="item.icon"></i>
+            </div>
+            <strong>{{ item.name }}</strong>
+          </div>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Categoria</span>
+            <span class="mobile-card-field-value">{{ item.categoryName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data</span>
+            <span class="mobile-card-field-value">{{ global.formatDate(item.createdAt || '') }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions">
+          <button class="btn-secondary btn-sm" (click)="openEditModal(item)">
+            <i class="fa-solid fa-pen-to-square"></i> Editar
+          </button>
+          <button class="btn-danger btn-sm" (click)="confirmDelete(item)">
+            <i class="fa-solid fa-trash-can"></i> Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" *ngIf="isModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ modalMode === 'create' ? 'Novo Serviço' : 'Editar Serviço' }}</h2>
+        <button class="btn-close" (click)="closeModal()">&times;</button>
+      </div>
+
+      <form (ngSubmit)="saveService()">
+        <div class="form-group">
+          <label>Nome do Serviço *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ex: Pintura de Fachadas e Muros"
+            [(ngModel)]="formData.name"
+            name="name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Categoria Pertencente *</label>
+          <select class="form-control" [(ngModel)]="formData.categoryId" name="categoryId" required>
+            <option *ngFor="let cat of categoriesList" [value]="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ícone Representativo</label>
+          <select class="form-control" [(ngModel)]="formData.icon" name="icon">
+            <option *ngFor="let ic of availableIcons" [value]="ic.value">
+              {{ ic.label }} ({{ ic.value }})
+            </option>
+          </select>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check"></i>
+            <span>{{ modalMode === 'create' ? 'Criar Serviço' : 'Salvar Alterações' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" *ngIf="isDeleteModalOpen && serviceToDelete">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Excluir Serviço</h2>
+        <button class="btn-close" (click)="closeDeleteModal()">&times;</button>
+      </div>
+      <p>Tem certeza de que deseja excluir o serviço <strong>{{ serviceToDelete.name }}</strong>?</p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger" (click)="executeDelete()">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
