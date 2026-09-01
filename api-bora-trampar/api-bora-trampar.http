@@ -1,0 +1,6 @@
+@api_bora_trampar_HostAddress = http://localhost:5067
+
+GET {{api_bora_trampar_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
