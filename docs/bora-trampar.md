@@ -134,15 +134,17 @@ O cronograma abaixo foi replanejado para entregar um **MVP enxuto em 20 dias út
 
 ## Linha do tempo sugerida
 
-| Semana | Foco principal | Resultado esperado |
+A ordem de entrega prioriza o **painel administrativo**, depois o aplicativo do cliente e, por fim, o aplicativo do profissional e a estabilização do MVP. A base da API pode ser desenvolvida em paralelo para sustentar cada entrega semanal, mas o primeiro produto utilizável será o painel.
+
+| Semana | Foco da entrega | O que será entregue |
 | --- | --- | --- |
-| Semana 1 | Escopo, regras e UX | Fluxo aprovado, telas essenciais definidas e documentação atualizada |
-| Semana 2 | Arquitetura e API | Base técnica pronta e endpoints principais funcionando |
-| Semana 3 | UI, app e integração | Fluxo principal navegável e conectado à API |
-| Semana 4 | Pix, testes e entrega | MVP demonstrável com pagamento Pix e principais erros tratados |
+| Semana 1 | Painel administrativo | Painel inicial com login de administrador, gestão de usuários, categorias, serviços, profissionais e fila de verificação de identidade. |
+| Semana 2 | API e operação do painel | API integrada ao painel, modelo de dados, disponibilidade, agendamentos, pagamentos Pix, contestações e decisões administrativas. |
+| Semana 3 | Aplicativo do cliente | Fluxo do cliente: categoria, serviço, data, horário, profissionais disponíveis, confirmação, geração do Pix e acompanhamento do pedido. |
+| Semana 4 | Aplicativo do profissional e entrega | Perfil e disponibilidade da profissional, recebimento e finalização de serviços, contestação, integração ponta a ponta, correções críticas e MVP demonstrável. |
 
 ## Critérios para avançar de etapa
-Uma etapa deve ser considerada concluída quando seus entregáveis forem revisados e aprovados no mesmo dia ou no início da etapa seguinte. Para preservar o prazo de 20 dias, o escopo deve permanecer congelado após o Dia 2. Antes da entrega, o sistema deve permitir concluir um agendamento de ponta a ponta em ambiente de testes, incluindo geração do Pix, confirmação do pagamento, atualização do status para cliente e profissional e tratamento dos erros críticos.
+Cada semana deve terminar com a entrega indicada na linha do tempo, revisada e demonstrável. Para preservar o prazo de 20 dias, o escopo deve permanecer congelado após o Dia 2 e a equipe deve priorizar o painel administrativo antes do aplicativo. Antes da entrega final, o sistema deve permitir concluir um agendamento de ponta a ponta em ambiente de testes, incluindo geração do Pix, confirmação do pagamento, atualização do status para cliente e profissional, finalização do serviço, contestação e tratamento dos erros críticos.
 ## Riscos e premissas
 O plano pressupõe decisões rápidas sobre escopo e stack, disponibilidade diária da equipe e acesso imediato a um provedor Pix em ambiente de testes. Para caber em 20 dias, pagamentos integrados além do Pix, avaliações, chat, geolocalização, recorrência, recomendações avançadas e funcionalidades não essenciais ficam fora do MVP. A integração Pix, conflitos de agenda, contestação de má-fé e mudanças de escopo são os principais riscos para o prazo.
 A política de contestação deve ser transparente para as duas partes. O sistema não deve presumir automaticamente que cliente ou profissional está correto; deve preservar o valor até a análise, registrar evidências e permitir decisão fundamentada do administrador. Os prazos de resposta, critérios de reembolso e regras de repasse devem ser definidos antes da publicação do MVP.
