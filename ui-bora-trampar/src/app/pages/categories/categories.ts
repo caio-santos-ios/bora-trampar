@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -24,6 +24,7 @@ export interface CategoryItem {
 })
 export class Categories implements OnInit {
   isLoading = false;
+  isSaving = false;
   searchQuery = '';
 
   isModalOpen = false;
@@ -88,7 +89,8 @@ export class Categories implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -97,9 +99,11 @@ export class Categories implements OnInit {
 
   async loadCategories() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       const response = await api.get('/api/categories');
-      if (response.data?.result && Array.isArray(response.data.result)) {
+      if (response.data?.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
         this.categories = response.data.result.map((cat: any) => ({
           id: cat.id || cat._id,
           name: cat.name,
@@ -109,10 +113,11 @@ export class Categories implements OnInit {
           createdAt: cat.createdAt || new Date().toISOString()
         }));
       }
-    } catch (err) {
-      console.warn('Backend categories endpoint offline, using local storage/mock', err);
+    } catch {
+      // Keep demo categories fallback
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -150,6 +155,9 @@ export class Categories implements OnInit {
       this.toastr.warning('O nome da categoria é obrigatório.');
       return;
     }
+
+    this.isSaving = true;
+    this.cdr.detectChanges();
 
     try {
       if (this.modalMode === 'create') {
@@ -204,6 +212,9 @@ export class Categories implements OnInit {
       this.closeModal();
     } catch (err: any) {
       this.toastr.error('Erro ao salvar categoria.');
+    } finally {
+      this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -220,6 +231,9 @@ export class Categories implements OnInit {
   async executeDelete() {
     if (!this.categoryToDelete) return;
 
+    this.isSaving = true;
+    this.cdr.detectChanges();
+
     try {
       try {
         await api.delete(`/api/categories/${this.categoryToDelete.id}`);
@@ -230,6 +244,9 @@ export class Categories implements OnInit {
       this.closeDeleteModal();
     } catch {
       this.toastr.error('Erro ao excluir categoria.');
+    } finally {
+      this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 }

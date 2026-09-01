@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -29,6 +29,7 @@ export interface CategoryRef {
 })
 export class Services implements OnInit {
   isLoading = false;
+  isSaving = false;
   searchQuery = '';
   selectedCategoryFilter = 'all';
 
@@ -109,7 +110,8 @@ export class Services implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -118,6 +120,8 @@ export class Services implements OnInit {
 
   async loadData() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       const [resCat, resServ] = await Promise.allSettled([
         api.get('/api/categories'),
@@ -144,10 +148,11 @@ export class Services implements OnInit {
           };
         });
       }
-    } catch (e) {
-      console.warn('Fallback to local services');
+    } catch {
+      // Fallback
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -192,6 +197,9 @@ export class Services implements OnInit {
       this.toastr.warning('Preencha o nome do serviço e selecione a categoria.');
       return;
     }
+
+    this.isSaving = true;
+    this.cdr.detectChanges();
 
     try {
       if (this.modalMode === 'create') {
@@ -249,6 +257,9 @@ export class Services implements OnInit {
       this.closeModal();
     } catch {
       this.toastr.error('Erro ao salvar serviço.');
+    } finally {
+      this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -265,6 +276,9 @@ export class Services implements OnInit {
   async executeDelete() {
     if (!this.serviceToDelete) return;
 
+    this.isSaving = true;
+    this.cdr.detectChanges();
+
     try {
       try {
         await api.delete(`/api/services/${this.serviceToDelete.id}`);
@@ -275,6 +289,9 @@ export class Services implements OnInit {
       this.closeDeleteModal();
     } catch {
       this.toastr.error('Erro ao excluir serviço.');
+    } finally {
+      this.isSaving = false;
+      this.cdr.detectChanges();
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -109,7 +109,8 @@ export class Payments implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -118,12 +119,15 @@ export class Payments implements OnInit {
 
   async loadPayments() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       await api.get('/api/payments');
     } catch {
       // Demo mock fallback
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 

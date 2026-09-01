@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -22,7 +22,8 @@ export class Login {
   constructor(
     private auth: Auth,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   toggleShowPassword() {
@@ -36,30 +37,43 @@ export class Login {
     }
 
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       const response = await api.post('/api/auth/login', {
         email: this.email,
         password: this.password
       });
 
-      const data = response.data?.result || response.data;
-      const token = data?.token || data?.accessToken || 'mock-admin-token-' + Date.now();
-      const user = data?.user || { name: 'Administrador Bora Trampar', email: this.email, role: 'admin' };
+      const resObj = response.data?.result || response.data;
+      const dataPayload = resObj?.data || resObj;
 
-      this.auth.setToken(token);
-      this.auth.setUser(user);
+      const token = dataPayload?.token || resObj?.token || response.data?.token;
+      const refreshToken = dataPayload?.refreshToken || resObj?.refreshToken || response.data?.refreshToken;
+      const user = dataPayload?.user || resObj?.user || { name: 'Administrador', email: this.email, role: 'admin' };
+      const message = resObj?.message || response.data?.message || 'Login realizado com sucesso!';
 
-      this.toastr.success('Login realizado com sucesso!');
-      this.router.navigate(['/dashboard']);
+      if (token) {
+        this.auth.setToken(token);
+        if (refreshToken) this.auth.setRefreshToken(refreshToken);
+        this.auth.setUser(user);
+
+        this.toastr.success(message);
+        this.router.navigate(['/dashboard']);
+      } else {
+        throw new Error('Token de autenticação não retornado.');
+      }
     } catch (err: any) {
-      console.warn('API fallback / mock login allowed for demo', err);
-      
-      this.auth.setToken('mock-admin-token-' + Date.now());
-      this.auth.setUser({ name: 'Administrador Bora Trampar', email: this.email, role: 'admin' });
-      this.toastr.success('Bem-vindo ao painel administrativo!');
-      this.router.navigate(['/dashboard']);
+      const errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.result?.message ||
+        err.response?.data?.errors?.[0]?.message ||
+        err.message ||
+        'Não foi possível conectar ao servidor da API.';
+      this.toastr.error(errorMsg);
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 }

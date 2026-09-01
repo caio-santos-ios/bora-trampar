@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -28,13 +28,15 @@ export class ResetPassword implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.token = params['token'] || params['code'] || '';
       this.hasToken = !!this.token;
+      this.cdr.detectChanges();
     });
   }
 
@@ -53,16 +55,19 @@ export class ResetPassword implements OnInit {
     }
 
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       await api.post('/api/auth/forgot-password', { email: this.email });
       this.isSubmitted = true;
       this.toastr.success('Link de recuperação enviado com sucesso!');
     } catch (err: any) {
-      // Fallback for mock demo
+      const msg = err.response?.data?.message || 'Se o e-mail estiver cadastrado, o link de recuperação foi enviado!';
       this.isSubmitted = true;
-      this.toastr.success('Se o e-mail estiver cadastrado, o link de recuperação foi enviado!');
+      this.toastr.success(msg);
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -83,6 +88,8 @@ export class ResetPassword implements OnInit {
     }
 
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       await api.post('/api/auth/reset-password', {
         token: this.token,
@@ -92,10 +99,11 @@ export class ResetPassword implements OnInit {
       this.isResetDone = true;
       this.toastr.success('Sua senha foi redefinida com sucesso!');
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Token inválido ou expirado.';
+      const msg = err.response?.data?.message || err.message || 'Token inválido ou expirado.';
       this.toastr.error(msg);
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 }

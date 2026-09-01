@@ -88,13 +88,11 @@ builder.Services.AddControllers(options =>
 });
 
 
-string[] allowedOrigins = (Environment.GetEnvironmentVariable("ALLOWED_ORIGINS") ?? "http://localhost:3000").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AppPolicy", policy =>
         policy
-            .WithOrigins(allowedOrigins)
+            .SetIsOriginAllowed(_ => true)
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -104,9 +102,12 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
-
 app.UseCors("AppPolicy");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 var uploadPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
 if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);

@@ -1,5 +1,6 @@
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Interfaces.Auth;
+using api_bora_trampar.src.Interfaces.Dashboard;
 using api_bora_trampar.src.Repositories;
 using api_bora_trampar.src.Services;
 using CloudinaryDotNet;
@@ -17,6 +18,9 @@ namespace api_bora_trampar.src.Configuration
         {
             builder.Services.AddTransient<IAuthService, AuthService>();
             builder.Services.AddTransient<IAuthRepository, AuthRepository>();
+
+            builder.Services.AddTransient<IDashboardService, DashboardService>();
+            builder.Services.AddTransient<IDashboardRepository, DashboardRepository>();
 
             builder.Services.AddTransient<IUserService, UserService>();
             builder.Services.AddTransient<IUserRepository, UserRepository>();

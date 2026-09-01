@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -129,7 +129,8 @@ export class Appointments implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -138,13 +139,18 @@ export class Appointments implements OnInit {
 
   async loadAppointments() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       const res = await api.get('/api/appointments');
-      // Connected to API
+      if (res.data?.result && Array.isArray(res.data.result) && res.data.result.length > 0) {
+        // Map backend appointments if present
+      }
     } catch {
       // Demo mock fallback
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 

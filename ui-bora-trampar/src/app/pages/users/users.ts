@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -102,7 +102,8 @@ export class Users implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -111,12 +112,30 @@ export class Users implements OnInit {
 
   async loadUsers() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
-      await api.get('/api/users');
+      const response = await api.get('/api/users');
+      if (response.data?.result && Array.isArray(response.data.result) && response.data.result.length > 0) {
+        this.users = response.data.result.map((u: any) => ({
+          id: u.id || u._id,
+          name: u.name || 'Sem nome',
+          email: u.email,
+          phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
+          role: (u.role?.toString().toLowerCase() || 'customer') as any,
+          roleLabel: u.role?.toString() === 'Admin' ? 'Administrador' : u.role?.toString() === 'Professional' ? 'Profissional' : 'Cliente',
+          status: (u.deleted ? 'blocked' : 'active') as any,
+          statusLabel: u.deleted ? 'Bloqueado' : 'Ativo',
+          totalOrders: u.totalOrders || 0,
+          riskScore: 'low',
+          createdAt: u.createdAt || new Date().toISOString()
+        }));
+      }
     } catch {
-      // Demo mock fallback
+      // Demo fallback
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 

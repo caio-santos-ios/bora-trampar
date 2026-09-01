@@ -6,6 +6,8 @@ export interface UserSession {
   name?: string;
   email?: string;
   role?: string;
+  photo?: string;
+  whatsapp?: string;
 }
 
 @Injectable({
@@ -28,6 +30,16 @@ export class Auth {
     return this.isBrowser ? localStorage.getItem('token') : null;
   }
 
+  setRefreshToken(token: string) {
+    if (this.isBrowser) {
+      localStorage.setItem('refreshToken', token);
+    }
+  }
+
+  getRefreshToken(): string | null {
+    return this.isBrowser ? localStorage.getItem('refreshToken') : null;
+  }
+
   setUser(user: UserSession) {
     if (this.isBrowser) {
       localStorage.setItem('user', JSON.stringify(user));
@@ -45,6 +57,7 @@ export class Auth {
   clearSession() {
     if (this.isBrowser) {
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
     }
   }

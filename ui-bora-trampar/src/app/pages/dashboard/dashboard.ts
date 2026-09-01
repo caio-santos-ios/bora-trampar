@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
@@ -14,66 +14,29 @@ Chart.register(...registerables);
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })
-export class Dashboard implements OnInit, AfterViewInit {
+export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('revenueChart') revenueChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('categoryChart') categoryChartRef!: ElementRef<HTMLCanvasElement>;
 
   chart: Chart | null = null;
   donutChart: Chart | null = null;
+  isLoading = true;
 
   stats = {
-    totalRevenue: 48920,
-    monthAppointments: 284,
-    activePros: 142,
-    pendingVerifications: 12,
-    openDisputes: 2,
-    satisfactionRate: 98.6
+    totalRevenue: 0,
+    monthAppointments: 0,
+    activePros: 0,
+    pendingVerifications: 0,
+    openDisputes: 0,
+    satisfactionRate: 100
   };
 
-  recentAppointments: any[] = [
-    {
-      id: 'APT-1082',
-      customer: 'Carlos Eduardo Silva',
-      professional: 'Marcos Eletricista',
-      service: 'Instalação de Tomadas & Disjuntores',
-      date: '01/09/2026 14:00',
-      value: 280.0,
-      status: 'confirmed',
-      statusText: 'Confirmado'
-    },
-    {
-      id: 'APT-1081',
-      customer: 'Juliana Mendes',
-      professional: 'Cláudio Pintor Profissional',
-      service: 'Pintura Residencial Sala',
-      date: '01/09/2026 10:30',
-      value: 650.0,
-      status: 'completed',
-      statusText: 'Concluído'
-    },
-    {
-      id: 'APT-1080',
-      customer: 'Roberto Fernandes',
-      professional: 'Ana Paula Faxina & Cuidados',
-      service: 'Limpeza Pós-Obra',
-      date: '02/09/2026 08:00',
-      value: 320.0,
-      status: 'pending',
-      statusText: 'Aguardando Pix'
-    },
-    {
-      id: 'APT-1079',
-      customer: 'Camila Rodrigues',
-      professional: 'Lucas Pedreiro & Reformas',
-      service: 'Revestimento e Assentamento de Piso',
-      date: '03/09/2026 09:00',
-      value: 950.0,
-      status: 'confirmed',
-      statusText: 'Confirmado'
-    }
-  ];
+  recentAppointments: any[] = [];
 
-  constructor(public global: GlobalService) {}
+  constructor(
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {
     this.fetchData();
@@ -83,30 +46,88 @@ export class Dashboard implements OnInit, AfterViewInit {
     this.initCharts();
   }
 
+  ngOnDestroy() {
+    this.destroyCharts();
+  }
+
+  destroyCharts() {
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+    if (this.donutChart) {
+      this.donutChart.destroy();
+      this.donutChart = null;
+    }
+  }
+
   async fetchData() {
+    this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
-      // In real mode fetch from /api/categories, /api/services, /api/appointments
-      const [resCat, resServ] = await Promise.allSettled([
-        api.get('/api/categories'),
-        api.get('/api/services')
-      ]);
+      const response = await api.get('/api/dashboard');
+      const data = response.data?.result || response.data?.data || response.data;
+
+      if (data) {
+        this.stats.totalRevenue = data.totalRevenue || 0;
+        this.stats.monthAppointments = data.monthAppointments || 0;
+        this.stats.activePros = data.activePros || 0;
+        this.stats.pendingVerifications = data.pendingVerifications || 0;
+        this.stats.openDisputes = data.openDisputes || 0;
+        this.stats.satisfactionRate = data.satisfactionRate || 100;
+
+        this.recentAppointments = data.recentAppointments || [];
+
+        // Update Line Chart (Revenue History)
+        if (this.chart && data.revenueHistory && data.revenueHistory.length > 0) {
+          this.chart.data.labels = data.revenueHistory.map((h: any) => h.label);
+          this.chart.data.datasets[0].data = data.revenueHistory.map((h: any) => h.revenue);
+          this.chart.update();
+        }
+
+        // Update Donut Chart (Categories Distribution)
+        if (this.donutChart) {
+          if (data.categoryDistribution && data.categoryDistribution.length > 0) {
+            this.donutChart.data.labels = data.categoryDistribution.map((c: any) => c.name);
+            this.donutChart.data.datasets[0].data = data.categoryDistribution.map((c: any) => c.count);
+            this.donutChart.data.datasets[0].backgroundColor = ['#fdbf0f', '#38bdf8', '#4ade80', '#a855f7', '#fb7185'];
+          } else {
+            this.donutChart.data.labels = ['Nenhuma categoria cadastrada'];
+            this.donutChart.data.datasets[0].data = [1];
+            this.donutChart.data.datasets[0].backgroundColor = ['#334155'];
+          }
+          this.donutChart.update();
+        }
+      }
     } catch (e) {
-      console.warn('Using dashboard default statistics');
+      console.warn('Fallback ao carregar dashboard:', e);
+    } finally {
+      this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 
   initCharts() {
+    const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const currentMonth = new Date().getMonth();
+    const last6MonthsLabels = [];
+    for (let i = 5; i >= 0; i--) {
+      const m = (currentMonth - i + 12) % 12;
+      last6MonthsLabels.push(monthNames[m]);
+    }
+
     if (this.revenueChartRef) {
       const ctx = this.revenueChartRef.nativeElement.getContext('2d');
       if (ctx) {
         this.chart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set'],
+            labels: last6MonthsLabels,
             datasets: [
               {
                 label: 'Faturamento Pix (R$)',
-                data: [18500, 24300, 31200, 39800, 44100, 48920],
+                data: [0, 0, 0, 0, 0, 0],
                 borderColor: '#fdbf0f',
                 backgroundColor: 'rgba(253, 191, 15, 0.1)',
                 borderWidth: 3,
@@ -131,10 +152,11 @@ export class Dashboard implements OnInit, AfterViewInit {
                 ticks: { color: '#94a3b8' }
               },
               y: {
+                beginAtZero: true,
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
                 ticks: {
                   color: '#94a3b8',
-                  callback: (value) => 'R$ ' + Number(value) / 1000 + 'k'
+                  callback: (value) => 'R$ ' + value
                 }
               }
             }
@@ -149,11 +171,11 @@ export class Dashboard implements OnInit, AfterViewInit {
         this.donutChart = new Chart(ctxDonut, {
           type: 'doughnut',
           data: {
-            labels: ['Construção & Reformas', 'Pintura', 'Eletricista', 'Limpeza', 'Cuidados Infantis'],
+            labels: ['Nenhuma categoria cadastrada'],
             datasets: [
               {
-                data: [35, 25, 20, 12, 8],
-                backgroundColor: ['#fdbf0f', '#38bdf8', '#4ade80', '#a855f7', '#fb7185'],
+                data: [1],
+                backgroundColor: ['#334155'],
                 borderWidth: 0
               }
             ]

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -107,7 +107,8 @@ export class Verifications implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    public global: GlobalService
+    public global: GlobalService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -116,6 +117,8 @@ export class Verifications implements OnInit {
 
   async loadData() {
     this.isLoading = true;
+    this.cdr.detectChanges();
+
     try {
       const res = await api.get('/api/approvals');
       // Connected to API
@@ -123,6 +126,7 @@ export class Verifications implements OnInit {
       // Keep rich demo mock
     } finally {
       this.isLoading = false;
+      this.cdr.detectChanges();
     }
   }
 

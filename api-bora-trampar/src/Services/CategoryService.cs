@@ -26,6 +26,8 @@ namespace api_bora_trampar.src.Services
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"name", 1},
+                        {"description", 1},
+                        {"icon", 1},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )

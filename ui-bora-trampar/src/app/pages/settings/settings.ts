@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -24,15 +24,21 @@ export class Settings implements OnInit {
     maintenanceMode: false
   };
 
-  constructor(private toastr: ToastrService) {}
+  constructor(
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit() {}
 
   saveSettings() {
     this.isSaving = true;
+    this.cdr.detectChanges();
+
     setTimeout(() => {
       this.isSaving = false;
       this.toastr.success('Configurações salvas com sucesso!');
+      this.cdr.detectChanges();
     }, 600);
   }
 }

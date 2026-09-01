@@ -25,7 +25,7 @@
       <div class="kpi-data">
         <span class="kpi-label">Faturamento Total Pix</span>
         <h3 class="kpi-value">{{ global.formatCurrency(stats.totalRevenue) }}</h3>
-        <span class="kpi-trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +14.8% este mês</span>
+        <span class="kpi-subtext">Volume acumulado</span>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
       <div class="kpi-data">
         <span class="kpi-label">Agendamentos no Mês</span>
         <h3 class="kpi-value">{{ stats.monthAppointments }}</h3>
-        <span class="kpi-trend positive"><i class="fa-solid fa-arrow-trend-up"></i> +22 novos hoje</span>
+        <span class="kpi-subtext">Total no período</span>
       </div>
     </div>
 
@@ -104,7 +104,7 @@
       </a>
     </div>
 
-    <div class="table-responsive desktop-table-view">
+    <div class="table-responsive desktop-table-view" *ngIf="recentAppointments.length > 0; else emptyTable">
       <table class="table">
         <thead>
           <tr>
@@ -136,8 +136,16 @@
       </table>
     </div>
 
+    <ng-template #emptyTable>
+      <div style="padding: 40px; text-align: center; color: #94a3b8;">
+        <i class="fa-solid fa-calendar-xmark" style="font-size: 36px; margin-bottom: 12px; opacity: 0.5;"></i>
+        <p style="font-size: 15px; margin: 0;">Nenhum agendamento realizado até o momento.</p>
+        <span style="font-size: 13px; color: #64748b;">Os agendamentos recebidos pelos profissionais aparecerão aqui em tempo real.</span>
+      </div>
+    </ng-template>
+
     <!-- Mobile Cards -->
-    <div class="mobile-cards-view">
+    <div class="mobile-cards-view" *ngIf="recentAppointments.length > 0">
       <div class="mobile-data-card" *ngFor="let item of recentAppointments">
         <div class="mobile-card-header">
           <div>
