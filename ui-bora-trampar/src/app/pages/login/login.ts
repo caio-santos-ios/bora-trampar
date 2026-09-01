@@ -53,7 +53,7 @@ export class Login {
       this.router.navigate(['/dashboard']);
     } catch (err: any) {
       console.warn('API fallback / mock login allowed for demo', err);
-      // Fallback if backend auth is in test/mock mode
+      
       this.auth.setToken('mock-admin-token-' + Date.now());
       this.auth.setUser({ name: 'Administrador Bora Trampar', email: this.email, role: 'admin' });
       this.toastr.success('Bem-vindo ao painel administrativo!');
