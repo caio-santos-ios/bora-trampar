@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -8,14 +9,15 @@ import '../../core/widgets/main_app_bar.dart';
 import '../../data/models/appointment/appointment_model.dart';
 import '../../data/models/auth/user_model.dart';
 import '../../data/models/category_model.dart';
-import '../../data/models/dashboard/dashboard_model.dart';
 import '../../data/models/order_request_model.dart';
+import '../../data/models/professional_model.dart';
 import '../../data/models/profile/profile_professional_model.dart';
 import '../../data/repositories/appointment/appointment_repository.dart';
 import '../../data/repositories/category/category_repository.dart';
-import '../../data/repositories/dashboard/dashboard_repository.dart';
 import '../../data/repositories/profile/profile_professional_repository.dart';
+import '../../data/repositories/user/user_repository.dart';
 import '../categories/category_selection_screen.dart';
+import '../professionals/professional_profile_screen.dart';
 import '../services/service_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,19 +35,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final DashboardRepository _dashboardRepo = DashboardRepository();
   final CategoryRepository _categoryRepo = CategoryRepository();
   final ProfileProfessionalRepository _profileRepo = ProfileProfessionalRepository();
   final AppointmentRepository _appointmentRepo = AppointmentRepository();
+  final UserRepository _userRepo = UserRepository();
 
   UserModel? _user;
   ProfileProfessionalModel? _profile;
-  DashboardModel? _dashboard;
   List<CategoryModel> _categories = [];
   List<AppointmentModel> _appointments = [];
+  List<ProfessionalModel> _nearbyPros = [];
   bool _isLoading = true;
   bool _isAvailable = true;
   bool _showBalance = true;
+  String _customerSearchQuery = '';
 
   @override
   void initState() {
@@ -56,18 +59,29 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final user = await AuthService().getCurrentUser();
-    final dashboard = await _dashboardRepo.getMetrics();
     final categories = await _categoryRepo.getCategories();
-    final profile = await _profileRepo.getMe();
-    final appointments = await _appointmentRepo.getAppointments();
+    final role = (user?.role ?? '').toLowerCase();
+    final isPro = role.contains('prof') || role.contains('prestador');
+
+    ProfileProfessionalModel? profile;
+    List<AppointmentModel> appointments = [];
+    List<ProfessionalModel> pros = [];
+
+    if (isPro) {
+      profile = await _profileRepo.getMe();
+      appointments = await _appointmentRepo.getAppointments();
+    } else {
+      appointments = await _appointmentRepo.getAppointments();
+      pros = await _userRepo.getProfessionals();
+    }
 
     if (mounted) {
       setState(() {
         _user = user;
-        _dashboard = dashboard;
         _categories = categories;
         _profile = profile;
         _appointments = appointments;
+        _nearbyPros = pros;
         _isAvailable = profile?.isAvailableNow ?? true;
         _isLoading = false;
       });
@@ -93,8 +107,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openWhatsApp(String phone, String name) async {
+  Future<void> _openWhatsApp(String? phone, String? customerName) async {
+    if (phone == null || phone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Telefone do cliente não informado.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final name = customerName ?? 'Cliente';
     final uri = Uri.parse('https://wa.me/55$cleanPhone?text=Olá%20$name,%20sou%20o%20profissional%20do%20Bora%20Trampar!');
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -109,7 +134,17 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openMaps(String address) async {
+  Future<void> _openMaps(String? address) async {
+    if (address == null || address.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Endereço não informado no agendamento.'),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -160,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
-                        'Nenhum serviço cadastrado ainda.',
+                        'Nenhum serviço cadastrado ainda no seu perfil.',
                         style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
                       ),
                     ),
@@ -212,8 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showShareModal() {
-    final name = _user?.name ?? 'Profissional';
-    final link = 'https://boratrampar.com.br/pro/${_user?.id ?? "perfil"}';
+    final userId = _user?.id ?? '';
+    final link = 'https://boratrampar.com.br/pro/$userId';
 
     showModalBottomSheet(
       context: context,
@@ -293,8 +328,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isCustomer = (_user?.role ?? '').toLowerCase() == 'customer' || (_user?.role ?? '').toLowerCase() == 'cliente';
-    final userName = _user?.name.split(' ').first ?? 'Profissional';
+    final role = (_user?.role ?? '').toLowerCase();
+    final isCustomer = role == 'customer' || role == 'cliente';
+    final userName = _user?.name.split(' ').first ?? 'Usuário';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -333,8 +369,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildHeaderSection(bool isCustomer, String userName) {
     final radius = _profile?.address.serviceRadiusKm ?? 25;
-    final city = _profile?.address.city.isNotEmpty == true ? _profile!.address.city : 'Sua Região';
-    final state = _profile?.address.state.isNotEmpty == true ? _profile!.address.state : 'BR';
+    final city = _profile?.address.city ?? '';
+    final state = _profile?.address.state ?? '';
+    final hasLocation = city.isNotEmpty && state.isNotEmpty;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -373,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (!isCustomer) ...[
+                        if (!isCustomer && (_profile?.identityVerificationStatus.toLowerCase() == 'approved')) ...[
                           const SizedBox(width: 6),
                           const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 20),
                         ],
@@ -383,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       isCustomer
                           ? 'Encontre profissionais de confiança para sua diária'
-                          : (_profile?.profession.isNotEmpty == true ? _profile!.profession : 'Profissional Especialista'),
+                          : (_profile?.profession.isNotEmpty == true ? _profile!.profession : 'Profissional'),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -444,27 +481,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 Switch(
                   value: _isAvailable,
-                  activeColor: AppColors.textDark,
+                  activeThumbColor: AppColors.textDark,
                   activeTrackColor: AppColors.primaryGold,
                   inactiveTrackColor: AppColors.cardElevated,
                   onChanged: _toggleAvailability,
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primaryGold),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    'Atendendo em até $radius km • $city, $state',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
-                    overflow: TextOverflow.ellipsis,
+            if (hasLocation) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primaryGold),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Atendendo em até $radius km • $city, $state',
+                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+            ],
           ],
         ],
       ),
@@ -472,17 +511,42 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildProfessionalView() {
-    final pendingRequests = _appointments.where((a) => a.status.toLowerCase().contains('pending') || a.status.toLowerCase().contains('request')).toList();
-    final activeAppointments = _appointments.where((a) => !a.status.toLowerCase().contains('pending') && !a.status.toLowerCase().contains('decline') && !a.status.toLowerCase().contains('cancel')).toList();
-    final nextJob = activeAppointments.isNotEmpty ? activeAppointments.first : null;
+    final now = DateTime.now();
 
-    final monthRevenue = _dashboard?.totalRevenue ?? 2450.0;
-    final completedCount = _dashboard?.completedAppointments ?? (_profile?.completedServicesCount ?? 14);
+    final completedAppointments = _appointments.where((a) {
+      final s = a.status.toLowerCase();
+      return s == 'completed' || s == 'finished' || s == 'confirmed' || s == 'paid';
+    }).toList();
+
+    final monthAppointments = completedAppointments.where((a) {
+      return a.date.month == now.month && a.date.year == now.year;
+    }).toList();
+
+    final todayAppointments = completedAppointments.where((a) {
+      return a.date.day == now.day && a.date.month == now.month && a.date.year == now.year;
+    }).toList();
+
+    final monthRevenue = monthAppointments.fold<double>(0.0, (sum, a) => sum + (a.price ?? 0.0));
+    final todayRevenue = todayAppointments.fold<double>(0.0, (sum, a) => sum + (a.price ?? 0.0));
+    final completedCount = completedAppointments.length;
+
+    final pendingRequests = _appointments.where((a) {
+      final s = a.status.toLowerCase();
+      return s == 'pending' || s == 'requested' || s == 'pendingpayment' || s == 'analysis';
+    }).toList();
+
+    final activeAppointments = _appointments.where((a) {
+      final s = a.status.toLowerCase();
+      return s == 'confirmed' || s == 'paid' || s == 'in_progress' || s == 'accepted';
+    }).toList();
+
+    activeAppointments.sort((a, b) => a.date.compareTo(b.date));
+    final nextJob = activeAppointments.isNotEmpty ? activeAppointments.first : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildFinancialSummaryCard(monthRevenue, completedCount),
+        _buildFinancialSummaryCard(monthRevenue, todayRevenue, completedCount),
         const SizedBox(height: 24),
         _buildNextJobSection(nextJob),
         const SizedBox(height: 24),
@@ -493,7 +557,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFinancialSummaryCard(double monthRevenue, int completedCount) {
+  Widget _buildFinancialSummaryCard(double monthRevenue, double todayRevenue, int completedCount) {
+    final rating = _profile?.rating ?? 0.0;
+    final reviewCount = _profile?.reviewCount ?? 0;
+    final ratingText = rating > 0 ? rating.toStringAsFixed(1) : 'Sem avaliações';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -568,7 +636,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _showBalance ? 'R\$ 220,00' : '••••••••',
+                      _showBalance ? 'R\$ ${todayRevenue.toStringAsFixed(2).replaceAll('.', ',')}' : '••••••••',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -589,8 +657,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMetricItem(
                 icon: Icons.star_rounded,
                 iconColor: AppColors.primaryGold,
-                title: '${_profile?.rating != null && _profile!.rating > 0 ? _profile!.rating.toStringAsFixed(1) : "5.0"}',
-                subtitle: '${_profile?.reviewCount ?? 0} avaliações',
+                title: ratingText,
+                subtitle: '$reviewCount avaliações',
               ),
               _buildMetricItem(
                 icon: Icons.task_alt_rounded,
@@ -601,8 +669,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildMetricItem(
                 icon: Icons.bolt_rounded,
                 iconColor: Colors.amber,
-                title: '100%',
-                subtitle: 'Taxa de resposta',
+                title: 'Ativo',
+                subtitle: 'Status da Conta',
               ),
             ],
           ),
@@ -680,69 +748,76 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        'Confirmado • ${nextJob.hour.isNotEmpty ? nextJob.hour : "Hoje"}',
+                        '${DateFormat('dd/MM').format(nextJob.date)}${nextJob.hour.isNotEmpty ? " • ${nextJob.hour}" : ""}',
                         style: GoogleFonts.inter(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w700),
                       ),
                     ),
-                    Text(
-                      'R\$ ${(nextJob.price ?? 220.0).toStringAsFixed(2).replaceAll('.', ',')}',
-                      style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 16, fontWeight: FontWeight.w800),
-                    ),
+                    if (nextJob.price != null && nextJob.price! > 0)
+                      Text(
+                        'R\$ ${nextJob.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  nextJob.serviceName ?? 'Diária Especializada',
+                  nextJob.serviceName ?? nextJob.categoryName ?? 'Serviço Agendado',
                   style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline_rounded, size: 15, color: AppColors.textMuted),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Cliente: ${nextJob.customerName ?? "Cliente Bora Trampar"}',
-                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_outlined, size: 15, color: AppColors.textMuted),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        nextJob.address ?? 'Endereço fornecido pelo cliente',
-                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                if (nextJob.customerName != null && nextJob.customerName!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.person_outline_rounded, size: 15, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Cliente: ${nextJob.customerName}',
+                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
+                if (nextJob.address != null && nextJob.address!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 15, color: AppColors.textMuted),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          nextJob.address!,
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => _openMaps(nextJob.address ?? 'Ilhéus, BA'),
-                        icon: const Icon(Icons.directions_rounded, color: AppColors.primaryGold, size: 16),
-                        label: Text(
-                          'Rota Maps',
-                          style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700, fontSize: 12),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryGold),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                    if (nextJob.address != null && nextJob.address!.isNotEmpty)
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _openMaps(nextJob.address),
+                          icon: const Icon(Icons.directions_rounded, color: AppColors.primaryGold, size: 16),
+                          label: Text(
+                            'Rota Maps',
+                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700, fontSize: 12),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primaryGold),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
+                    if (nextJob.address != null && nextJob.address!.isNotEmpty)
+                      const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => _openWhatsApp('73999999999', nextJob.customerName ?? 'Cliente'),
+                        onPressed: () => _openWhatsApp('', nextJob.customerName),
                         icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textDark, size: 16),
                         label: Text(
                           'WhatsApp',
@@ -784,7 +859,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Nenhum trampo agendado hoje',
+                        'Nenhum trampo agendado',
                         style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 2),
@@ -838,7 +913,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else
-          ...requests.take(2).map((req) {
+          ...requests.take(3).map((req) {
+            final dateStr = DateFormat('dd/MM/yyyy').format(req.date);
+            final hourStr = req.hour.isNotEmpty ? ' • ${req.hour}' : '';
+
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
@@ -853,21 +931,32 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        req.serviceName ?? 'Serviço Solicitado',
-                        style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      Expanded(
+                        child: Text(
+                          req.serviceName ?? req.categoryName ?? 'Serviço Solicitado',
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      Text(
-                        'R\$ ${(req.price ?? 200.0).toStringAsFixed(2).replaceAll('.', ',')}',
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryGold),
-                      ),
+                      if (req.price != null && req.price! > 0)
+                        Text(
+                          'R\$ ${req.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryGold),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Cliente: ${req.customerName ?? "Cliente"} • Data: ${req.hour.isNotEmpty ? req.hour : "A combinar"}',
+                    '${req.customerName != null ? "Cliente: ${req.customerName} • " : ""}Data: $dateStr$hourStr',
                     style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                   ),
+                  if (req.address != null && req.address!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Local: ${req.address}',
+                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   Row(
                     children: [
@@ -1019,14 +1108,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCustomerView() {
+    final filteredCategories = _customerSearchQuery.isEmpty
+        ? _categories
+        : _categories.where((c) => c.title.toLowerCase().contains(_customerSearchQuery.toLowerCase())).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.inputBackground,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.inputBorder),
+          ),
+          child: TextField(
+            style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+            onChanged: (v) => setState(() => _customerSearchQuery = v),
+            decoration: InputDecoration(
+              icon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
+              hintText: 'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
+              hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'O que você precisa hoje?',
+              'Categorias de Serviços',
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
@@ -1042,7 +1155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 child: Text(
-                  'Ver todos',
+                  'Ver todas',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -1053,7 +1166,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         const SizedBox(height: 14),
-        if (_categories.isEmpty)
+        if (filteredCategories.isEmpty)
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -1063,7 +1176,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Center(
               child: Text(
-                'Nenhuma categoria disponível no momento.',
+                'Nenhuma categoria encontrada.',
                 style: GoogleFonts.inter(
                   color: AppColors.textSecondary,
                   fontSize: 13,
@@ -1073,13 +1186,13 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         else
           GridView.count(
-            crossAxisCount: _categories.length == 1 ? 1 : 2,
+            crossAxisCount: filteredCategories.length == 1 ? 1 : 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: _categories.length == 1 ? 2.6 : 1.35,
-            children: _categories.take(4).map((cat) {
+            childAspectRatio: filteredCategories.length == 1 ? 2.6 : 1.35,
+            children: filteredCategories.take(4).map((cat) {
               return InkWell(
                 onTap: () {
                   Navigator.push(
@@ -1182,6 +1295,103 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
+        if (_nearbyPros.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          Text(
+            'Profissionais na sua Região',
+            style: GoogleFonts.inter(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ..._nearbyPros.take(3).map((pro) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.cardBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColors.cardElevated,
+                    backgroundImage: pro.avatarUrl.isNotEmpty ? NetworkImage(pro.avatarUrl) : null,
+                    child: pro.avatarUrl.isEmpty
+                        ? Text(
+                            pro.name.isNotEmpty ? pro.name[0] : 'P',
+                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pro.name,
+                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          pro.role,
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
+                            const SizedBox(width: 2),
+                            Text(
+                              pro.rating > 0 ? pro.rating.toStringAsFixed(1) : '5.0',
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${pro.completedServicesCount} diárias',
+                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProfessionalProfileScreen(
+                            professional: pro,
+                            orderRequest: OrderRequestModel(
+                              selectedCategory: _categories.isNotEmpty ? _categories.first : null,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.textDark,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                    ),
+                    child: Text(
+                      'Ver Perfil',
+                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ],
     );
   }

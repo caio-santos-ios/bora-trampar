@@ -26,6 +26,7 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _currentIndex;
   bool _isCheckingAccess = true;
+  bool _isProfessional = false;
 
   @override
   void initState() {
@@ -37,9 +38,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   Future<void> _verifyAccess() async {
     final user = await AuthService().getCurrentUser();
     final role = (user?.role ?? '').toLowerCase();
-    final isProfessional = role.contains('prof') || role.contains('prestador');
+    final isPro = role.contains('prof') || role.contains('prestador');
 
-    if (isProfessional) {
+    if (isPro) {
       ProfileProfessionalModel? profile;
       if (user != null && user.id.isNotEmpty) {
         profile = await ProfileProfessionalRepository().getByUserId(user.id);
@@ -67,7 +68,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     if (mounted) {
-      setState(() => _isCheckingAccess = false);
+      setState(() {
+        _isProfessional = isPro;
+        _isCheckingAccess = false;
+      });
     }
   }
 
@@ -100,6 +104,52 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       const ProfileScreen(),
     ];
 
+    final proNavItems = const [
+      BottomNavigationBarItem(
+        icon: Icon(Icons.home_outlined),
+        activeIcon: Icon(Icons.home_rounded),
+        label: 'Home',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.calendar_month_outlined),
+        activeIcon: Icon(Icons.calendar_month_rounded),
+        label: 'Agenda',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.account_balance_wallet_outlined),
+        activeIcon: Icon(Icons.account_balance_wallet_rounded),
+        label: 'Financeiro',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.person_outline_rounded),
+        activeIcon: Icon(Icons.person_rounded),
+        label: 'Perfil',
+      ),
+    ];
+
+    final customerNavItems = const [
+      BottomNavigationBarItem(
+        icon: Icon(Icons.explore_outlined),
+        activeIcon: Icon(Icons.explore_rounded),
+        label: 'Explorar',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.assignment_outlined),
+        activeIcon: Icon(Icons.assignment_rounded),
+        label: 'Meus Pedidos',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.credit_card_outlined),
+        activeIcon: Icon(Icons.credit_card_rounded),
+        label: 'Pagamentos',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.person_outline_rounded),
+        activeIcon: Icon(Icons.person_rounded),
+        label: 'Minha Conta',
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: IndexedStack(
@@ -125,28 +175,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             unselectedItemColor: AppColors.textMuted,
             selectedLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
             unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home_rounded),
-                label: 'Home',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_month_outlined),
-                activeIcon: Icon(Icons.calendar_month_rounded),
-                label: 'Agenda',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.account_balance_wallet_outlined),
-                activeIcon: Icon(Icons.account_balance_wallet_rounded),
-                label: 'Financeiro',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline_rounded),
-                activeIcon: Icon(Icons.person_rounded),
-                label: 'Perfil',
-              ),
-            ],
+            items: _isProfessional ? proNavItems : customerNavItems,
           ),
         ),
       ),
