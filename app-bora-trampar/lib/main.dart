@@ -1,8 +1,7 @@
+import 'package:app_bora_trampar/bora_trampar_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'core/theme/app_theme.dart';
-import 'features/onboarding/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,16 +20,4 @@ void main() async {
   runApp(const BoraTrampaApp());
 }
 
-class BoraTrampaApp extends StatelessWidget {
-  const BoraTrampaApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BoraTrampa',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const WelcomeScreen(),
-    );
-  }
-}

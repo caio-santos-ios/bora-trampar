@@ -7,6 +7,7 @@ import '../../core/widgets/primary_button.dart';
 import '../../data/models/category_model.dart';
 import '../../data/models/order_request_model.dart';
 import '../../data/models/service_item_model.dart';
+import '../../data/repositories/services/services_repository.dart';
 import '../order_details/order_details_screen.dart';
 
 class ServiceSelectionScreen extends StatefulWidget {
@@ -24,18 +25,30 @@ class ServiceSelectionScreen extends StatefulWidget {
 }
 
 class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
+  final ServicesRepository _servicesRepository = ServicesRepository();
+
+  List<ServiceItemModel> _services = [];
   final Set<String> _selectedServiceIds = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    if (widget.orderRequest.selectedServices.isNotEmpty) {
-      for (final s in widget.orderRequest.selectedServices) {
-        _selectedServiceIds.add(s.id);
-      }
-    } else if (widget.category.services.isNotEmpty) {
-      // Default select the first service (e.g. Pedreiro) as shown in mockup
-      _selectedServiceIds.add(widget.category.services.first.id);
+    _loadServices();
+  }
+
+  Future<void> _loadServices() async {
+    setState(() => _isLoading = true);
+    final services = await _servicesRepository.getServices(categoryId: widget.category.id);
+
+    if (mounted) {
+      setState(() {
+        _services = services;
+        if (_services.isNotEmpty) {
+          _selectedServiceIds.add(_services.first.id);
+        }
+        _isLoading = false;
+      });
     }
   }
 
@@ -52,7 +65,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
   }
 
   void _onContinue() {
-    final selectedList = widget.category.services
+    final selectedList = _services
         .where((s) => _selectedServiceIds.contains(s.id))
         .toList();
 
@@ -68,17 +81,17 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
 
   IconData _getServiceIcon(String serviceName) {
     final lower = serviceName.toLowerCase();
-    if (lower.contains('pedreiro')) return Icons.foundation_rounded;
+    if (lower.contains('pedreiro') || lower.contains('alvenaria')) return Icons.foundation_rounded;
     if (lower.contains('pintura') || lower.contains('pintor')) return Icons.format_paint_rounded;
-    if (lower.contains('reparo')) return Icons.build_rounded;
+    if (lower.contains('reparo') || lower.contains('pequenos')) return Icons.build_rounded;
     if (lower.contains('serralheiro')) return Icons.fence_rounded;
     if (lower.contains('marceneiro')) return Icons.carpenter_rounded;
     if (lower.contains('vidraceiro')) return Icons.window_rounded;
     if (lower.contains('manuten')) return Icons.settings_rounded;
     if (lower.contains('eletric')) return Icons.bolt_rounded;
-    if (lower.contains('encanador')) return Icons.plumbing_rounded;
+    if (lower.contains('encanador') || lower.contains('hidraul')) return Icons.plumbing_rounded;
     if (lower.contains('ar-condicionado')) return Icons.ac_unit_rounded;
-    if (lower.contains('limpeza')) return Icons.cleaning_services_rounded;
+    if (lower.contains('limpeza') || lower.contains('faxina')) return Icons.cleaning_services_rounded;
     return Icons.handyman_rounded;
   }
 
@@ -103,7 +116,17 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Central de Ajuda Bora Trampar',
+                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                  ),
+                  backgroundColor: AppColors.primaryGold,
+                ),
+              );
+            },
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,
@@ -121,226 +144,224 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          // Stepper bar
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: AppStepper(totalSteps: 4, currentStep: 3),
-          ),
-
-          // Scrollable content
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              children: [
-                // Back to categories link
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.chevron_left_rounded,
-                        color: AppColors.primaryGold,
-                        size: 20,
-                      ),
-                      Text(
-                        'Voltar às categorias',
-                        style: GoogleFonts.inter(
-                          color: AppColors.primaryGold,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Title + Logo
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.category.title,
-                            style: GoogleFonts.inter(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                              height: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Selecione um ou mais serviços\nque você precisa.',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Services checklist
-                ...List.generate(widget.category.services.length, (index) {
-                  final service = widget.category.services[index];
-                  final isChecked = _selectedServiceIds.contains(service.id);
-                  final itemNumber = index + 1;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: InkWell(
-                      onTap: () => _toggleService(service),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isChecked ? AppColors.primaryGold : AppColors.cardBorder,
-                            width: isChecked ? 1.5 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              _getServiceIcon(service.name),
-                              color: AppColors.primaryGold,
-                              size: 26,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                '$itemNumber. ${service.name}',
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: AppStepper(totalSteps: 4, currentStep: 2),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryGold),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.chevron_left_rounded,
+                                color: AppColors.primaryGold,
+                                size: 18,
+                              ),
+                              Text(
+                                'Voltar às categorias',
                                 style: GoogleFonts.inter(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryGold,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
-                            ),
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: isChecked ? AppColors.primaryGold : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: isChecked ? AppColors.primaryGold : AppColors.cardBorder,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: isChecked
-                                  ? const Icon(
-                                      Icons.check_rounded,
-                                      size: 18,
-                                      color: AppColors.textDark,
-                                    )
-                                  : null,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
-
-          // Bottom Summary & CTA
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(
-                top: BorderSide(color: AppColors.divider, width: 1),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Selected summary box
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primaryGold, width: 1.2),
-                          color: const Color(0xFF1E1A10),
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.assignment_outlined,
-                            color: AppColors.primaryGold,
-                            size: 16,
+                            ],
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
+                        const SizedBox(height: 12),
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Serviços selecionados',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.category.title,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.textPrimary,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Selecione um ou mais serviços\nque você precisa.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              '$selectedCount ${selectedCount == 1 ? "serviço" : "serviços"}',
-                              style: GoogleFonts.inter(
-                                color: AppColors.primaryGold,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            const SizedBox(width: 8),
+                            const BoraTrampaLogo(size: 34, showSubtitle: true, isHorizontal: false),
                           ],
                         ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.primaryGold,
-                        size: 22,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                PrimaryButton(
-                  text: 'Continuar',
-                  onPressed: _onContinue,
-                ),
-              ],
+                        const SizedBox(height: 20),
+                        if (_services.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Nenhum serviço cadastrado para esta categoria.',
+                                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+                              ),
+                            ),
+                          )
+                        else
+                          for (int i = 0; i < _services.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: InkWell(
+                                onTap: () => _toggleService(_services[i]),
+                                borderRadius: BorderRadius.circular(14),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: _selectedServiceIds.contains(_services[i].id)
+                                        ? AppColors.cardElevated
+                                        : AppColors.cardBackground,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: _selectedServiceIds.contains(_services[i].id)
+                                          ? AppColors.primaryGold
+                                          : AppColors.cardBorder,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _getServiceIcon(_services[i].name),
+                                        color: AppColors.primaryGold,
+                                        size: 26,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Text(
+                                          '${i + 1}. ${_services[i].name}',
+                                          style: GoogleFonts.inter(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: _selectedServiceIds.contains(_services[i].id)
+                                              ? AppColors.primaryGold
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(
+                                            color: _selectedServiceIds.contains(_services[i].id)
+                                                ? AppColors.primaryGold
+                                                : AppColors.cardBorder,
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        child: _selectedServiceIds.contains(_services[i].id)
+                                            ? const Icon(
+                                                Icons.check_rounded,
+                                                color: AppColors.textDark,
+                                                size: 16,
+                                              )
+                                            : null,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        const SizedBox(height: 12),
+                        if (_selectedServiceIds.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBackground,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1F1C12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.assignment_outlined,
+                                    color: AppColors.primaryGold,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Serviços selecionados',
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Text(
+                                        '$selectedCount serviço${selectedCount > 1 ? 's' : ''}',
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.chevron_right_rounded,
+                                  color: AppColors.primaryGold,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: PrimaryButton(
+                text: 'Continuar',
+                onPressed: _selectedServiceIds.isNotEmpty ? _onContinue : null,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

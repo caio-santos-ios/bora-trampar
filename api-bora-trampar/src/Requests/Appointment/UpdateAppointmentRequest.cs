@@ -24,5 +24,32 @@ namespace api_bora_trampar.src.Requests
         [Required(ErrorMessage = "O Horário é obrigatório.")]
         [Display(Order = 5)]
         public string Hour { get; set; } = string.Empty;
+
+        [Display(Order = 6)]
+        public string Status { get; set; } = "PendingPayment";
+
+        [Display(Order = 7)]
+        public string ServiceNames { get; set; } = string.Empty;
+
+        [Display(Order = 8)]
+        public string CategoryName { get; set; } = string.Empty;
+
+        [Display(Order = 9)]
+        public string Address { get; set; } = string.Empty;
+
+        [Display(Order = 10)]
+        public string Description { get; set; } = string.Empty;
+
+        [Display(Order = 11)]
+        public string Notes { get; set; } = string.Empty;
+
+        [Display(Order = 12)]
+        public List<string> PhotoUrls { get; set; } = new();
+
+        [Display(Order = 13)]
+        public decimal TotalPrice { get; set; }
+
+        [Display(Order = 14)]
+        public string AsaasPaymentId { get; set; } = string.Empty;
     }
 }

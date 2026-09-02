@@ -1,0 +1,202 @@
+import 'dart:convert';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/models/auth/user_model.dart';
+import '../../data/repositories/auth/auth_repository.dart';
+
+class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
+  final AuthRepository _repository = AuthRepository();
+
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+    String role = 'Professional',
+  }) async {
+    try {
+      final normalizedRole = role.toLowerCase().contains('prof') ? 'Professional' : 'Customer';
+      final response = await _repository.login({
+        'email': email.trim(),
+        'password': password,
+        'role': normalizedRole,
+      });
+
+      final data = response.data;
+      final result = data['result'] ?? data['data'] ?? data;
+      final payload = result is Map ? (result['data'] ?? result) : data;
+
+      final token = payload is Map ? (payload['token'] ?? (result is Map ? result['token'] : null)) : null;
+      final refreshToken = payload is Map ? (payload['refreshToken'] ?? (result is Map ? result['refreshToken'] : null)) : null;
+      final userJson = payload is Map ? (payload['user'] ?? (result is Map ? result['user'] : null)) : null;
+
+      if (token != null) {
+        await _saveSession(token, refreshToken, userJson);
+      }
+
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Login realizado com sucesso!',
+        'user': userJson != null ? UserModel.fromJson(userJson) : null,
+      };
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      String errorMsg = 'Falha na autenticação.';
+
+      if (errorData is Map) {
+        if (errorData['errors'] is List && (errorData['errors'] as List).isNotEmpty) {
+          final firstError = (errorData['errors'] as List)[0];
+          errorMsg = firstError is Map ? (firstError['message'] ?? firstError['Message'] ?? errorMsg) : firstError.toString();
+        } else if (errorData['message'] != null) {
+          errorMsg = errorData['message'].toString();
+        } else if (errorData['title'] != null) {
+          errorMsg = errorData['title'].toString();
+        }
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        errorMsg = e.message!;
+      }
+
+      return {
+        'success': false,
+        'message': errorMsg,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> registerCustomer({
+    required String name,
+    required String email,
+    required String whatsApp,
+    required String password,
+  }) async {
+    try {
+      final response = await _repository.register({
+        'name': name.trim(),
+        'email': email.trim(),
+        'whatsApp': whatsApp.trim(),
+        'password': password,
+        'role': 'Customer',
+      });
+
+      final data = response.data;
+
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Conta criada com sucesso! Faça login para continuar.',
+      };
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      String errorMsg = 'Falha ao realizar cadastro.';
+
+      if (errorData is Map) {
+        if (errorData['errors'] is List && (errorData['errors'] as List).isNotEmpty) {
+          final firstError = (errorData['errors'] as List)[0];
+          errorMsg = firstError is Map ? (firstError['message'] ?? firstError['Message'] ?? errorMsg) : firstError.toString();
+        } else if (errorData['message'] != null) {
+          errorMsg = errorData['message'].toString();
+        } else if (errorData['title'] != null) {
+          errorMsg = errorData['title'].toString();
+        }
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        errorMsg = e.message!;
+      }
+
+      return {
+        'success': false,
+        'message': errorMsg,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor: $e',
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> registerProfessional({
+    required String name,
+    required String email,
+    required String whatsApp,
+    required String password,
+  }) async {
+    try {
+      final response = await _repository.register({
+        'name': name.trim(),
+        'email': email.trim(),
+        'whatsApp': whatsApp.trim(),
+        'password': password,
+        'role': 'Professional',
+      });
+
+      final data = response.data;
+
+      return {
+        'success': true,
+        'message': data['message'] ?? 'Conta criada com sucesso! Faça login para continuar.',
+      };
+    } on DioException catch (e) {
+      final errorData = e.response?.data;
+      String errorMsg = 'Falha ao realizar cadastro.';
+
+      if (errorData is Map) {
+        if (errorData['errors'] is List && (errorData['errors'] as List).isNotEmpty) {
+          final firstError = (errorData['errors'] as List)[0];
+          errorMsg = firstError is Map ? (firstError['message'] ?? firstError['Message'] ?? errorMsg) : firstError.toString();
+        } else if (errorData['message'] != null) {
+          errorMsg = errorData['message'].toString();
+        } else if (errorData['title'] != null) {
+          errorMsg = errorData['title'].toString();
+        }
+      } else if (e.message != null && e.message!.isNotEmpty) {
+        errorMsg = e.message!;
+      }
+
+      return {
+        'success': false,
+        'message': errorMsg,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Não foi possível conectar ao servidor: $e',
+      };
+    }
+  }
+
+  Future<void> _saveSession(String token, String? refreshToken, dynamic user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+    if (refreshToken != null) {
+      await prefs.setString('refresh_token', refreshToken);
+    }
+    if (user != null) {
+      await prefs.setString('user_profile', jsonEncode(user));
+    }
+  }
+
+  Future<UserModel?> getCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString('user_profile');
+    if (raw != null) {
+      try {
+        final json = jsonDecode(raw) as Map<String, dynamic>;
+        return UserModel.fromJson(json);
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('refresh_token');
+    await prefs.remove('user_profile');
+  }
+}

@@ -1,9 +1,9 @@
+using api_bora_trampar.src.Handlers;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Interfaces.Dashboard;
 using api_bora_trampar.src.Repositories;
 using api_bora_trampar.src.Services;
-using CloudinaryDotNet;
 
 namespace api_bora_trampar.src.Configuration
 {
@@ -46,12 +46,12 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<IReviewsService, ReviewsService>();
             builder.Services.AddTransient<IReviewsRepository, ReviewsRepository>();
 
-            // Account account = new(
-            //     Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME"),
-            //     Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY"),
-            //     Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET")
-            // );
-            // builder.Services.AddSingleton(new Cloudinary(account));
+            builder.Services.AddTransient<IAsaasService, AsaasService>();
+
+            builder.Services.AddTransient<IProfileProfessionalService, ProfileProfessionalService>();
+            builder.Services.AddTransient<IProfileProfessionalRepository, ProfileProfessionalRepository>();
+
+            builder.Services.AddTransient<ICloudinaryHandler, CloudinaryHandler>();
         }
     }
 }

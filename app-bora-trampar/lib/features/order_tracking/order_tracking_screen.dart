@@ -133,7 +133,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           Expanded(
             child: ListView(
@@ -620,7 +621,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildTimelineStep({

@@ -50,23 +50,20 @@ export class Users implements OnInit {
 
     try {
       const response = await api.get('/api/users');
-      if (response.data?.result && Array.isArray(response.data.result)) {
-        this.users = response.data.result.map((u: any) => ({
-          id: u.id || u._id,
-          name: u.name || 'Sem nome',
-          email: u.email,
-          phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
-          role: (u.role?.toString().toLowerCase() === 'admin' || u.role === 1 ? 'admin' : u.role?.toString().toLowerCase() === 'professional' || u.role === 2 ? 'professional' : 'customer') as any,
-          roleLabel: u.role?.toString() === 'Admin' || u.role === 1 ? 'Administrador' : u.role?.toString() === 'Professional' || u.role === 2 ? 'Profissional' : 'Cliente',
-          status: (u.deleted ? 'blocked' : 'active') as any,
-          statusLabel: u.deleted ? 'Bloqueado' : 'Ativo',
-          totalOrders: u.totalOrders || 0,
-          riskScore: 'low',
-          createdAt: u.createdAt || new Date().toISOString()
-        }));
-      } else {
-        this.users = [];
-      }
+      const result = response.data.result;      
+      this.users = result.data.map((u: any) => ({
+        id: u.id || u._id,
+        name: u.name || 'Sem nome',
+        email: u.email,
+        phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
+        role: (u.role?.toString().toLowerCase() === 'admin' || u.role === 1 ? 'admin' : u.role?.toString().toLowerCase() === 'professional' || u.role === 2 ? 'professional' : 'customer') as any,
+        roleLabel: u.role?.toString() === 'Admin' ? 'Administrador' : u.role?.toString() === 'Professional' || u.role === 2 ? 'Profissional' : 'Cliente',
+        status: (u.deleted ? 'blocked' : 'active') as any,
+        statusLabel: u.deleted ? 'Bloqueado' : 'Ativo',
+        totalOrders: u.totalOrders || 0,
+        riskScore: 'low',
+        createdAt: u.createdAt || new Date().toISOString()
+      }));
     } catch {
       this.users = [];
     } finally {

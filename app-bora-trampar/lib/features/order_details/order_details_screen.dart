@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_stepper.dart';
@@ -18,13 +20,9 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  final TextEditingController _descController = TextEditingController(
-    text: 'Preciso levantar uma parede no quintal, aproximadamente 4x3m.',
-  );
+  final TextEditingController _descController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController(
-    text: 'Alameda dos Nhambiquaras, 111 - Moema, São Paulo - SP',
-  );
+  final TextEditingController _addressController = TextEditingController();
 
   bool _useCurrentLocation = true;
   DateTime _selectedDate = DateTime.now();
@@ -47,6 +45,12 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if (widget.orderRequest.description.isNotEmpty) {
       _descController.text = widget.orderRequest.description;
     }
+    if (widget.orderRequest.address.isNotEmpty) {
+      _addressController.text = widget.orderRequest.address;
+    }
+    if (widget.orderRequest.notes.isNotEmpty) {
+      _notesController.text = widget.orderRequest.notes;
+    }
   }
 
   @override
@@ -55,6 +59,77 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _notesController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPhoto() async {
+    try {
+      final picker = ImagePicker();
+      final source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        backgroundColor: AppColors.cardBackground,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (context) {
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Adicionar Foto do Serviço',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.photo_library_outlined, color: AppColors.primaryGold),
+                    title: Text(
+                      'Galeria de Fotos',
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    ),
+                    onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryGold),
+                    title: Text(
+                      'Tirar Foto com a Câmera',
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                    ),
+                    onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      if (source != null) {
+        final picked = await picker.pickImage(source: source, imageQuality: 80);
+        if (picked != null) {
+          setState(() {
+            _photos.add(picked.path);
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Reinicie o aplicativo para sincronizar o plugin de fotos.',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.cardElevated,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _pickDate() async {
@@ -149,10 +224,38 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   }
 
   void _onFindProfessionals() {
-    widget.orderRequest.description = _descController.text;
-    widget.orderRequest.notes = _notesController.text;
+    if (_descController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Por favor, descreva o que precisa ser feito no serviço.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    if (!_useCurrentLocation && _addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Por favor, informe o endereço onde o serviço será realizado.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    widget.orderRequest.description = _descController.text.trim();
+    widget.orderRequest.notes = _notesController.text.trim();
     widget.orderRequest.useCurrentLocation = _useCurrentLocation;
-    widget.orderRequest.address = _addressController.text;
+    widget.orderRequest.address = _useCurrentLocation
+        ? 'Localização Atual'
+        : _addressController.text.trim();
     widget.orderRequest.scheduledDate = _selectedDate;
     widget.orderRequest.scheduledTimeSlot = _selectedTimeSlot;
     widget.orderRequest.photoPaths = _photos;
@@ -186,7 +289,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Central de Ajuda Bora Trampar',
+                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                  ),
+                  backgroundColor: AppColors.primaryGold,
+                ),
+              );
+            },
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,
@@ -204,612 +317,632 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          // Stepper bar
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: AppStepper(totalSteps: 4, currentStep: 4),
-          ),
-
-          // Scrollable content
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              children: [
-                // Title + Logo
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.inter(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                height: 1.2,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: AppStepper(totalSteps: 4, currentStep: 3),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                style: GoogleFonts.inter(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  height: 1.2,
+                                ),
+                                children: const [
+                                  TextSpan(text: 'Conte mais sobre\no que '),
+                                  TextSpan(
+                                    text: 'você precisa',
+                                    style: TextStyle(color: AppColors.primaryGold),
+                                  ),
+                                ],
                               ),
-                              children: const [
-                                TextSpan(text: 'Conte mais sobre\no que você '),
-                                TextSpan(
-                                  text: 'precisa',
-                                  style: TextStyle(color: AppColors.primaryGold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Quanto mais detalhes, mais fácil para o profissional te atender.',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFF1F1C12),
+                          ),
+                          child: const Icon(
+                            Icons.foundation_rounded,
+                            color: AppColors.primaryGold,
+                            size: 22,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                serviceName.isNotEmpty ? serviceName : 'Serviço Selecionado',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Você selecionou este serviço.',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text(
+                            'Alterar serviço',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'O que precisa ser feito?',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Stack(
+                    children: [
+                      TextField(
+                        controller: _descController,
+                        maxLines: 4,
+                        maxLength: 500,
+                        style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Descreva o serviço que você precisa...',
+                          hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                          counterText: '',
+                          filled: true,
+                          fillColor: AppColors.cardBackground,
+                        ),
+                        onChanged: (val) => setState(() {}),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        right: 12,
+                        child: Text(
+                          '${_descController.text.length}/500',
+                          style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Adicione fotos (opcional)',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Fotos ajudam o profissional a entender o serviço.',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 90,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        if (_photos.length < 3)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: InkWell(
+                              onTap: _pickPhoto,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                width: 90,
+                                height: 90,
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                    width: 1.2,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Stack(
+                                      alignment: Alignment.topRight,
+                                      children: [
+                                        const Icon(
+                                          Icons.camera_alt_outlined,
+                                          color: AppColors.primaryGold,
+                                          size: 26,
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.primaryGold,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.add,
+                                            size: 10,
+                                            color: AppColors.textDark,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Adicionar fotos',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.primaryGold,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        for (int i = 0; i < _photos.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.cardBackground,
+                                      border: Border.all(color: AppColors.cardBorder),
+                                    ),
+                                    child: Image.file(
+                                      File(_photos[i]),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => const Icon(
+                                        Icons.image_outlined,
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _photos.removeAt(i);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black87,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close_rounded,
+                                        color: Colors.white,
+                                        size: 12,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Quanto mais detalhes, mais fácil\npara o profissional te atender.',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              height: 1.35,
+                        for (int k = _photos.length + (_photos.length < 3 ? 1 : 0); k < 3; k++)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                color: AppColors.cardBackground,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.cardBorder),
+                              ),
                             ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Onde será o serviço?',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () => setState(() => _useCurrentLocation = true),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: AppColors.primaryGold,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Usar minha localização',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Localize-me automaticamente',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                                width: 2,
+                              ),
+                            ),
+                            child: _useCurrentLocation
+                                ? Center(
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  )
+                                : null,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Selected Service Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.cardBorder),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: const Color(0xFF1F1C12),
-                        ),
-                        child: const Icon(
-                          Icons.foundation_rounded,
-                          color: AppColors.primaryGold,
-                          size: 24,
+                  const SizedBox(height: 10),
+                  InkWell(
+                    onTap: () => setState(() => _useCurrentLocation = false),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
                         ),
                       ),
-                      const SizedBox(width: 14),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.apartment_rounded,
+                            color: AppColors.primaryGold,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Digite o endereço',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Inserir endereço manualmente',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                                width: 2,
+                              ),
+                            ),
+                            child: !_useCurrentLocation
+                                ? Center(
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!_useCurrentLocation) ...[
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _addressController,
+                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'Rua, número, bairro e cidade...',
+                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              serviceName,
+                              'Quando você precisa?',
                               style: GoogleFonts.inter(
                                 color: AppColors.textPrimary,
-                                fontSize: 16,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Você selecionou este serviço.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: _pickDate,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.cardBorder),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today_rounded,
+                                      color: AppColors.primaryGold,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        formattedDate,
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: AppColors.textMuted,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Text(
-                          'Alterar serviço',
-                          style: GoogleFonts.inter(
-                            color: AppColors.primaryGold,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Horário',
+                              style: GoogleFonts.inter(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: _showTimeSlotModal,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: AppColors.cardBackground,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.cardBorder),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.access_time_rounded,
+                                      color: AppColors.primaryGold,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _selectedTimeSlot,
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.keyboard_arrow_down_rounded,
+                                      color: AppColors.textMuted,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-
-                // Section 1: "O que precisa ser feito?"
-                Text(
-                  'O que precisa ser feito?',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Stack(
-                  children: [
-                    TextField(
-                      controller: _descController,
-                      maxLines: 4,
-                      maxLength: 500,
-                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Descreva o serviço que você precisa...',
-                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                        counterText: '',
-                        filled: true,
-                        fillColor: AppColors.cardBackground,
-                      ),
-                      onChanged: (val) => setState(() {}),
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      right: 12,
-                      child: Text(
-                        '${_descController.text.length}/500',
-                        style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Section 2: "Adicione fotos (opcional)"
-                Text(
-                  'Adicione fotos (opcional)',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Fotos ajudam o profissional a entender o serviço.',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    // Add photo button slot
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          _photos.add('photo_${_photos.length + 1}');
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Foto adicionada ao pedido!'),
-                            backgroundColor: AppColors.cardElevated,
-                          ),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 90,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primaryGold.withValues(alpha: 0.8),
-                            width: 1.2,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Stack(
-                              alignment: Alignment.topRight,
-                              children: [
-                                const Icon(
-                                  Icons.camera_alt_outlined,
-                                  color: AppColors.primaryGold,
-                                  size: 26,
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.primaryGold,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.add,
-                                    size: 10,
-                                    color: AppColors.textDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'Adicionar fotos',
-                              style: GoogleFonts.inter(
-                                color: AppColors.primaryGold,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Placeholder slot 1
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: _photos.isNotEmpty
-                          ? const Center(
-                              child: Icon(Icons.check_circle_rounded, color: AppColors.primaryGold, size: 28),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    // Placeholder slot 2
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: _photos.length > 1
-                          ? const Center(
-                              child: Icon(Icons.check_circle_rounded, color: AppColors.primaryGold, size: 28),
-                            )
-                          : null,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Section 3: "Onde será o serviço?"
-                Text(
-                  'Onde será o serviço?',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Radio 1: Usar minha localização
-                InkWell(
-                  onTap: () => setState(() => _useCurrentLocation = true),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: AppColors.primaryGold,
-                          size: 22,
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Usar minha localização',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                'Localize-me automaticamente',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
-                              width: 2,
-                            ),
-                          ),
-                          child: _useCurrentLocation
-                              ? Center(
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.primaryGold,
-                                    ),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ],
+                  const SizedBox(height: 24),
+                  Text(
+                    'Observações (opcional)',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                // Radio 2: Digite o endereço
-                InkWell(
-                  onTap: () => setState(() => _useCurrentLocation = false),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                  const SizedBox(height: 8),
+                  Stack(
+                    children: [
+                      TextField(
+                        controller: _notesController,
+                        maxLines: 3,
+                        maxLength: 300,
+                        style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Alguma informação importante?',
+                          hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                          counterText: '',
+                          filled: true,
+                          fillColor: AppColors.cardBackground,
+                        ),
+                        onChanged: (val) => setState(() {}),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.apartment_rounded,
-                          color: AppColors.primaryGold,
-                          size: 22,
+                      Positioned(
+                        bottom: 8,
+                        right: 12,
+                        child: Text(
+                          '${_notesController.text.length}/300',
+                          style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Digite o endereço',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              Text(
-                                'Inserir endereço manualmente',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
-                              width: 2,
-                            ),
-                          ),
-                          child: !_useCurrentLocation
-                              ? Center(
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.primaryGold,
-                                    ),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Section 4: Date & Time Pickers
-                Row(
-                  children: [
-                    // Date
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Quando você precisa?',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _pickDate,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: AppColors.cardBackground,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.cardBorder),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.calendar_today_rounded,
-                                    color: AppColors.primaryGold,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      formattedDate,
-                                      style: GoogleFonts.inter(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: AppColors.textMuted,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Time
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Horário',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          InkWell(
-                            onTap: _showTimeSlotModal,
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                              decoration: BoxDecoration(
-                                color: AppColors.cardBackground,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.cardBorder),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.access_time_rounded,
-                                    color: AppColors.primaryGold,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _selectedTimeSlot,
-                                      style: GoogleFonts.inter(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    color: AppColors.textMuted,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Section 5: Observações (opcional)
-                Text(
-                  'Observações (opcional)',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Stack(
-                  children: [
-                    TextField(
-                      controller: _notesController,
-                      maxLines: 3,
-                      maxLength: 300,
-                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
-                      decoration: InputDecoration(
-                        hintText: 'Alguma informação importante?',
-                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                        counterText: '',
-                        filled: true,
-                        fillColor: AppColors.cardBackground,
-                      ),
-                      onChanged: (val) => setState(() {}),
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      right: 12,
-                      child: Text(
-                        '${_notesController.text.length}/300',
-                        style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-            ),
-          ),
-
-          // Bottom Button: "Encontrar profissionais"
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(
-                top: BorderSide(color: AppColors.divider, width: 1),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-            child: PrimaryButton(
-              text: 'Encontrar profissionais',
-              onPressed: _onFindProfessionals,
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                border: Border(
+                  top: BorderSide(color: AppColors.divider, width: 1),
+                ),
+              ),
+              child: PrimaryButton(
+                text: 'Encontrar profissionais',
+                onPressed: _onFindProfessionals,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

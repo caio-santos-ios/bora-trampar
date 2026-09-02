@@ -3,9 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
-import '../../data/mock/mock_data.dart';
 import '../../data/models/order_request_model.dart';
 import '../../data/models/professional_model.dart';
+import '../../data/repositories/user/user_repository.dart';
 import 'professional_profile_screen.dart';
 
 class ProfessionalsListScreen extends StatefulWidget {
@@ -14,11 +14,14 @@ class ProfessionalsListScreen extends StatefulWidget {
   const ProfessionalsListScreen({super.key, required this.orderRequest});
 
   @override
-  State<ProfessionalsListScreen> createState() =>
-      _ProfessionalsListScreenState();
+  State<ProfessionalsListScreen> createState() => _ProfessionalsListScreenState();
 }
 
 class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
+  final UserRepository _userRepository = UserRepository();
+
+  List<ProfessionalModel> _professionals = [];
+  bool _isLoading = true;
   String _selectedSort = 'Mais bem avaliados';
   final List<String> _sortOptions = [
     'Mais bem avaliados',
@@ -27,8 +30,26 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     'Mais experientes',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadProfessionals();
+  }
+
+  Future<void> _loadProfessionals() async {
+    setState(() => _isLoading = true);
+    final list = await _userRepository.getProfessionals();
+
+    if (mounted) {
+      setState(() {
+        _professionals = list;
+        _isLoading = false;
+      });
+    }
+  }
+
   List<ProfessionalModel> get _sortedProfessionals {
-    final list = List<ProfessionalModel>.from(MockData.professionals);
+    final list = List<ProfessionalModel>.from(_professionals);
     if (_selectedSort == 'Menor preço') {
       list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
     } else if (_selectedSort == 'Mais rápidos (chegada)') {
@@ -56,7 +77,9 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   @override
   Widget build(BuildContext context) {
     final serviceName = widget.orderRequest.serviceNamesDisplay;
-    final locationText = widget.orderRequest.address.split('-').first.trim();
+    final locationText = widget.orderRequest.address.isNotEmpty
+        ? widget.orderRequest.address.split('-').first.trim()
+        : 'São Paulo, SP';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -75,7 +98,17 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Central de Ajuda Bora Trampar',
+                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                  ),
+                  backgroundColor: AppColors.primaryGold,
+                ),
+              );
+            },
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,
@@ -93,321 +126,345 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          // Stepper bar (Step 5 active)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: AppStepper(totalSteps: 5, currentStep: 5),
-          ),
-
-          // Scrollable List
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              children: [
-                // Title + Logo
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              style: GoogleFonts.inter(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                                height: 1.2,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: AppStepper(totalSteps: 4, currentStep: 4),
+            ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryGold),
+                    )
+                  : ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  RichText(
+                                    text: TextSpan(
+                                      style: GoogleFonts.inter(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                        height: 1.2,
+                                      ),
+                                      children: const [
+                                        TextSpan(text: 'Encontre os melhores\nprofissionais para o\n'),
+                                        TextSpan(
+                                          text: 'seu serviço',
+                                          style: TextStyle(color: AppColors.primaryGold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Compare perfis, avaliações e escolha quem você mais confia.',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      color: AppColors.textSecondary,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              children: const [
-                                TextSpan(text: 'Encontre os melhores\nprofissionais para o\n'),
-                                TextSpan(
-                                  text: 'seu serviço',
-                                  style: TextStyle(color: AppColors.primaryGold),
+                            ),
+                            const SizedBox(width: 8),
+                            const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBackground,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: const Color(0xFF1F1C12),
+                                ),
+                                child: const Icon(
+                                  Icons.foundation_rounded,
+                                  color: AppColors.primaryGold,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Serviço solicitado',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    Text(
+                                      serviceName,
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppColors.primaryGold),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  minimumSize: Size.zero,
+                                ),
+                                child: Text(
+                                  'Alterar',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on_outlined,
+                                color: AppColors.primaryGold,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '$locationText • ${widget.orderRequest.scheduledTimeSlot}',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => Navigator.of(context).pop(),
+                                child: Text(
+                                  'Editar',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        if (_sortedProfessionals.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: AppColors.cardBackground,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: AppColors.cardBorder),
+                            ),
+                            child: Column(
+                              children: [
+                                const Icon(
+                                  Icons.engineering_outlined,
+                                  size: 44,
+                                  color: AppColors.primaryGold,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Nenhum profissional encontrado',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Ainda não há profissionais cadastrados com esta categoria.',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Compare perfis, avaliações e escolha quem você mais confia.',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              height: 1.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                // Selected service chip card
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: const Color(0xFF1F1C12),
-                        ),
-                        child: const Icon(
-                          Icons.foundation_rounded,
-                          color: AppColors.primaryGold,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Serviço solicitado',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                            Text(
-                              serviceName,
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {},
-                              child: Text(
-                                'Ver detalhes',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.primaryGold,
-                                  fontSize: 11,
-                                  decoration: TextDecoration.underline,
+                          )
+                        else ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Profissionais disponíveis',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.primaryGold),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          minimumSize: Size.zero,
-                        ),
-                        child: Text(
-                          'Alterar',
-                          style: GoogleFonts.inter(
-                            color: AppColors.primaryGold,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-
-                // Location & Schedule Chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: AppColors.primaryGold,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '$locationText • Hoje, ${widget.orderRequest.scheduledTimeSlot}',
-                          style: GoogleFonts.inter(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Text(
-                          'Editar',
-                          style: GoogleFonts.inter(
-                            color: AppColors.primaryGold,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Section title + Sort dropdown
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Profissionais disponíveis',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      initialValue: _selectedSort,
-                      onSelected: (val) => setState(() => _selectedSort = val),
-                      color: AppColors.cardBackground,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(color: AppColors.cardBorder),
-                      ),
-                      itemBuilder: (context) {
-                        return _sortOptions.map((opt) {
-                          return PopupMenuItem(
-                            value: opt,
-                            child: Text(
-                              opt,
-                              style: GoogleFonts.inter(
-                                color: opt == _selectedSort
-                                    ? AppColors.primaryGold
-                                    : AppColors.textPrimary,
-                                fontSize: 13,
+                              PopupMenuButton<String>(
+                                initialValue: _selectedSort,
+                                onSelected: (val) => setState(() => _selectedSort = val),
+                                color: AppColors.cardBackground,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: const BorderSide(color: AppColors.cardBorder),
+                                ),
+                                itemBuilder: (context) {
+                                  return _sortOptions.map((opt) {
+                                    return PopupMenuItem(
+                                      value: opt,
+                                      child: Text(
+                                        opt,
+                                        style: GoogleFonts.inter(
+                                          color: opt == _selectedSort
+                                              ? AppColors.primaryGold
+                                              : AppColors.textPrimary,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.cardBackground,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.cardBorder),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.sort_rounded, color: AppColors.primaryGold, size: 16),
+                                      const SizedBox(width: 6),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(maxWidth: 130),
+                                        child: Text(
+                                          _selectedSort,
+                                          style: GoogleFonts.inter(
+                                            color: AppColors.primaryGold,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        color: AppColors.primaryGold,
+                                        size: 16,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ),
-                          );
-                        }).toList();
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            'Ordenar por: ',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textSecondary,
-                              fontSize: 12,
-                            ),
+                            ],
                           ),
-                          Text(
-                            _selectedSort,
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          const SizedBox(height: 14),
+                          for (final prof in _sortedProfessionals)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: _buildProfessionalCard(prof),
                             ),
-                          ),
-                          const Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: AppColors.primaryGold,
-                            size: 16,
-                          ),
                         ],
-                      ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.cardBackground,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.cardBorder),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: AppColors.primaryGold, width: 1.5),
+                                  color: const Color(0xFF1E1A10),
+                                ),
+                                child: const Icon(
+                                  Icons.verified_user_outlined,
+                                  color: AppColors.primaryGold,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pagamento seguro pelo app',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Você só paga após o serviço ser concluído.',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Professional Cards List
-                ..._sortedProfessionals.map((prof) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _buildProfessionalCard(prof),
-                  );
-                }),
-                const SizedBox(height: 10),
-
-                // Bottom security guarantee banner
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primaryGold, width: 1.5),
-                          color: const Color(0xFF1E1A10),
-                        ),
-                        child: const Icon(
-                          Icons.verified_user_outlined,
-                          color: AppColors.primaryGold,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pagamento seguro pelo app',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Você só paga após o serviço ser concluído.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.primaryGold,
-                        size: 22,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-              ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -425,13 +482,22 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar with Online dot
               Stack(
                 children: [
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: const Color(0xFF2C2C2C),
-                    backgroundImage: NetworkImage(prof.avatarUrl),
+                    backgroundColor: AppColors.cardElevated,
+                    backgroundImage: prof.avatarUrl.isNotEmpty ? NetworkImage(prof.avatarUrl) : null,
+                    child: prof.avatarUrl.isEmpty
+                        ? Text(
+                            prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          )
+                        : null,
                   ),
                   if (prof.isAvailable)
                     Positioned(
@@ -450,13 +516,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                 ],
               ),
               const SizedBox(width: 14),
-
-              // Info column
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name + Verified Badge
                     Row(
                       children: [
                         Flexible(
@@ -471,7 +534,7 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (prof.isVerified) ...[
+                        if (prof.isVerified && prof.highlightBadge.isNotEmpty) ...[
                           const SizedBox(width: 4),
                           const Icon(
                             Icons.verified_rounded,
@@ -490,61 +553,69 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-
-                    // Rating & Services Count
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.star_rounded,
-                          color: AppColors.primaryGold,
-                          size: 16,
+                    if (prof.reviewCount > 0)
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star_rounded,
+                            color: AppColors.primaryGold,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        'Novo profissional na plataforma',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
+                      ),
+                    if (prof.completedServicesCount > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${prof.completedServicesCount} serviços realizados',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textMuted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                    if (prof.highlightBadge.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1A10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.primaryGold.withValues(alpha: 0.6),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          prof.highlightBadge,
                           style: GoogleFonts.inter(
-                            color: AppColors.textPrimary,
-                            fontSize: 12,
+                            color: AppColors.primaryGold,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${prof.completedServicesCount} serviços realizados',
-                      style: GoogleFonts.inter(
-                        color: AppColors.textMuted,
-                        fontSize: 11,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Badge Pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1A10),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: AppColors.primaryGold.withValues(alpha: 0.6),
-                          width: 1,
-                        ),
-                      ),
-                      child: Text(
-                        prof.highlightBadge,
-                        style: GoogleFonts.inter(
-                          color: AppColors.primaryGold,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-
-              // Price & Time column
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -589,8 +660,6 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
             ],
           ),
           const SizedBox(height: 14),
-
-          // Action Button
           SizedBox(
             width: double.infinity,
             height: 42,

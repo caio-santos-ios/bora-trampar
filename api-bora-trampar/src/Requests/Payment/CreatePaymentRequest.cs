@@ -16,5 +16,20 @@ namespace api_bora_trampar.src.Requests
         [Required(ErrorMessage = "O Valor é obrigatório.")]
         [Display(Order = 3)]
         public decimal Value { get; set; }
+
+        [Display(Order = 4)]
+        public string AppointmentId { get; set; } = string.Empty;
+
+        [Display(Order = 5)]
+        public string Status { get; set; } = "PENDING";
+
+        [Display(Order = 6)]
+        public string AsaasId { get; set; } = string.Empty;
+
+        [Display(Order = 7)]
+        public string QrCodeImage { get; set; } = string.Empty;
+
+        [Display(Order = 8)]
+        public string QrCodePayload { get; set; } = string.Empty;
     }
 }

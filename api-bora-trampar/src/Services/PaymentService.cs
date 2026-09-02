@@ -8,9 +8,8 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class PaymentService(IPaymentRepository repository) : IPaymentService
+    public class PaymentService(IPaymentRepository repository, IAppointmentRepository appointmentRepository) : IPaymentService
     {
-        #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
             try
@@ -25,9 +24,14 @@ namespace api_bora_trampar.src.Services
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
+                        {"appointment_id", 1},
                         {"method_payment", 1},
                         {"date", 1},
                         {"value", 1},
+                        {"status", 1},
+                        {"asaas_id", 1},
+                        {"qr_code_image", 1},
+                        {"qr_code_payload", 1},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
@@ -57,9 +61,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region CREATE
         public async Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request)
         {
             try
@@ -78,9 +80,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region UPDATE
         public async Task<ResponseApi<Payment?>> UpdateAsync(UpdatePaymentRequest request)
         {
             try
@@ -98,9 +98,40 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region DELETE
+        public async Task<ResponseApi<Payment?>> ConfirmPaymentAsync(string paymentId, string userId)
+        {
+            try
+            {
+                Payment? payment = await repository.GetByIdAsync(paymentId);
+                if (payment is null) return new(null, 404, "Pagamento não encontrado");
+
+                payment.Status = "RECEIVED";
+                payment.UpdatedBy = userId;
+                payment.UpdatedAt = DateTime.UtcNow;
+
+                Payment? updatedPayment = await repository.UpdateAsync(payment);
+
+                if (!string.IsNullOrEmpty(payment.AppointmentId))
+                {
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(payment.AppointmentId);
+                    if (appointment is not null)
+                    {
+                        appointment.Status = "PendingAcceptance";
+                        appointment.UpdatedBy = userId;
+                        appointment.UpdatedAt = DateTime.UtcNow;
+                        await appointmentRepository.UpdateAsync(appointment);
+                    }
+                }
+
+                return new(updatedPayment, 200, "Pagamento confirmado com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
         public async Task<ResponseApi<Payment?>> DeleteAsync(DeleteRequest request)
         {
             try
@@ -122,6 +153,5 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
     }
 }

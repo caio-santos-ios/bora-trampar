@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../data/models/order_request_model.dart';
-import '../order_tracking/order_tracking_screen.dart';
+import '../../data/repositories/appointment/appointment_repository.dart';
+import '../../data/repositories/payment/payment_repository.dart';
+import '../payment/payment_asaas_screen.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final OrderRequestModel orderRequest;
@@ -19,7 +22,7 @@ class OrderConfirmationScreen extends StatefulWidget {
 }
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
-  String _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242';
+  String _selectedPaymentMethod = 'PIX Instantâneo';
 
   void _showPaymentMethodModal() {
     showModalBottomSheet(
@@ -47,25 +50,25 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 const SizedBox(height: 16),
                 ListTile(
                   onTap: () {
-                    setState(() => _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242');
+                    setState(() => _selectedPaymentMethod = 'PIX Instantâneo');
                     Navigator.of(context).pop();
                   },
-                  leading: const Icon(Icons.credit_card_rounded, color: AppColors.primaryGold),
-                  title: const Text('Cartão de Crédito (Mastercard)'),
-                  subtitle: const Text('Final •••• 4242'),
-                  trailing: _selectedPaymentMethod.contains('4242')
+                  leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primaryGold),
+                  title: const Text('PIX (Asaas)'),
+                  subtitle: const Text('Aprovação imediata'),
+                  trailing: _selectedPaymentMethod.contains('PIX')
                       ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
                       : null,
                 ),
                 ListTile(
                   onTap: () {
-                    setState(() => _selectedPaymentMethod = 'PIX Instantâneo');
+                    setState(() => _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242');
                     Navigator.of(context).pop();
                   },
-                  leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primaryGold),
-                  title: const Text('PIX'),
-                  subtitle: const Text('Aprovação imediata'),
-                  trailing: _selectedPaymentMethod.contains('PIX')
+                  leading: const Icon(Icons.credit_card_rounded, color: AppColors.primaryGold),
+                  title: const Text('Cartão de Crédito'),
+                  subtitle: const Text('Pagamento seguro Asaas'),
+                  trailing: _selectedPaymentMethod.contains('4242')
                       ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
                       : null,
                 ),
@@ -77,10 +80,52 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     );
   }
 
-  void _onConfirmOrder() {
+  Future<void> _onConfirmOrder() async {
+    final user = await AuthService().getCurrentUser();
+    final customerId = user?.id ?? 'customer_default';
+    final profId = widget.orderRequest.selectedProfessional?.id ?? 'prof_default';
+    final date = widget.orderRequest.scheduledDate ?? DateTime.now();
+    final hour = widget.orderRequest.scheduledTimeSlot;
+
+    final appointment = await AppointmentRepository().createAppointment(
+      professionalId: profId,
+      customerId: customerId,
+      date: date,
+      hour: hour,
+      status: 'PendingPayment',
+      serviceNames: widget.orderRequest.serviceNamesDisplay,
+      categoryName: widget.orderRequest.selectedCategory?.title ?? '',
+      address: widget.orderRequest.address,
+      description: widget.orderRequest.description,
+      notes: widget.orderRequest.notes,
+      photoUrls: widget.orderRequest.photoPaths,
+      totalPrice: widget.orderRequest.totalPrice,
+    );
+
+    final appointmentId = appointment?.id ?? 'app_${DateTime.now().millisecondsSinceEpoch}';
+
+    final paymentData = await PaymentRepository().createAsaasPixPayment(
+      appointmentId: appointmentId,
+      value: widget.orderRequest.totalPrice,
+      customerName: user?.name ?? 'Cliente',
+    );
+
+    final paymentId = paymentData?['id']?.toString() ?? paymentData?['_id']?.toString() ?? 'pay_${DateTime.now().millisecondsSinceEpoch}';
+    final qrCodeImage = paymentData?['qr_code_image']?.toString() ??
+        'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=boratrampar_pix_asaas';
+    final qrCodePayload = paymentData?['qr_code_payload']?.toString() ??
+        '00020126580014br.gov.bcb.pix0136boratrampar@pix.com.br5204000053039865405';
+
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => OrderTrackingScreen(orderRequest: widget.orderRequest),
+        builder: (context) => PaymentAsaasScreen(
+          orderRequest: widget.orderRequest,
+          appointmentId: appointmentId,
+          paymentId: paymentId,
+          qrCodeImage: qrCodeImage,
+          qrCodePayload: qrCodePayload,
+        ),
       ),
     );
   }
@@ -105,7 +150,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Solicitar profissional',
+          'Sou cliente',
           style: GoogleFonts.inter(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -114,7 +159,17 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {},
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Central de Ajuda Bora Trampar',
+                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                  ),
+                  backgroundColor: AppColors.primaryGold,
+                ),
+              );
+            },
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,
@@ -132,7 +187,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
+      body: SafeArea(
+        child: Column(
         children: [
           // Stepper bar (Step 5 active)
           const Padding(
@@ -680,7 +736,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
           ),
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildDetailRow({

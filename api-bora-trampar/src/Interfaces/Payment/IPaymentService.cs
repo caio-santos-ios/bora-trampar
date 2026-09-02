@@ -11,6 +11,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<Payment?>> GetByIdAsync(string id);
         Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request);
         Task<ResponseApi<Payment?>> UpdateAsync(UpdatePaymentRequest request);
+        Task<ResponseApi<Payment?>> ConfirmPaymentAsync(string paymentId, string userId);
         Task<ResponseApi<Payment?>> DeleteAsync(DeleteRequest request);
     }
 }

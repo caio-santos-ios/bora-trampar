@@ -10,7 +10,6 @@ namespace api_bora_trampar.src.Services
 {
     public class AppointmentService(IAppointmentRepository repository) : IAppointmentService
     {
-        #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
             try
@@ -29,6 +28,15 @@ namespace api_bora_trampar.src.Services
                         {"customer_id", 1},
                         {"date", 1},
                         {"hour", 1},
+                        {"status", 1},
+                        {"service_names", 1},
+                        {"category_name", 1},
+                        {"address", 1},
+                        {"description", 1},
+                        {"notes", 1},
+                        {"photo_urls", 1},
+                        {"total_price", 1},
+                        {"asaas_payment_id", 1},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
@@ -58,9 +66,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region CREATE
         public async Task<ResponseApi<Appointment?>> CreateAsync(CreateAppointmentRequest request)
         {
             try
@@ -79,9 +85,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region UPDATE
         public async Task<ResponseApi<Appointment?>> UpdateAsync(UpdateAppointmentRequest request)
         {
             try
@@ -99,9 +103,47 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
 
-        #region DELETE
+        public async Task<ResponseApi<Appointment?>> AcceptAsync(string id, string userId)
+        {
+            try
+            {
+                Appointment? appointment = await repository.GetByIdAsync(id);
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                appointment.Status = "Accepted";
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedAt = DateTime.UtcNow;
+
+                Appointment updated = await repository.UpdateAsync(appointment);
+                return new(updated, 200, "Agendamento aceito com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
+        public async Task<ResponseApi<Appointment?>> DeclineAsync(string id, string userId)
+        {
+            try
+            {
+                Appointment? appointment = await repository.GetByIdAsync(id);
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                appointment.Status = "Declined";
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedAt = DateTime.UtcNow;
+
+                Appointment updated = await repository.UpdateAsync(appointment);
+                return new(updated, 200, "Agendamento recusado");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
         public async Task<ResponseApi<Appointment?>> DeleteAsync(DeleteRequest request)
         {
             try
@@ -123,6 +165,5 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
     }
 }

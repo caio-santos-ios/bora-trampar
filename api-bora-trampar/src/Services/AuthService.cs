@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Requests.Auth;
+using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
@@ -57,8 +58,15 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                User? existingUser = await authRepository.GetByEmailAsync(request.Email);
+                if (existingUser != null)
+                {
+                    return new(null, 400, "Já existe um usuário cadastrado com este e-mail.");
+                }
+
                 User user = new()
                 {
+                    Id = ObjectId.GenerateNewId().ToString(),
                     Name = request.Name,
                     Email = request.Email,
                     WhatsApp = request.WhatsApp,
@@ -67,7 +75,8 @@ namespace api_bora_trampar.src.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                User? createdUserRes = await authRepository.RegisterAsync(user);
+                User? response = await authRepository.RegisterAsync(user);
+                if(response is null) return new(null, 400, "Falha ao criar conta");
 
                 return new(null, 201, "Conta criada com sucesso");
             }
@@ -223,7 +232,7 @@ namespace api_bora_trampar.src.Services
 
             Claim[] claims =
             [
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id ?? ""),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),

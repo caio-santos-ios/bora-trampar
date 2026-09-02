@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:app_bora_trampar/main.dart';
+import 'package:app_bora_trampar/bora_trampar_app.dart';
 
 void main() {
   testWidgets('App renders WelcomeScreen smoke test', (WidgetTester tester) async {

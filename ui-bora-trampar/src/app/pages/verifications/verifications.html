@@ -6,7 +6,6 @@
     </div>
   </div>
 
-  <!-- Filters Row -->
   <div class="card filters-card">
     <div class="filters-wrap">
       <div class="search-box">
@@ -61,13 +60,11 @@
 
   <app-loading [isLoading]="isLoading"></app-loading>
 
-  <!-- Table View -->
   <div class="card" *ngIf="!isLoading">
     <div class="table-responsive desktop-table-view">
       <table class="table">
         <thead>
           <tr>
-            <th>Protocolo</th>
             <th>Profissional</th>
             <th>Categoria</th>
             <th>Documento</th>
@@ -78,7 +75,6 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of filteredList">
-            <td><strong class="gold-text">{{ item.id }}</strong></td>
             <td>
               <div class="pro-cell">
                 <div class="avatar-circle">{{ item.professionalName[0] }}</div>
@@ -104,7 +100,7 @@
             </td>
           </tr>
           <tr *ngIf="filteredList.length === 0">
-            <td colspan="7" class="empty-state-cell">
+            <td colspan="6" class="empty-state-cell">
               <i class="fa-solid fa-folder-open empty-icon"></i>
               <p>Nenhuma verificação encontrada para os filtros selecionados.</p>
             </td>
@@ -113,13 +109,11 @@
       </table>
     </div>
 
-    <!-- Mobile View -->
     <div class="mobile-cards-view">
       <div class="mobile-data-card" *ngFor="let item of filteredList">
         <div class="mobile-card-header">
           <div>
-            <strong class="gold-text">{{ item.id }}</strong>
-            <div class="pro-name" style="margin-top: 4px;">{{ item.professionalName }}</div>
+            <div class="pro-name">{{ item.professionalName }}</div>
           </div>
           <span class="status-badge" [ngClass]="item.status">{{ item.statusLabel }}</span>
         </div>
@@ -151,19 +145,17 @@
     </div>
   </div>
 
-  <!-- Verification Review Modal -->
   <div class="modal-overlay" *ngIf="isModalOpen && selectedItem">
     <div class="modal-content modal-lg">
       <div class="modal-header">
         <div>
           <h2>Análise de Documentos — {{ selectedItem.professionalName }}</h2>
-          <span class="protocol-sub">Protocolo: {{ selectedItem.id }} • {{ selectedItem.category }}</span>
+          <span class="protocol-sub">{{ selectedItem.category }}</span>
         </div>
         <button class="btn-close" (click)="closeDetails()">&times;</button>
       </div>
 
       <div class="doc-review-body">
-        <!-- Professional Info Summary -->
         <div class="info-grid">
           <div class="info-item">
             <label>Profissional</label>
@@ -183,7 +175,6 @@
           </div>
         </div>
 
-        <!-- Evidence Gallery -->
         <h3 class="section-subtitle"><i class="fa-solid fa-images"></i> Evidências e Prova de Vida</h3>
         <div class="evidence-grid">
           <div class="evidence-card" *ngIf="selectedItem.selfieUrl">
@@ -202,7 +193,6 @@
           </div>
         </div>
 
-        <!-- Audit trail notes if already reviewed -->
         <div class="audit-box" *ngIf="selectedItem.reviewedBy">
           <h4><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Auditoria</h4>
           <p><strong>Revisado por:</strong> {{ selectedItem.reviewedBy }} em {{ selectedItem.reviewedAt }}</p>
@@ -228,7 +218,6 @@
     </div>
   </div>
 
-  <!-- Action Justification Modal -->
   <div class="modal-overlay" *ngIf="isActionModalOpen">
     <div class="modal-content">
       <div class="modal-header">

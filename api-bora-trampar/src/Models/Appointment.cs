@@ -15,5 +15,32 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("hour")]
         public string Hour { get; set; } = string.Empty;
+
+        [BsonElement("status")]
+        public string Status { get; set; } = "PendingPayment";
+
+        [BsonElement("service_names")]
+        public string ServiceNames { get; set; } = string.Empty;
+
+        [BsonElement("category_name")]
+        public string CategoryName { get; set; } = string.Empty;
+
+        [BsonElement("address")]
+        public string Address { get; set; } = string.Empty;
+
+        [BsonElement("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [BsonElement("notes")]
+        public string Notes { get; set; } = string.Empty;
+
+        [BsonElement("photo_urls")]
+        public List<string> PhotoUrls { get; set; } = new();
+
+        [BsonElement("total_price")]
+        public decimal TotalPrice { get; set; }
+
+        [BsonElement("asaas_payment_id")]
+        public string AsaasPaymentId { get; set; } = string.Empty;
     }
 }

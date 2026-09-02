@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
-import '../categories/category_selection_screen.dart';
+import '../auth/login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -18,11 +18,8 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 12),
-              // Header Logo
               const BoraTrampaLogo(size: 44),
               const SizedBox(height: 28),
-
-              // Title
               RichText(
                 text: TextSpan(
                   style: GoogleFonts.inter(
@@ -41,8 +38,6 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // Subtitle
               Text(
                 'Contrate ou trabalhe com profissionais qualificados de forma rápida, segura e prática.',
                 style: GoogleFonts.inter(
@@ -53,11 +48,8 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 28),
-
-              // Feature Highlights and Visual Card
               Stack(
                 children: [
-                  // Decorative background card
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -97,8 +89,6 @@ class WelcomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Founder info badge
                   Positioned(
                     top: 14,
                     right: 14,
@@ -135,8 +125,6 @@ class WelcomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Carousel indicator dots
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -169,13 +157,11 @@ class WelcomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 28),
-
-              // Button "Sou cliente"
               InkWell(
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const CategorySelectionScreen(),
+                      builder: (context) => const LoginScreen(initialRole: 'Customer'),
                     ),
                   );
                 },
@@ -230,19 +216,11 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-
-              // Button "Sou profissional"
               InkWell(
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Módulo Profissional em breve! Navegando no fluxo do cliente.'),
-                      backgroundColor: AppColors.cardElevated,
-                    ),
-                  );
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const CategorySelectionScreen(),
+                      builder: (context) => const LoginScreen(initialRole: 'Profissional'),
                     ),
                   );
                 },
@@ -291,25 +269,32 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 22),
-
-              // Footer Login
               Center(
-                child: RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                    ),
-                    children: [
-                      const TextSpan(text: 'Já tem uma conta? '),
-                      TextSpan(
-                        text: 'Entrar',
-                        style: GoogleFonts.inter(
-                          color: AppColors.primaryGold,
-                          fontWeight: FontWeight.w700,
-                        ),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
                       ),
-                    ],
+                    );
+                  },
+                  child: RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                      children: [
+                        const TextSpan(text: 'Já tem uma conta? '),
+                        TextSpan(
+                          text: 'Entrar',
+                          style: GoogleFonts.inter(
+                            color: AppColors.primaryGold,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

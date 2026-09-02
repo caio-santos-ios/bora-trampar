@@ -66,31 +66,58 @@ export class Verifications implements OnInit {
         api.get('/api/users')
       ]);
 
-      const users: any[] = resUsers.status === 'fulfilled' && resUsers.value.data?.result ? resUsers.value.data.result : [];
-      const userMap = new Map<string, any>(users.map(u => [u.id || u._id, u]));
+      let usersList: any[] = [];
+      if (resUsers.status === 'fulfilled' && resUsers.value.data) {
+        const uPayload = resUsers.value.data;
+        if (Array.isArray(uPayload)) usersList = uPayload;
+        else if (Array.isArray(uPayload.result)) usersList = uPayload.result;
+        else if (uPayload.result && Array.isArray(uPayload.result.data)) usersList = uPayload.result.data;
+        else if (Array.isArray(uPayload.data)) usersList = uPayload.data;
+      }
+      const userMap = new Map<string, any>(usersList.map(u => [u.id || u._id, u]));
 
-      if (resApprovals.status === 'fulfilled' && resApprovals.value.data?.result && Array.isArray(resApprovals.value.data.result)) {
-        this.verifications = resApprovals.value.data.result.map((appr: any) => {
+      let approvalsList: any[] = [];
+      if (resApprovals.status === 'fulfilled' && resApprovals.value.data) {
+        const aPayload = resApprovals.value.data;
+        if (Array.isArray(aPayload)) approvalsList = aPayload;
+        else if (Array.isArray(aPayload.result)) approvalsList = aPayload.result;
+        else if (aPayload.result && Array.isArray(aPayload.result.data)) approvalsList = aPayload.result.data;
+        else if (Array.isArray(aPayload.data)) approvalsList = aPayload.data;
+      }
+
+      if (approvalsList.length > 0) {
+        this.verifications = approvalsList.map((appr: any) => {
           const user = userMap.get(appr.profissional_id || appr.profissionalId) || {};
-          const status = appr.approved ? 'approved' : (appr.status || 'analysis');
+          const rawStatus = (appr.status || (appr.approved ? 'approved' : 'analysis')).toString().toLowerCase().trim();
+          const status = (rawStatus === 'approved' || rawStatus === 'approve')
+            ? 'approved'
+            : (rawStatus === 'rejected' || rawStatus === 'reject')
+              ? 'rejected'
+              : rawStatus === 'correction'
+                ? 'correction'
+                : 'analysis';
+
+          const rawId = appr.id || appr._id;
+          const cleanId = (rawId && typeof rawId === 'object') ? (rawId.$oid || rawId.toString?.() || '') : (rawId?.toString?.() || '');
+
           return {
-            id: appr.id || appr._id,
+            id: cleanId,
             professionalId: appr.profissional_id || appr.profissionalId || '',
             professionalName: user.name || 'Profissional',
             email: user.email || 'Não informado',
             phone: user.whatsApp || user.phone || 'Não informado',
             category: 'Profissional Autônomo',
-            documentType: 'CNH',
-            documentNumber: appr.documentNumber || 'Não cadastrado',
-            submittedAt: appr.createdAt || new Date().toISOString(),
+            documentType: appr.documentType || appr.document_type || 'CNH',
+            documentNumber: appr.documentNumber || appr.document_number || 'Não cadastrado',
+            submittedAt: appr.createdAt || appr.created_at || new Date().toISOString(),
             status: status as any,
             statusLabel: status === 'approved' ? 'Aprovado' : status === 'correction' ? 'Necessita Correção' : status === 'rejected' ? 'Reprovado' : 'Em Análise',
-            rgFrontUrl: appr.rgFrontUrl || '',
-            rgBackUrl: appr.rgBackUrl || '',
-            selfieUrl: appr.selfieUrl || user.photo || '',
-            reviewNotes: appr.reviewNotes || '',
-            reviewedBy: appr.reviewedBy || '',
-            reviewedAt: appr.reviewedAt || ''
+            rgFrontUrl: appr.rgFrontUrl || appr.rg_front_url || '',
+            rgBackUrl: appr.rgBackUrl || appr.rg_back_url || '',
+            selfieUrl: appr.selfieUrl || appr.selfie_url || user.photo || '',
+            reviewNotes: appr.reviewNotes || appr.review_notes || '',
+            reviewedBy: appr.reviewedBy || appr.reviewed_by || '',
+            reviewedAt: appr.reviewedAt || appr.reviewed_at || ''
           };
         });
       } else {
@@ -146,16 +173,15 @@ export class Verifications implements OnInit {
     this.cdr.detectChanges();
 
     try {
+      const normalizedStatus = this.actionType === 'approve' ? 'approved' : this.actionType === 'reject' ? 'rejected' : 'correction';
       const payload = {
         id: this.selectedItem.id,
         approved: this.actionType === 'approve',
-        status: this.actionType === 'approve' ? 'approved' : this.actionType,
+        status: normalizedStatus,
         reviewNotes: this.actionJustification
       };
 
-      try {
-        await api.put('/api/approvals', payload);
-      } catch {}
+      await api.put('/api/approvals', payload);
 
       if (this.actionType === 'approve') {
         this.selectedItem.status = 'approved';
@@ -178,6 +204,7 @@ export class Verifications implements OnInit {
 
       this.closeActionModal();
       this.closeDetails();
+      await this.loadData();
     } catch {
       this.toastr.error('Erro ao atualizar aprovação.');
     } finally {

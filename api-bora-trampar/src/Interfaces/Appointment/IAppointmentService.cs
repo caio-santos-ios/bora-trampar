@@ -11,6 +11,8 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<Appointment?>> GetByIdAsync(string id);
         Task<ResponseApi<Appointment?>> CreateAsync(CreateAppointmentRequest request);
         Task<ResponseApi<Appointment?>> UpdateAsync(UpdateAppointmentRequest request);
+        Task<ResponseApi<Appointment?>> AcceptAsync(string id, string userId);
+        Task<ResponseApi<Appointment?>> DeclineAsync(string id, string userId);
         Task<ResponseApi<Appointment?>> DeleteAsync(DeleteRequest request);
     }
 }

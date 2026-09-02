@@ -25,17 +25,25 @@ class BoraTrampaLogo extends StatelessWidget {
         border: Border.all(color: AppColors.primaryGold, width: 2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryGold.withValues(alpha: 0.2),
+            color: AppColors.primaryGold.withValues(alpha: 0.25),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Center(
-        child: Icon(
-          Icons.engineering_rounded,
-          color: AppColors.primaryGold,
-          size: size * 0.58,
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/logo-bora-trampar.jpeg',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => Center(
+            child: Icon(
+              Icons.engineering_rounded,
+              color: AppColors.primaryGold,
+              size: size * 0.58,
+            ),
+          ),
         ),
       ),
     );
