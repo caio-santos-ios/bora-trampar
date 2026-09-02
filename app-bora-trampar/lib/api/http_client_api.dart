@@ -1,13 +1,12 @@
-import 'dart:io' show Platform;
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/config/app_config.dart';
 
 class HttpClientApi {
   final Dio _dio = Dio();
 
   HttpClientApi() {
-    _dio.options.baseUrl = _getBaseUrl();
+    _dio.options.baseUrl = apiBaseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 15);
     _dio.options.receiveTimeout = const Duration(seconds: 15);
 
@@ -38,18 +37,6 @@ class HttpClientApi {
         },
       ),
     );
-  }
-
-  static String _getBaseUrl() {
-    if (kIsWeb) {
-      return 'http://192.168.18.72:5067';
-    }
-    try {
-      if (Platform.isAndroid) {
-        return 'http://192.168.18.72:5067';
-      }
-    } catch (_) {}
-    return 'http://192.168.18.72:5067';
   }
 
   Dio get client => _dio;
