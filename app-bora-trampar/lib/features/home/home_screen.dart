@@ -1348,7 +1348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
                             const SizedBox(width: 2),
                             Text(
-                              pro.rating > 0 ? pro.rating.toStringAsFixed(1) : '5.0',
+                              pro.rating > 0 ? pro.rating.toStringAsFixed(1) : '--',
                               style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                             ),
                             const SizedBox(width: 8),

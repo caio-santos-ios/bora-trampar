@@ -21,15 +21,15 @@ class CategoryModel {
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     return CategoryModel(
       id: json['id'] ?? json['_id'] ?? '',
-      title: json['name'] ?? json['title'] ?? 'Serviço',
-      subtitle: json['subtitle'] ?? json['description'] ?? 'Serviços especializados',
+      title: json['name'] ?? json['title'] ?? '',
+      subtitle: json['subtitle'] ?? json['description'] ?? '',
       icon: _mapIconFromJson(json['icon'] ?? json['name'] ?? ''),
       services: (json['services'] as List? ?? [])
           .map((s) => ServiceItemModel(
                 id: s['id'] ?? s['_id'] ?? '',
                 categoryId: json['id'] ?? json['_id'] ?? '',
                 name: s['name'] ?? s['title'] ?? '',
-                basePrice: (s['basePrice'] ?? s['price'] ?? 150.0).toDouble(),
+                basePrice: (s['basePrice'] ?? s['price'] ?? 0.0).toDouble(),
               ))
           .toList(),
       isSpecial: json['isSpecial'] ?? false,

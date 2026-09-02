@@ -180,7 +180,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   : _buildCustomerView(),
         ),
       ),
-      bottomNavigationBar: !_isProfessional
+      bottomNavigationBar: (!_isLoading && !_isProfessional)
           ? Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: SizedBox(

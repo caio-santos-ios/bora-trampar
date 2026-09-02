@@ -20,26 +20,26 @@ class UserRepository {
             final role = (u['role'] ?? '').toString().toLowerCase();
             return role.contains('prof');
           }).map<ProfessionalModel>((u) {
-            final name = u['name']?.toString() ?? 'Profissional';
+            final name = u['name']?.toString() ?? '';
             final photo = u['photo']?.toString() ?? '';
             final rating = (u['rating'] as num?)?.toDouble() ?? 0.0;
             final reviewCount = (u['reviewCount'] as num?)?.toInt() ?? 0;
             final completedCount = (u['completedServicesCount'] as num?)?.toInt() ?? 0;
-            final basePrice = (u['basePrice'] as num?)?.toDouble() ?? 200.0;
-            final badge = u['badge']?.toString() ?? (reviewCount > 10 ? 'Verificado' : '');
-            final bio = u['bio']?.toString() ?? 'Profissional autônomo na plataforma Bora Trampar.';
-            final city = u['city']?.toString();
-            final state = u['state']?.toString() ?? 'SP';
-            final region = city != null ? '$city, $state' : 'São Paulo, SP';
+            final basePrice = (u['basePrice'] as num?)?.toDouble() ?? 0.0;
+            final badge = u['badge']?.toString() ?? u['highlightBadge']?.toString() ?? '';
+            final bio = u['bio']?.toString() ?? '';
+            final city = u['city']?.toString() ?? '';
+            final state = u['state']?.toString() ?? '';
+            final region = [city, state].where((s) => s.isNotEmpty).join(', ');
 
             return ProfessionalModel(
               id: u['id']?.toString() ?? u['_id']?.toString() ?? '',
-              name: name,
-              role: u['profession']?.toString() ?? 'Profissional Autônomo',
+              name: name.isNotEmpty ? name : 'Profissional',
+              role: u['profession']?.toString() ?? u['role']?.toString() ?? '',
               rating: rating,
               reviewCount: reviewCount,
               completedServicesCount: completedCount,
-              arrivalTimeMinutes: 30,
+              arrivalTimeMinutes: (u['arrivalTimeMinutes'] as num?)?.toInt() ?? 0,
               basePrice: basePrice,
               highlightBadge: badge,
               avatarUrl: photo,
