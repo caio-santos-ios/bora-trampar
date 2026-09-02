@@ -97,8 +97,8 @@ export class Verifications implements OnInit {
                 ? 'correction'
                 : 'analysis';
 
-          const rawId = appr.id || appr._id;
-          const cleanId = (rawId && typeof rawId === 'object') ? (rawId.$oid || rawId.toString?.() || '') : (rawId?.toString?.() || '');
+          const rawId = appr.id || (typeof appr._id === 'string' ? appr._id : (appr._id?.$oid || ''));
+          const cleanId = (typeof rawId === 'string' && rawId !== '[object Object]') ? rawId : '';
 
           return {
             id: cleanId,
@@ -174,12 +174,15 @@ export class Verifications implements OnInit {
 
     try {
       const normalizedStatus = this.actionType === 'approve' ? 'approved' : this.actionType === 'reject' ? 'rejected' : 'correction';
-      const payload = {
-        id: this.selectedItem.id,
+      const payload: any = {
         approved: this.actionType === 'approve',
         status: normalizedStatus,
-        reviewNotes: this.actionJustification
+        reviewNotes: this.actionJustification,
+        profissionalId: this.selectedItem.professionalId
       };
+      if (this.selectedItem.id) {
+        payload.id = this.selectedItem.id;
+      }
 
       await api.put('/api/approvals', payload);
 
@@ -205,8 +208,9 @@ export class Verifications implements OnInit {
       this.closeActionModal();
       this.closeDetails();
       await this.loadData();
-    } catch {
-      this.toastr.error('Erro ao atualizar aprovação.');
+    } catch (err: any) {
+      const message = err?.response?.data?.message || err?.message || 'Erro ao atualizar aprovação.';
+      this.toastr.error(message);
     } finally {
       this.isLoading = false;
       this.cdr.detectChanges();

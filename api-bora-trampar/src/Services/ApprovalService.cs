@@ -120,7 +120,20 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                var existing = await repository.GetByIdAsync(request.Id);
+                Approval? existing = null;
+
+                if (!string.IsNullOrWhiteSpace(request.Id) && MongoDB.Bson.ObjectId.TryParse(request.Id, out _))
+                {
+                    existing = await repository.GetByIdAsync(request.Id);
+                }
+
+                if (existing == null && !string.IsNullOrWhiteSpace(request.ProfissionalId))
+                {
+                    existing = await appDbContext.Approvals
+                        .Find(x => !x.Deleted && x.ProfissionalId == request.ProfissionalId)
+                        .FirstOrDefaultAsync();
+                }
+
                 if (existing == null) return new(null, 404, "Aprovação não encontrada");
 
                 var statusNorm = (request.Status ?? "").ToLower().Trim();

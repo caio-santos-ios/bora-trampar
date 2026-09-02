@@ -6,13 +6,11 @@ namespace api_bora_trampar.src.Requests
 {
     public class UpdateApprovalRequest : RequestBase
     {
-        [Required(ErrorMessage = "O Id é obrigatório.")]
-        [Display(Order = 1)]
         [JsonPropertyName("id")]
-        public string Id { get; set; } = string.Empty;
+        public string? Id { get; set; } = string.Empty;
 
         [JsonPropertyName("profissionalId")]
-        public string ProfissionalId { get; set; } = string.Empty;
+        public string? ProfissionalId { get; set; } = string.Empty;
 
         [JsonPropertyName("documentType")]
         public string DocumentType { get; set; } = "CNH";

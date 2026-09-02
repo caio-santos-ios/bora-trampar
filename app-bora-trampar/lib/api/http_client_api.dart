@@ -6,7 +6,7 @@ class HttpClientApi {
   final Dio _dio = Dio();
 
   HttpClientApi() {
-    _dio.options.baseUrl = apiBaseUrl;
+    _dio.options.baseUrl = "https://bora-trampar.onrender.com";
     _dio.options.connectTimeout = const Duration(seconds: 15);
     _dio.options.receiveTimeout = const Duration(seconds: 15);
 
