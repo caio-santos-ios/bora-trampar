@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:5067'
+  apiUrl: 'https://bora-trampar.onrender.com'
 };
