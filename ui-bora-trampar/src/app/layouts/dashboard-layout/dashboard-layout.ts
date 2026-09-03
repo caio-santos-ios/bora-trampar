@@ -1,23 +1,41 @@
-import { Component } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 import { Sidebar } from '../../components/sidebar/sidebar';
+import { ThemeService } from '../../services/theme';
 
 @Component({
   selector: 'app-dashboard-layout',
   standalone: true,
   imports: [CommonModule, RouterOutlet, Sidebar],
   templateUrl: './dashboard-layout.html',
-  styleUrl: './dashboard-layout.css'
+  styleUrls: ['./dashboard-layout.css']
 })
-export class DashboardLayout {
-  isSidebarOpen = false;
+export class DashboardLayout implements OnInit {
+  isSidebarOpen = typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+
+  constructor(public themeService: ThemeService, public router: Router) {}
+
+  ngOnInit(): void {}
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    if (typeof window !== 'undefined') {
+      if (event.target.innerWidth >= 1024) {
+        this.isSidebarOpen = true;
+      } else {
+        this.isSidebarOpen = false;
+      }
+    }
+  }
 
   toggleSidebar() {
     this.isSidebarOpen = !this.isSidebarOpen;
   }
 
-  closeSidebar() {
-    this.isSidebarOpen = false;
+  closeOnMobile() {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      this.isSidebarOpen = false;
+    }
   }
 }
