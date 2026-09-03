@@ -31,6 +31,12 @@ class ProfessionalProfileScreen extends StatelessWidget {
         ? professional.offeredServices
         : [orderRequest.serviceNamesDisplay];
 
+    final effectivePrice = professional.basePrice > 0
+        ? professional.basePrice
+        : (orderRequest.selectedServices.isNotEmpty && orderRequest.selectedServices.first.basePrice > 0
+            ? orderRequest.selectedServices.first.basePrice
+            : 150.0);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -372,6 +378,45 @@ class ProfessionalProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Valor da Diária',
+                              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'R\$ ${effectivePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                              style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Diária Completa',
+                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -544,7 +589,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Solicitar Profissional',
+                    'Solicitar Profissional • R\$ ${effectivePrice.toStringAsFixed(2).replaceAll('.', ',')}',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,

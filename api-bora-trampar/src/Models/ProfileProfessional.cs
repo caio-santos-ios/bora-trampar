@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace api_bora_trampar.src.Models
 {
+    [BsonIgnoreExtraElements]
     public class ProfileProfessional : ModelBase
     {
         [BsonElement("user_id")]
@@ -90,6 +91,7 @@ namespace api_bora_trampar.src.Models
         public List<string> Badges { get; set; } = [];
     }
 
+    [BsonIgnoreExtraElements]
     public class ProfessionalAddress
     {
         [BsonElement("zip_code")]
@@ -133,6 +135,7 @@ namespace api_bora_trampar.src.Models
         public int ServiceRadiusKm { get; set; } = 25;
     }
 
+    [BsonIgnoreExtraElements]
     public class ProfessionalServiceItem
     {
         [BsonElement("category_id")]
@@ -152,6 +155,7 @@ namespace api_bora_trampar.src.Models
         public string ServiceName { get; set; } = string.Empty;
 
         [BsonElement("price")]
+        [BsonRepresentation(MongoDB.Bson.BsonType.Decimal128, AllowTruncation = true)]
         [JsonPropertyName("price")]
         public decimal Price { get; set; } = 0m;
 
@@ -168,6 +172,7 @@ namespace api_bora_trampar.src.Models
         public string Description { get; set; } = string.Empty;
     }
 
+    [BsonIgnoreExtraElements]
     public class ProfessionalWorkingDay
     {
         [BsonElement("day_of_week")]

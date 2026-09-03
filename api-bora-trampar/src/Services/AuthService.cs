@@ -7,26 +7,43 @@ using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Requests.Auth;
 using MongoDB.Bson;
+using api_bora_trampar.src.Utils;
+using api_bora_trampar.src.Handlers;
 
 namespace api_bora_trampar.src.Services
 {
-    public class AuthService(IAuthRepository authRepository) : IAuthService
+    public class AuthService(IAuthRepository authRepository, MailHandler mailHandler) : IAuthService
     {
         public async Task<ResponseApi<dynamic>> LoginAsync(LoginRequest request)
         {
             try
             {
                 User? user = await authRepository.GetByEmailAsync(request.Email);
-                if (user is null)
+                if (user is null) return new(null, 400, "E-mail ou senha inválidos.");
+
+                if (user.Blocked) return new(null, 400, "Seu usuário está bloqueado, entre em contato com o suporte.");
+
+                if (!user.ConfirmAccount)
                 {
-                    return new(null, 401, "E-mail ou senha inválidos.");
-                }
+                    string code = GenerateCode.GenerateCodeNumber();
+                    DateTime today = DateTime.Now;
+
+                    string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                    string link = $"{uriUi}/confirmation/{code}/app";
+                    string html = $"Segue o link pra confirmar sua conta {link}";
+
+                    await mailHandler.SendMailAsync(user.Email, "Novo Link Confirmação de conta", link);
+
+                    user.ConfirmAccount = false;
+                    user.ConfirmAccountCode = code;
+                    user.ConfirmAccountDate = today.AddSeconds(30);
+
+                    await authRepository.UpdateAsync(user);
+                    return new(null, 400, "Sua conta não foi confirmada, foi enviado um link para confirmar o e-mail.");
+                } 
 
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
-                if (!isPasswordValid)
-                {
-                    return new(null, 401, "E-mail ou senha inválidos.");
-                }
+                if (!isPasswordValid) return new(null, 400, "E-mail ou senha inválidos.");
 
                 string token = GenerateJwtToken(user);
                 string refreshToken = GenerateJwtToken(user, true);
@@ -59,11 +76,17 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                User? existingUser = await authRepository.GetByEmailAsync(request.Email);
-                if (existingUser != null)
+                User? existingUserEmail = await authRepository.GetByEmailAsync(request.Email);
+                if (existingUserEmail != null) return new(null, 400, "E-mail inválido, tente user um diferente.");
+
+                if (!string.IsNullOrEmpty(request.WhatsApp))
                 {
-                    return new(null, 400, "Já existe um usuário cadastrado com este e-mail.");
+                    User? existingUserWhatsApp = await authRepository.GetByEmailAsync(request.WhatsApp);
+                    if (existingUserWhatsApp != null) return new(null, 400, "WhatsApp inválido, tente user um diferente.");
                 }
+
+                string code = GenerateCode.GenerateCodeNumber();
+                DateTime today = DateTime.Now;
 
                 User user = new()
                 {
@@ -73,11 +96,19 @@ namespace api_bora_trampar.src.Services
                     WhatsApp = request.WhatsApp,
                     Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Role = request.Role,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ConfirmAccount = false,
+                    ConfirmAccountCode = code,
+                    ConfirmAccountDate = today.AddSeconds(30)
                 };
 
                 User? response = await authRepository.RegisterAsync(user);
-                if(response is null) return new(null, 400, "Falha ao criar conta");
+                if (response is null) return new(null, 400, "Falha ao criar conta");
+
+                string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                string link = $"{uriUi}/confirmation/{code}/app";
+                string html = $"Segue o link pra confirmar sua conta {link}";
+                await mailHandler.SendMailAsync(user.Email, "Confirmação de conta", link);
 
                 return new(null, 201, "Conta criada com sucesso");
             }
@@ -124,7 +155,7 @@ namespace api_bora_trampar.src.Services
                     return new(null, 401, "Token informado não é um refresh token válido.");
                 }
 
-                string? userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value 
+                string? userId = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
                     ?? principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
                 {

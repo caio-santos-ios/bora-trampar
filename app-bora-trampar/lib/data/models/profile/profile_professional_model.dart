@@ -67,7 +67,7 @@ class ProfileProfessionalModel {
       address: map['address'] is Map
           ? ProfessionalAddressModel.fromJson(map['address'] as Map)
           : ProfessionalAddressModel(),
-      services: (map['services'] as List?)
+      services: ((map['services'] ?? map['Services']) as List?)
               ?.map<ProfessionalServiceItemModel>((item) => ProfessionalServiceItemModel.fromJson(item is Map ? item : {}))
               .toList() ??
           <ProfessionalServiceItemModel>[],
@@ -203,7 +203,16 @@ class ProfessionalServiceItemModel {
       categoryName: map['categoryName']?.toString() ?? map['category_name']?.toString() ?? '',
       serviceId: map['serviceId']?.toString() ?? map['service_id']?.toString() ?? '',
       serviceName: map['serviceName']?.toString() ?? map['service_name']?.toString() ?? '',
-      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      price: () {
+        final raw = map['price'] ?? map['Price'] ?? map['basePrice'] ?? map['base_price'] ?? map['valor'];
+        if (raw is num) return raw.toDouble();
+        if (raw != null) {
+          final s = raw.toString().replaceAll(',', '.');
+          final parsed = double.tryParse(s);
+          if (parsed != null) return parsed;
+        }
+        return 0.0;
+      }(),
       priceType: map['priceType']?.toString() ?? map['price_type']?.toString() ?? 'Diária',
       estimatedMinutes: (map['estimatedMinutes'] ?? map['estimated_minutes'] as num?)?.toInt() ?? 480,
       description: map['description']?.toString() ?? '',

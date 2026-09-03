@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
@@ -62,8 +63,17 @@ namespace api_bora_trampar.src.Services
             }
         }
 
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+
         public async Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request)
         {
+            string lockKey = !string.IsNullOrEmpty(request.AppointmentId)
+                ? request.AppointmentId
+                : (!string.IsNullOrEmpty(request.CreatedBy) ? request.CreatedBy : "global_payment_lock");
+
+            var semaphore = _locks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+            await semaphore.WaitAsync();
+
             try
             {
                 Payment entity = ObjectMapper.Map<CreatePaymentRequest, Payment>(request);
@@ -76,7 +86,10 @@ namespace api_bora_trampar.src.Services
                     {
                         userId = appointment.Data.CustomerId;
                     }
+                }
 
+                if (!string.IsNullOrEmpty(request.AppointmentId))
+                {
                     List<BsonDocument> checkPipeline =
                     [
                         new("$match", new BsonDocument
@@ -130,6 +143,10 @@ namespace api_bora_trampar.src.Services
             catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+            finally
+            {
+                semaphore.Release();
             }
         }
 

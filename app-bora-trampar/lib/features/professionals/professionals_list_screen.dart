@@ -7,6 +7,7 @@ import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../data/models/order_request_model.dart';
 import '../../data/models/professional_model.dart';
+import '../../data/models/profile/profile_professional_model.dart';
 import '../../data/repositories/appointment/appointment_repository.dart';
 import '../../data/repositories/profile/profile_professional_repository.dart';
 import '../../data/repositories/user/user_repository.dart';
@@ -50,7 +51,17 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     final profiles = await _profileRepository.getAllProfiles();
     final appointments = await _appointmentRepository.getAppointments();
 
-    final profileMap = {for (final p in profiles) p.userId: p};
+    final Map<String, ProfileProfessionalModel> profileMap = {};
+    for (final p in profiles) {
+      if (p.userId.isNotEmpty) {
+        profileMap[p.userId.trim()] = p;
+        profileMap[p.userId.trim().toLowerCase()] = p;
+      }
+      if (p.id != null && p.id!.isNotEmpty) {
+        profileMap[p.id!.trim()] = p;
+        profileMap[p.id!.trim().toLowerCase()] = p;
+      }
+    }
 
     final customerLat = widget.orderRequest.customerLatitude;
     final customerLon = widget.orderRequest.customerLongitude;
@@ -62,7 +73,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     final List<ProfessionalModel> matchingPros = [];
 
     for (final pro in rawPros) {
-      final profile = profileMap[pro.id];
+      ProfileProfessionalModel? profile = profileMap[pro.id.trim()] ?? profileMap[pro.id.trim().toLowerCase()];
+      if (profile == null && pro.id.isNotEmpty) {
+        profile = await _profileRepository.getByUserId(pro.id.trim());
+      }
 
       double proLat = profile?.address.latitude ?? 0.0;
       double proLon = profile?.address.longitude ?? 0.0;
@@ -93,15 +107,41 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
       );
 
       if (withinRadius && available) {
-        double dailyRate = pro.basePrice;
+        double dailyRate = 0.0;
         if (profile != null && profile.services.isNotEmpty) {
-          final matchingService = profile.services.firstWhere(
+          final profData = profile;
+          final matchingService = profData.services.firstWhere(
             (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
-            orElse: () => profile.services.first,
+            orElse: () => profData.services.firstWhere((s) => s.price > 0, orElse: () => profData.services.first),
           );
-          dailyRate = matchingService.price > 0 ? matchingService.price : profile.services.first.price;
+          if (matchingService.price > 0) {
+            dailyRate = matchingService.price;
+          } else {
+            for (final s in profData.services) {
+              if (s.price > 0) {
+                dailyRate = s.price;
+                break;
+              }
+            }
+          }
         }
-        if (dailyRate <= 0) dailyRate = 150.0;
+
+        if (dailyRate <= 0 && pro.basePrice > 0) {
+          dailyRate = pro.basePrice;
+        }
+
+        if (dailyRate <= 0 && widget.orderRequest.selectedServices.isNotEmpty) {
+          for (final sel in widget.orderRequest.selectedServices) {
+            if (sel.basePrice > 0) {
+              dailyRate = sel.basePrice;
+              break;
+            }
+          }
+        }
+
+        if (dailyRate <= 0) {
+          dailyRate = 150.0;
+        }
 
         final updatedPro = ProfessionalModel(
           id: pro.id,
@@ -154,12 +194,40 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   }
 
   void _onSelectProfessional(ProfessionalModel professional) {
-    widget.orderRequest.selectedProfessional = professional;
+    final effectivePrice = professional.basePrice > 0
+        ? professional.basePrice
+        : (widget.orderRequest.selectedServices.isNotEmpty && widget.orderRequest.selectedServices.first.basePrice > 0
+            ? widget.orderRequest.selectedServices.first.basePrice
+            : 150.0);
+
+    final resolvedProf = ProfessionalModel(
+      id: professional.id,
+      name: professional.name,
+      role: professional.role,
+      avatarUrl: professional.avatarUrl,
+      isVerified: professional.isVerified,
+      isAvailable: professional.isAvailable,
+      rating: professional.rating,
+      reviewCount: professional.reviewCount,
+      completedServicesCount: professional.completedServicesCount,
+      highlightBadge: professional.highlightBadge,
+      basePrice: effectivePrice,
+      arrivalTimeMinutes: professional.arrivalTimeMinutes,
+      sinceYear: professional.sinceYear,
+      responseTime: professional.responseTime,
+      completionRate: professional.completionRate,
+      bio: professional.bio,
+      offeredServices: professional.offeredServices,
+      reviews: professional.reviews,
+      region: professional.region,
+    );
+
+    widget.orderRequest.selectedProfessional = resolvedProf;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ProfessionalProfileScreen(
           orderRequest: widget.orderRequest,
-          professional: professional,
+          professional: resolvedProf,
         ),
       ),
     );
@@ -798,7 +866,7 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                     ),
                   ),
                   Text(
-                    'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                    'R\$ ${(prof.basePrice > 0 ? prof.basePrice : (widget.orderRequest.selectedServices.isNotEmpty && widget.orderRequest.selectedServices.first.basePrice > 0 ? widget.orderRequest.selectedServices.first.basePrice : 150.0)).toStringAsFixed(2).replaceAll('.', ',')}',
                     style: GoogleFonts.inter(
                       color: AppColors.textPrimary,
                       fontSize: 16,

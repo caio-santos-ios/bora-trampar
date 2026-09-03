@@ -7,8 +7,7 @@ namespace api_bora_trampar.src.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        [BsonIgnoreIfDefault]
-        public string? Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [BsonElement("deleted")]
         public bool Deleted { get; set; } = false;

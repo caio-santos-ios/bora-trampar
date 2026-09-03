@@ -21,6 +21,14 @@ namespace api_bora_trampar.src.Services
                     {
                         {"deleted", false},
                     }),
+                    new("$addFields", new BsonDocument("userIdString", new BsonDocument("$toString", "$_id"))),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "profile_professionals"},
+                        {"localField", "userIdString"},
+                        {"foreignField", "user_id"},
+                        {"as", "profile_lookup"}
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -33,6 +41,36 @@ namespace api_bora_trampar.src.Services
                         {"active", new BsonDocument("$ifNull", new BsonArray { "$active", true })},
                         {"walletBalance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
                         {"wallet_balance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
+                        {"profession", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.profession", 0 }),
+                            ""
+                        })},
+                        {"bio", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.bio", 0 }),
+                            ""
+                        })},
+                        {"rating", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.rating", 0 }),
+                            5.0
+                        })},
+                        {"reviewCount", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.review_count", 0 }),
+                            0
+                        })},
+                        {"completedServicesCount", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.completed_services_count", 0 }),
+                            0
+                        })},
+                        {"services", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.services", 0 }),
+                            new BsonArray()
+                        })},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )

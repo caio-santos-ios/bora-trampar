@@ -17,6 +17,14 @@ namespace api_bora_trampar.src.Repositories
         {
             return await appDbContext.Users.Find(x => !x.Deleted && x.Email.Equals(email)).FirstOrDefaultAsync();
         }
+        public async Task<User?> GetByWhatsAppAsync(string whatsapp)
+        {
+            return await appDbContext.Users.Find(x => !x.Deleted && x.WhatsApp.Equals(whatsapp)).FirstOrDefaultAsync();
+        }
+        public async Task<User?> GetByDocumentAsync(string document)
+        {
+            return await appDbContext.Users.Find(x => !x.Deleted && x.Document.Equals(document)).FirstOrDefaultAsync();
+        }
 
         public async Task<User?> GetByIdAsync(string id)
         {

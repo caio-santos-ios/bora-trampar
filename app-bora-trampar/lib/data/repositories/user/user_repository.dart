@@ -26,12 +26,36 @@ class UserRepository {
             final rating = (u['rating'] as num?)?.toDouble() ?? 0.0;
             final reviewCount = (u['reviewCount'] as num?)?.toInt() ?? 0;
             final completedCount = (u['completedServicesCount'] as num?)?.toInt() ?? 0;
-            final basePrice = (u['basePrice'] as num?)?.toDouble() ?? 0.0;
+            final rawBasePrice = u['basePrice'] ?? u['base_price'] ?? u['price'] ?? u['Price'] ?? u['dailyRate'] ?? u['diaria'];
+            final basePrice = rawBasePrice is num
+                ? rawBasePrice.toDouble()
+                : (rawBasePrice != null ? double.tryParse(rawBasePrice.toString().replaceAll(',', '.')) ?? 0.0 : 0.0);
             final badge = u['badge']?.toString() ?? u['highlightBadge']?.toString() ?? '';
             final bio = u['bio']?.toString() ?? '';
             final city = u['city']?.toString() ?? '';
             final state = u['state']?.toString() ?? '';
             final region = [city, state].where((s) => s.isNotEmpty).join(', ');
+
+            double extractedPrice = basePrice;
+            final rawServices = u['services'] as List?;
+            final List<String> serviceNames = [];
+            if (rawServices != null) {
+              for (final s in rawServices) {
+                if (s is Map) {
+                  final sName = s['serviceName']?.toString() ?? s['service_name']?.toString() ?? '';
+                  if (sName.isNotEmpty) serviceNames.add(sName);
+                  if (extractedPrice <= 0) {
+                    final p = s['price'] ?? s['Price'];
+                    if (p is num && p > 0) {
+                      extractedPrice = p.toDouble();
+                    } else if (p != null) {
+                      final parsed = double.tryParse(p.toString().replaceAll(',', '.'));
+                      if (parsed != null && parsed > 0) extractedPrice = parsed;
+                    }
+                  }
+                }
+              }
+            }
 
             return ProfessionalModel(
               id: u['id']?.toString() ?? u['_id']?.toString() ?? '',
@@ -41,11 +65,11 @@ class UserRepository {
               reviewCount: reviewCount,
               completedServicesCount: completedCount,
               arrivalTimeMinutes: (u['arrivalTimeMinutes'] as num?)?.toInt() ?? 0,
-              basePrice: basePrice,
+              basePrice: extractedPrice > 0 ? extractedPrice : 150.0,
               highlightBadge: badge,
               avatarUrl: photo,
               bio: bio,
-              offeredServices: const [],
+              offeredServices: serviceNames,
               reviews: const [],
               region: region,
             );

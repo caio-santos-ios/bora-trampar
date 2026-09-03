@@ -7,8 +7,10 @@ import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../data/models/order_request_model.dart';
+import '../../data/models/professional_model.dart';
 import '../../data/repositories/appointment/appointment_repository.dart';
 import '../../data/repositories/payment/payment_repository.dart';
+import '../../data/repositories/profile/profile_professional_repository.dart';
 import '../../data/repositories/user/user_repository.dart';
 import '../order_tracking/order_tracking_screen.dart';
 import '../payment/payment_asaas_screen.dart';
@@ -26,6 +28,61 @@ class OrderConfirmationScreen extends StatefulWidget {
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   String _selectedPaymentMethod = 'PIX Instantâneo';
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveProfessionalPrice();
+  }
+
+  Future<void> _resolveProfessionalPrice() async {
+    final prof = widget.orderRequest.selectedProfessional;
+    if (prof != null && prof.id.isNotEmpty) {
+      final profile = await ProfileProfessionalRepository().getByUserId(prof.id);
+      if (profile != null && profile.services.isNotEmpty) {
+        final matching = profile.services.firstWhere(
+          (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
+          orElse: () => profile.services.firstWhere((s) => s.price > 0, orElse: () => profile.services.first),
+        );
+        double resolvedPrice = matching.price > 0 ? matching.price : 0.0;
+        if (resolvedPrice <= 0) {
+          for (final s in profile.services) {
+            if (s.price > 0) {
+              resolvedPrice = s.price;
+              break;
+            }
+          }
+        }
+        if (resolvedPrice > 0 && resolvedPrice != prof.basePrice) {
+          if (mounted) {
+            setState(() {
+              widget.orderRequest.selectedProfessional = ProfessionalModel(
+                id: prof.id,
+                name: prof.name,
+                role: prof.role,
+                avatarUrl: prof.avatarUrl,
+                isVerified: prof.isVerified,
+                isAvailable: prof.isAvailable,
+                rating: prof.rating,
+                reviewCount: prof.reviewCount,
+                completedServicesCount: prof.completedServicesCount,
+                highlightBadge: prof.highlightBadge,
+                basePrice: resolvedPrice,
+                arrivalTimeMinutes: prof.arrivalTimeMinutes,
+                sinceYear: prof.sinceYear,
+                responseTime: prof.responseTime,
+                completionRate: prof.completionRate,
+                bio: prof.bio,
+                offeredServices: prof.offeredServices,
+                reviews: prof.reviews,
+                region: prof.region,
+              );
+            });
+          }
+        }
+      }
+    }
+  }
 
   void _showPaymentMethodModal() {
     showModalBottomSheet(
@@ -85,7 +142,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
   Future<void> _onConfirmOrder() async {
     if (_isSubmitting) return;
-    setState(() => _isSubmitting = true);
+    _isSubmitting = true;
+    setState(() {});
 
     final user = await AuthService().getCurrentUser();
     final customerId = user?.id ?? 'customer_default';
@@ -117,7 +175,22 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       totalPrice: widget.orderRequest.servicePrice,
     );
 
-    final appointmentId = appointment?.id ?? 'app_${DateTime.now().millisecondsSinceEpoch}';
+    if (appointment == null || appointment.id.isEmpty) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Falha ao registrar solicitação. Verifique sua conexão e tente novamente.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final appointmentId = appointment.id;
 
     if (isFullyCovered) {
       if (remainingCredit > 0) {

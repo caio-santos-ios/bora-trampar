@@ -42,7 +42,14 @@ class OrderRequestModel {
   })  : selectedServices = selectedServices ?? [],
         photoPaths = photoPaths ?? [];
 
-  double get servicePrice => selectedProfessional?.basePrice ?? 150.0;
+  double get servicePrice {
+    final profPrice = selectedProfessional?.basePrice ?? 0.0;
+    if (profPrice > 0) return profPrice;
+    if (selectedServices.isNotEmpty && selectedServices.first.basePrice > 0) {
+      return selectedServices.first.basePrice;
+    }
+    return 150.0;
+  }
   double get totalPrice => servicePrice;
   double get amountToPay => (servicePrice - creditApplied).clamp(0.0, double.infinity);
   double get remainingCredit => (creditApplied - servicePrice).clamp(0.0, double.infinity);
