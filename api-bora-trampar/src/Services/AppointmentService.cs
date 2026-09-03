@@ -84,9 +84,13 @@ namespace api_bora_trampar.src.Services
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"profissional_id", 1},
+                        {"profissionalId", "$profissional_id"},
                         {"customer_id", 1},
+                        {"customerId", "$customer_id"},
                         {"category_id", 1},
+                        {"categoryId", "$category_id"},
                         {"service_id", 1},
+                        {"serviceId", "$service_id"},
                         {"customerName", new BsonDocument("$ifNull", new BsonArray
                         {
                             new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),

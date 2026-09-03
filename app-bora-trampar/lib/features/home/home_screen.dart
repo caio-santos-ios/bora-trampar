@@ -560,7 +560,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final isForMe = _user == null ||
           a.profissionalId.isEmpty ||
           a.profissionalId == 'prof_default' ||
-          a.profissionalId.trim() == _user!.id.trim();
+          a.profissionalId.trim().toLowerCase() == _user!.id.trim().toLowerCase() ||
+          (_profile != null && _profile!.id != null && a.profissionalId.trim().toLowerCase() == _profile!.id!.trim().toLowerCase());
       if (!isForMe) return false;
 
       final s = a.status.toLowerCase();

@@ -28,7 +28,8 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   final AppointmentRepository _appointmentRepository = AppointmentRepository();
 
-  int _remainingSeconds = 60;
+  static const int _totalWaitSeconds = 900;
+  int _remainingSeconds = _totalWaitSeconds;
   Timer? _countdownTimer;
   Timer? _pollTimer;
   TrackingStatus _status = TrackingStatus.waiting;
@@ -48,7 +49,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void _startTracking() {
     if (_isToday) {
       _countdownTimer?.cancel();
-      _remainingSeconds = 60;
+      _remainingSeconds = _totalWaitSeconds;
       _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (_remainingSeconds > 1) {
           if (mounted) {
@@ -151,7 +152,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void _continueWaiting() {
     setState(() {
       _status = TrackingStatus.waiting;
-      _remainingSeconds = 60;
+      _remainingSeconds = _totalWaitSeconds;
     });
     _startTracking();
   }
@@ -254,8 +255,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ? DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(widget.orderRequest.scheduledDate!)
         : 'Hoje, ${DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now())}';
 
-    final progress = _remainingSeconds / 60.0;
-    final formattedTime = '00:${_remainingSeconds.toString().padLeft(2, '0')}';
+    final progress = _remainingSeconds / _totalWaitSeconds.toDouble();
+    final minutes = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    final formattedTime = '$minutes:$seconds';
 
     return Scaffold(
       backgroundColor: AppColors.background,

@@ -325,6 +325,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 12),
+          ...pending.map((apt) => _buildProAppointmentCard(apt)),
           const SizedBox(height: 20),
         ],
         Container(
