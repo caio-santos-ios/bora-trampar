@@ -22,6 +22,15 @@ namespace api_bora_trampar.src.Repositories
                 profissional_id = a.ProfissionalId,
                 date = a.Date,
                 hour = a.Hour,
+                status = a.Status,
+                service_names = a.ServiceNames,
+                category_name = a.CategoryName,
+                address = a.Address,
+                description = a.Description,
+                notes = a.Notes,
+                photo_urls = a.PhotoUrls,
+                total_price = a.TotalPrice,
+                asaas_payment_id = a.AsaasPaymentId,
                 createdAt = a.CreatedAt
             }).ToList();
         }

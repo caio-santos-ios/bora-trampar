@@ -52,6 +52,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final success = await _appointmentRepo.acceptAppointment(appointmentId);
     if (mounted) {
       if (success) {
+        setState(() {
+          _appointments = _appointments.map((a) {
+            if (a.id == appointmentId) {
+              return AppointmentModel(
+                id: a.id,
+                profissionalId: a.profissionalId,
+                customerId: a.customerId,
+                date: a.date,
+                hour: a.hour,
+                serviceName: a.serviceName,
+                categoryName: a.categoryName,
+                customerName: a.customerName,
+                professionalName: a.professionalName,
+                address: a.address,
+                description: a.description,
+                notes: a.notes,
+                photoUrls: a.photoUrls,
+                price: a.price,
+                status: 'Accepted',
+              );
+            }
+            return a;
+          }).toList();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -70,6 +94,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final success = await _appointmentRepo.declineAppointment(appointmentId);
     if (mounted) {
       if (success) {
+        setState(() {
+          _appointments = _appointments.map((a) {
+            if (a.id == appointmentId) {
+              return AppointmentModel(
+                id: a.id,
+                profissionalId: a.profissionalId,
+                customerId: a.customerId,
+                date: a.date,
+                hour: a.hour,
+                serviceName: a.serviceName,
+                categoryName: a.categoryName,
+                customerName: a.customerName,
+                professionalName: a.professionalName,
+                address: a.address,
+                description: a.description,
+                notes: a.notes,
+                photoUrls: a.photoUrls,
+                price: a.price,
+                status: 'Declined',
+              );
+            }
+            return a;
+          }).toList();
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -452,27 +500,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     String statusDisplay;
     Color statusColor;
 
-    if (st == 'pending' || st == 'pendingpayment' || st == 'paid' || st == 'requested') {
+    final isPendingAcceptance = (st.contains('pending') || st == 'requested' || st == 'paid') &&
+        st != 'accepted' &&
+        st != 'confirmed' &&
+        st != 'confirmado' &&
+        st != 'declined' &&
+        st != 'cancelled';
+
+    if (isPendingAcceptance) {
       statusDisplay = 'Aguardando Aceite';
       statusColor = AppColors.primaryGold;
-    } else if (st == 'accepted' || st == 'confirmed') {
+    } else if (st == 'accepted' || st == 'confirmed' || st == 'confirmado') {
       statusDisplay = 'Confirmado';
       statusColor = AppColors.success;
-    } else if (st == 'declined') {
+    } else if (st == 'declined' || st == 'recusado') {
       statusDisplay = 'Recusado';
       statusColor = AppColors.errorRed;
     } else if (st == 'completed' || st == 'concluido' || st == 'finished') {
       statusDisplay = 'Concluído';
       statusColor = AppColors.textMuted;
-    } else if (st == 'cancelled' || st == 'canceled') {
+    } else if (st == 'cancelled' || st == 'canceled' || st == 'cancelado') {
       statusDisplay = 'Cancelado';
       statusColor = AppColors.errorRed;
     } else {
       statusDisplay = apt.status;
       statusColor = AppColors.textMuted;
     }
-
-    final isPendingAcceptance = st == 'pending' || st == 'pendingpayment' || st == 'paid' || st == 'requested';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

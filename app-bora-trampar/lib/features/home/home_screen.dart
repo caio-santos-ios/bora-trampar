@@ -532,7 +532,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final pendingRequests = _appointments.where((a) {
       final s = a.status.toLowerCase();
-      return s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando');
+      return (s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando')) &&
+          s != 'accepted' &&
+          s != 'confirmed' &&
+          s != 'declined' &&
+          s != 'cancelled';
     }).toList();
 
     final activeAppointments = _appointments.where((a) {
@@ -963,8 +967,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
-                            await _appointmentRepo.declineAppointment(req.id);
-                            _loadData();
+                            final success = await _appointmentRepo.declineAppointment(req.id);
+                            if (success && mounted) {
+                              setState(() {
+                                _appointments = _appointments.map((a) {
+                                  if (a.id == req.id) {
+                                    return AppointmentModel(
+                                      id: a.id,
+                                      profissionalId: a.profissionalId,
+                                      customerId: a.customerId,
+                                      date: a.date,
+                                      hour: a.hour,
+                                      serviceName: a.serviceName,
+                                      categoryName: a.categoryName,
+                                      customerName: a.customerName,
+                                      professionalName: a.professionalName,
+                                      address: a.address,
+                                      description: a.description,
+                                      notes: a.notes,
+                                      photoUrls: a.photoUrls,
+                                      price: a.price,
+                                      status: 'Declined',
+                                    );
+                                  }
+                                  return a;
+                                }).toList();
+                              });
+                              _loadData();
+                            }
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.cardBorder),
@@ -981,15 +1011,40 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            await _appointmentRepo.acceptAppointment(req.id);
-                            _loadData();
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Trampo aceito com sucesso! Verifique na sua Agenda.'),
-                                backgroundColor: AppColors.primaryGold,
-                              ),
-                            );
+                            final success = await _appointmentRepo.acceptAppointment(req.id);
+                            if (success && mounted) {
+                              setState(() {
+                                _appointments = _appointments.map((a) {
+                                  if (a.id == req.id) {
+                                    return AppointmentModel(
+                                      id: a.id,
+                                      profissionalId: a.profissionalId,
+                                      customerId: a.customerId,
+                                      date: a.date,
+                                      hour: a.hour,
+                                      serviceName: a.serviceName,
+                                      categoryName: a.categoryName,
+                                      customerName: a.customerName,
+                                      professionalName: a.professionalName,
+                                      address: a.address,
+                                      description: a.description,
+                                      notes: a.notes,
+                                      photoUrls: a.photoUrls,
+                                      price: a.price,
+                                      status: 'Accepted',
+                                    );
+                                  }
+                                  return a;
+                                }).toList();
+                              });
+                              _loadData();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Trampo aceito com sucesso! Verifique na sua Agenda.'),
+                                  backgroundColor: AppColors.primaryGold,
+                                ),
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,

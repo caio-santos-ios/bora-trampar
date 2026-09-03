@@ -50,7 +50,6 @@
       <table class="table">
         <thead>
           <tr>
-            <th>ID Pedido</th>
             <th>Cliente</th>
             <th>Profissional</th>
             <th>Serviço</th>
@@ -62,7 +61,6 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of filteredList">
-            <td><strong class="gold-text">{{ item.id }}</strong></td>
             <td>
               <div class="cell-main">{{ item.customerName }}</div>
               <div class="cell-sub">{{ item.customerPhone }}</div>
@@ -72,7 +70,7 @@
               <div class="cell-sub">{{ item.professionalPhone }}</div>
             </td>
             <td><strong>{{ item.serviceName }}</strong></td>
-            <td>{{ item.date }} às {{ item.hour }}</td>
+            <td>{{ item.date | date : 'dd/MM/yyyy' }} às {{ item.hour }}</td>
             <td><strong class="gold-text">{{ global.formatCurrency(item.value) }}</strong></td>
             <td>
               <span class="status-badge" [ngClass]="item.status">
