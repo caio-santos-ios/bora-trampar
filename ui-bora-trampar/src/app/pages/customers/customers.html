@@ -99,7 +99,10 @@
           <tr *ngFor="let customer of filteredList">
             <td>
               <div class="user-cell">
-                <div class="avatar-circle">{{ customer.name[0] }}</div>
+                <div class="user-avatar" *ngIf="customer.photo">
+                  <img [src]="customer.photo" [alt]="customer.name" />
+                </div>
+                <div class="avatar-circle" *ngIf="!customer.photo">{{ customer.name[0] }}</div>
                 <div>
                   <div class="user-cell-name">{{ customer.name }}</div>
                   <div class="user-cell-sub">{{ customer.email }}</div>
@@ -168,7 +171,10 @@
       <div class="user-card-item" *ngFor="let customer of filteredList">
         <div class="user-card-header">
           <div class="user-cell">
-            <div class="avatar-circle">{{ customer.name[0] }}</div>
+            <div class="user-avatar" *ngIf="customer.photo">
+              <img [src]="customer.photo" [alt]="customer.name" />
+            </div>
+            <div class="avatar-circle" *ngIf="!customer.photo">{{ customer.name[0] }}</div>
             <div>
               <div class="user-cell-name">{{ customer.name }}</div>
               <div class="user-cell-sub">{{ customer.email }}</div>
@@ -217,13 +223,21 @@
   <div class="modal-backdrop" *ngIf="selectedCustomer" (click)="closeDetails()">
     <div class="modal-card" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <div>
-          <h3 style="margin: 0; color: var(--text-main); font-size: 18px; font-weight: 800;">
-            Detalhes do Cliente
-          </h3>
-          <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 13px;">
-            {{ selectedCustomer.name }} • {{ selectedCustomer.email }}
-          </p>
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="user-avatar" style="width: 48px; height: 48px;" *ngIf="selectedCustomer.photo">
+            <img [src]="selectedCustomer.photo" [alt]="selectedCustomer.name" />
+          </div>
+          <div class="avatar-circle" style="width: 48px; height: 48px; font-size: 20px;" *ngIf="!selectedCustomer.photo">
+            {{ selectedCustomer.name[0] }}
+          </div>
+          <div>
+            <h3 style="margin: 0; color: var(--text-main); font-size: 18px; font-weight: 800;">
+              {{ selectedCustomer.name }}
+            </h3>
+            <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 13px;">
+              {{ selectedCustomer.email }}
+            </p>
+          </div>
         </div>
         <button class="btn-icon" (click)="closeDetails()">
           <i class="fa-solid fa-xmark"></i>

@@ -20,6 +20,7 @@ export interface ProfessionalData {
   region: string;
   radiusKm: number;
   avatarUrl: string;
+  photo: string;
   bio: string;
   services: string[];
   isAvailable: boolean;
@@ -148,7 +149,8 @@ export class Professionals implements OnInit {
             completedServicesCount: apptCountByPro[uId] || u.completedServicesCount || 0,
             region: regionStr,
             radiusKm: prof.address?.serviceRadiusKm || 25,
-            avatarUrl: prof.identitySelfieUrl || prof.selfieUrl || u.photo || '',
+            avatarUrl: (u.photo || '').trim(),
+            photo: (u.photo || '').trim(),
             bio: prof.bio || u.bio || '',
             services: servicesList,
             isAvailable: prof.isAvailableNow ?? true,

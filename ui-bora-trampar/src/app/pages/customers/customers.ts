@@ -17,6 +17,7 @@ export interface CustomerAccount {
   status: 'active' | 'blocked' | 'pending';
   statusLabel: string;
   riskScore: 'low' | 'medium' | 'high';
+  photo: string;
   createdAt: string;
 }
 
@@ -103,6 +104,7 @@ export class Customers implements OnInit {
             status: isBlocked ? 'blocked' : 'active',
             statusLabel: isBlocked ? 'Bloqueado' : 'Ativo',
             riskScore: risk,
+            photo: u.photo || '',
             createdAt: u.createdAt || new Date().toISOString()
           };
         });
