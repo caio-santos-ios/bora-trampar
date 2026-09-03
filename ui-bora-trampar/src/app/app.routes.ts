@@ -8,6 +8,8 @@ import { Appointments } from './pages/appointments/appointments';
 import { Payments } from './pages/payments/payments';
 import { Disputes } from './pages/disputes/disputes';
 import { Users } from './pages/users/users';
+import { Customers } from './pages/customers/customers';
+import { Professionals } from './pages/professionals/professionals';
 import { Settings } from './pages/settings/settings';
 import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
@@ -32,6 +34,8 @@ export const routes: Routes = [
       { path: 'appointments', component: Appointments },
       { path: 'payments', component: Payments },
       { path: 'disputes', component: Disputes },
+      { path: 'customers', component: Customers },
+      { path: 'professionals', component: Professionals },
       { path: 'users', component: Users },
       { path: 'settings', component: Settings }
     ]

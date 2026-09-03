@@ -1,0 +1,365 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestão de Profissionais</h1>
+      <p class="page-subtitle">Prestadores de serviços, credenciamento, verificação de identidade e avaliações</p>
+    </div>
+    <div class="header-actions">
+      <a routerLink="/verifications" class="btn-primary">
+        <i class="fa-solid fa-id-card"></i>
+        <span>Fila de Verificação</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card gold-border">
+      <div class="kpi-icon-wrap gold-icon">
+        <i class="fa-solid fa-user-tie"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Total de Profissionais</span>
+        <h3 class="kpi-value">{{ stats.totalPros }}</h3>
+        <span class="kpi-subtext">Cadastrados na base</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap green-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Verificados</span>
+        <h3 class="kpi-value">{{ stats.verifiedPros }}</h3>
+        <span class="kpi-subtext">Documentos aprovados</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap blue-icon">
+        <i class="fa-solid fa-briefcase"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Profissionais Ativos</span>
+        <h3 class="kpi-value">{{ stats.activePros }}</h3>
+        <span class="kpi-subtext">Habilitados para receber serviço</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap amber-icon">
+        <i class="fa-solid fa-star"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Avaliação Média</span>
+        <h3 class="kpi-value">{{ stats.avgRating }} / 5.0</h3>
+        <span class="kpi-subtext">Nota média dos clientes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nome, profissão, e-mail ou cidade..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          Todos ({{ professionals.length }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'verified'" (click)="filterStatus = 'verified'">
+          Verificados ({{ stats.verifiedPros }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'pending'" (click)="filterStatus = 'pending'">
+          Em Análise
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'blocked'" (click)="filterStatus = 'blocked'">
+          Bloqueados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading [isLoading]="isLoading"></app-loading>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Profissional</th>
+            <th>Especialidade</th>
+            <th>WhatsApp / Contato</th>
+            <th>Região / Raio</th>
+            <th>Diária</th>
+            <th>Avaliação</th>
+            <th>Verificação</th>
+            <th>Status</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pro of filteredList">
+            <td>
+              <div class="user-cell">
+                <div class="pro-avatar" *ngIf="pro.avatarUrl">
+                  <img [src]="pro.avatarUrl" [alt]="pro.name" />
+                </div>
+                <div class="avatar-circle" *ngIf="!pro.avatarUrl">
+                  {{ pro.name[0] }}
+                </div>
+                <div>
+                  <div class="user-cell-name">{{ pro.name }}</div>
+                  <div class="user-cell-sub">{{ pro.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge-tag">{{ pro.profession }}</span>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>{{ pro.phone }}</span>
+                <a
+                  *ngIf="pro.phone !== 'Não informado'"
+                  [href]="'https://wa.me/55' + cleanPhone(pro.phone)"
+                  target="_blank"
+                  class="btn-icon"
+                  style="color: #25d366;"
+                  title="Abrir WhatsApp"
+                >
+                  <i class="fa-brands fa-whatsapp"></i>
+                </a>
+              </div>
+            </td>
+            <td>
+              <div>{{ pro.region }}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Raio: {{ pro.radiusKm }} km</div>
+            </td>
+            <td>
+              <strong style="color: var(--accent-primary);">
+                {{ pro.basePrice > 0 ? global.formatCurrency(pro.basePrice) : 'A combinar' }}
+              </strong>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 4px; font-weight: 700;">
+                <i class="fa-solid fa-star" style="color: #f59e0b; font-size: 13px;"></i>
+                <span>{{ pro.rating.toFixed(1) }}</span>
+                <span style="font-size: 11px; color: var(--text-muted);">({{ pro.reviewCount }})</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge-ver" [ngClass]="pro.verificationStatus">
+                <i class="fa-solid" [ngClass]="pro.verificationStatus === 'approved' ? 'fa-circle-check' : pro.verificationStatus === 'pending' ? 'fa-clock' : 'fa-circle-xmark'"></i>
+                {{ pro.verificationStatusLabel }}
+              </span>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="pro.status === 'active' ? 'active' : 'inactive'">
+                {{ pro.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <button
+                  class="btn-icon"
+                  style="color: var(--accent-primary);"
+                  (click)="openDetails(pro)"
+                  title="Ver Perfil Completo"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button
+                  class="btn-icon"
+                  [style.color]="pro.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
+                  (click)="toggleBlock(pro)"
+                  [title]="pro.status === 'blocked' ? 'Desbloquear' : 'Bloquear'"
+                >
+                  <i class="fa-solid" [ngClass]="pro.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              Nenhum profissional encontrado com os critérios de busca.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-card-list">
+      <div class="user-card-item" *ngFor="let pro of filteredList">
+        <div class="user-card-header">
+          <div class="user-cell">
+            <div class="pro-avatar" *ngIf="pro.avatarUrl">
+              <img [src]="pro.avatarUrl" [alt]="pro.name" />
+            </div>
+            <div class="avatar-circle" *ngIf="!pro.avatarUrl">
+              {{ pro.name[0] }}
+            </div>
+            <div>
+              <div class="user-cell-name">{{ pro.name }}</div>
+              <div class="user-cell-sub">{{ pro.profession }}</div>
+            </div>
+          </div>
+          <span class="badge-ver" [ngClass]="pro.verificationStatus">
+            {{ pro.verificationStatusLabel }}
+          </span>
+        </div>
+        <div class="user-card-body">
+          <div class="user-card-row">
+            <span class="label">Telefone:</span>
+            <span>{{ pro.phone }}</span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Região:</span>
+            <span>{{ pro.region }}</span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Diária:</span>
+            <span style="font-weight: 700; color: var(--accent-primary);">
+              {{ pro.basePrice > 0 ? global.formatCurrency(pro.basePrice) : 'A combinar' }}
+            </span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Avaliação:</span>
+            <span>★ {{ pro.rating.toFixed(1) }} ({{ pro.reviewCount }})</span>
+          </div>
+        </div>
+        <div class="user-card-actions">
+          <button class="btn-secondary" style="flex: 1; padding: 8px;" (click)="openDetails(pro)">
+            <i class="fa-solid fa-eye"></i> Perfil
+          </button>
+          <button
+            class="btn-secondary"
+            style="flex: 1; padding: 8px;"
+            [style.color]="pro.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
+            (click)="toggleBlock(pro)"
+          >
+            <i class="fa-solid" [ngClass]="pro.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
+            {{ pro.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="selectedPro" (click)="closeDetails()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="pro-avatar-lg" *ngIf="selectedPro.avatarUrl">
+            <img [src]="selectedPro.avatarUrl" [alt]="selectedPro.name" />
+          </div>
+          <div class="avatar-circle" style="width: 48px; height: 48px; font-size: 20px;" *ngIf="!selectedPro.avatarUrl">
+            {{ selectedPro.name[0] }}
+          </div>
+          <div>
+            <h3 style="margin: 0; color: var(--text-main); font-size: 18px; font-weight: 800;">
+              {{ selectedPro.name }}
+            </h3>
+            <p style="margin: 2px 0 0 0; color: var(--accent-primary); font-size: 13px; font-weight: 600;">
+              {{ selectedPro.profession }}
+            </p>
+          </div>
+        </div>
+        <button class="btn-icon" (click)="closeDetails()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Contato / WhatsApp</span>
+            <span class="detail-value">{{ selectedPro.phone }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">E-mail</span>
+            <span class="detail-value">{{ selectedPro.email }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Localização</span>
+            <span class="detail-value">{{ selectedPro.region }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Raio de Atendimento</span>
+            <span class="detail-value">{{ selectedPro.radiusKm }} km</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Valor da Diária</span>
+            <span class="detail-value" style="color: var(--accent-primary); font-weight: 800;">
+              {{ selectedPro.basePrice > 0 ? global.formatCurrency(selectedPro.basePrice) : 'A combinar' }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Status de Verificação</span>
+            <span class="badge-ver" [ngClass]="selectedPro.verificationStatus">
+              {{ selectedPro.verificationStatusLabel }}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="selectedPro.bio" style="margin-top: 16px;">
+          <span class="detail-label">Apresentação / Bio</span>
+          <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--text-main); line-height: 1.5; background: var(--bg-sidebar); padding: 10px; border-radius: 8px;">
+            {{ selectedPro.bio }}
+          </p>
+        </div>
+
+        <div *ngIf="selectedPro.services.length > 0" style="margin-top: 16px;">
+          <span class="detail-label">Serviços Oferecidos</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
+            <span class="badge-tag" *ngFor="let s of selectedPro.services">{{ s }}</span>
+          </div>
+        </div>
+
+        <h4 style="margin: 20px 0 10px 0; color: var(--text-main); font-size: 15px; font-weight: 700;">
+          Serviços Realizados ({{ proAppointments.length }})
+        </h4>
+
+        <div *ngIf="loadingAppointments" style="text-align: center; padding: 20px;">
+          <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-primary); font-size: 24px;"></i>
+        </div>
+
+        <div *ngIf="!loadingAppointments && proAppointments.length === 0" style="padding: 16px; background: var(--bg-sidebar); border-radius: 8px; color: var(--text-muted); font-size: 13px; text-align: center;">
+          Nenhum agendamento registrado para este profissional até o momento.
+        </div>
+
+        <div *ngIf="!loadingAppointments && proAppointments.length > 0" class="mini-appts-list">
+          <div class="mini-appt-item" *ngFor="let a of proAppointments">
+            <div>
+              <div style="font-weight: 700; color: var(--text-main); font-size: 13px;">
+                {{ a.serviceName || a.categoryName || 'Serviço' }}
+              </div>
+              <div style="color: var(--text-muted); font-size: 11px;">
+                Cliente: {{ a.customerName || a.customer_name || 'Cliente' }} • {{ global.formatDate(a.date) }} {{ a.hour }}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 800; color: var(--accent-primary); font-size: 13px;">
+                {{ global.formatCurrency(a.total_price || a.totalPrice || a.price || 0) }}
+              </div>
+              <span class="status-badge" style="font-size: 10px; padding: 2px 6px;">
+                {{ a.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetails()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>

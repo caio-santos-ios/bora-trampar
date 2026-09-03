@@ -1,0 +1,294 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestão de Clientes</h1>
+      <p class="page-subtitle">Acompanhamento, histórico de agendamentos e moderação de clientes da plataforma</p>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card gold-border">
+      <div class="kpi-icon-wrap gold-icon">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Total de Clientes</span>
+        <h3 class="kpi-value">{{ stats.totalCustomers }}</h3>
+        <span class="kpi-subtext">Cadastrados no sistema</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap green-icon">
+        <i class="fa-solid fa-user-check"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Clientes Ativos</span>
+        <h3 class="kpi-value">{{ stats.activeCustomers }}</h3>
+        <span class="kpi-subtext">Contas em dia</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap blue-icon">
+        <i class="fa-solid fa-calendar-check"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Total de Pedidos</span>
+        <h3 class="kpi-value">{{ stats.totalOrders }}</h3>
+        <span class="kpi-subtext">Chamados realizados</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-icon-wrap gold-icon">
+        <i class="fa-solid fa-wallet"></i>
+      </div>
+      <div class="kpi-data">
+        <span class="kpi-label">Saldo em Carteira</span>
+        <h3 class="kpi-value">{{ global.formatCurrency(stats.totalWalletBalance) }}</h3>
+        <span class="kpi-subtext">Créditos de clientes</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por nome, e-mail, telefone ou CPF..."
+          [(ngModel)]="searchQuery"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          Todos ({{ customers.length }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'active'" (click)="filterStatus = 'active'">
+          Ativos ({{ stats.activeCustomers }})
+        </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'blocked'" (click)="filterStatus = 'blocked'">
+          Bloqueados ({{ stats.totalCustomers - stats.activeCustomers }})
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading [isLoading]="isLoading"></app-loading>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>WhatsApp / Contato</th>
+            <th>Documento</th>
+            <th>Saldo em Carteira</th>
+            <th>Agendamentos</th>
+            <th>Status</th>
+            <th>Data Cadastro</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let customer of filteredList">
+            <td>
+              <div class="user-cell">
+                <div class="avatar-circle">{{ customer.name[0] }}</div>
+                <div>
+                  <div class="user-cell-name">{{ customer.name }}</div>
+                  <div class="user-cell-sub">{{ customer.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>{{ customer.phone }}</span>
+                <a
+                  *ngIf="customer.phone !== 'Não informado'"
+                  [href]="'https://wa.me/55' + cleanPhone(customer.phone)"
+                  target="_blank"
+                  class="btn-icon"
+                  style="color: #25d366;"
+                  title="Abrir WhatsApp"
+                >
+                  <i class="fa-brands fa-whatsapp"></i>
+                </a>
+              </div>
+            </td>
+            <td>{{ customer.document }}</td>
+            <td>
+              <span class="balance-pill" [class.has-balance]="customer.walletBalance > 0">
+                {{ global.formatCurrency(customer.walletBalance) }}
+              </span>
+            </td>
+            <td><strong>{{ customer.totalOrders }}</strong> pedidos</td>
+            <td>
+              <span class="status-badge" [ngClass]="customer.status === 'active' ? 'active' : 'inactive'">
+                {{ customer.statusLabel }}
+              </span>
+            </td>
+            <td>{{ global.formatDate(customer.createdAt) }}</td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <button
+                  class="btn-icon"
+                  style="color: var(--accent-primary);"
+                  (click)="openDetails(customer)"
+                  title="Ver Detalhes do Cliente"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+                <button
+                  class="btn-icon"
+                  [style.color]="customer.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
+                  (click)="toggleBlock(customer)"
+                  [title]="customer.status === 'blocked' ? 'Desbloquear' : 'Bloquear'"
+                >
+                  <i class="fa-solid" [ngClass]="customer.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-muted);">
+              Nenhum cliente encontrado com os critérios de busca.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-card-list">
+      <div class="user-card-item" *ngFor="let customer of filteredList">
+        <div class="user-card-header">
+          <div class="user-cell">
+            <div class="avatar-circle">{{ customer.name[0] }}</div>
+            <div>
+              <div class="user-cell-name">{{ customer.name }}</div>
+              <div class="user-cell-sub">{{ customer.email }}</div>
+            </div>
+          </div>
+          <span class="status-badge" [ngClass]="customer.status === 'active' ? 'active' : 'inactive'">
+            {{ customer.statusLabel }}
+          </span>
+        </div>
+        <div class="user-card-body">
+          <div class="user-card-row">
+            <span class="label">Telefone:</span>
+            <span>{{ customer.phone }}</span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Carteira:</span>
+            <span>{{ global.formatCurrency(customer.walletBalance) }}</span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Pedidos:</span>
+            <span>{{ customer.totalOrders }}</span>
+          </div>
+          <div class="user-card-row">
+            <span class="label">Cadastro:</span>
+            <span>{{ global.formatDate(customer.createdAt) }}</span>
+          </div>
+        </div>
+        <div class="user-card-actions">
+          <button class="btn-secondary" style="flex: 1; padding: 8px;" (click)="openDetails(customer)">
+            <i class="fa-solid fa-eye"></i> Detalhes
+          </button>
+          <button
+            class="btn-secondary"
+            style="flex: 1; padding: 8px;"
+            [style.color]="customer.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
+            (click)="toggleBlock(customer)"
+          >
+            <i class="fa-solid" [ngClass]="customer.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
+            {{ customer.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="selectedCustomer" (click)="closeDetails()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3 style="margin: 0; color: var(--text-main); font-size: 18px; font-weight: 800;">
+            Detalhes do Cliente
+          </h3>
+          <p style="margin: 4px 0 0 0; color: var(--text-muted); font-size: 13px;">
+            {{ selectedCustomer.name }} • {{ selectedCustomer.email }}
+          </p>
+        </div>
+        <button class="btn-icon" (click)="closeDetails()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="detail-grid">
+          <div class="detail-item">
+            <span class="detail-label">Telefone / WhatsApp</span>
+            <span class="detail-value">{{ selectedCustomer.phone }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Documento (CPF)</span>
+            <span class="detail-value">{{ selectedCustomer.document }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Saldo em Carteira</span>
+            <span class="detail-value" style="color: var(--accent-primary); font-weight: 800;">
+              {{ global.formatCurrency(selectedCustomer.walletBalance) }}
+            </span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">Status da Conta</span>
+            <span class="detail-value">{{ selectedCustomer.statusLabel }}</span>
+          </div>
+        </div>
+
+        <h4 style="margin: 20px 0 10px 0; color: var(--text-main); font-size: 15px; font-weight: 700;">
+          Histórico de Agendamentos ({{ customerAppointments.length }})
+        </h4>
+
+        <div *ngIf="loadingAppointments" style="text-align: center; padding: 20px;">
+          <i class="fa-solid fa-spinner fa-spin" style="color: var(--accent-primary); font-size: 24px;"></i>
+        </div>
+
+        <div *ngIf="!loadingAppointments && customerAppointments.length === 0" style="padding: 16px; background: var(--bg-sidebar); border-radius: 8px; color: var(--text-muted); font-size: 13px; text-align: center;">
+          Nenhum agendamento registrado para este cliente.
+        </div>
+
+        <div *ngIf="!loadingAppointments && customerAppointments.length > 0" class="mini-appts-list">
+          <div class="mini-appt-item" *ngFor="let a of customerAppointments">
+            <div>
+              <div style="font-weight: 700; color: var(--text-main); font-size: 13px;">
+                {{ a.serviceName || a.categoryName || 'Serviço' }}
+              </div>
+              <div style="color: var(--text-muted); font-size: 11px;">
+                Profissional: {{ a.professionalName || a.professional_name || 'Profissional' }} • {{ global.formatDate(a.date) }} {{ a.hour }}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-weight: 800; color: var(--accent-primary); font-size: 13px;">
+                {{ global.formatCurrency(a.total_price || a.totalPrice || a.price || 0) }}
+              </div>
+              <span class="status-badge" style="font-size: 10px; padding: 2px 6px;">
+                {{ a.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetails()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
