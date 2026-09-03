@@ -8,7 +8,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class PaymentService(IPaymentRepository repository, IAppointmentRepository appointmentRepository) : IPaymentService
+    public class PaymentService(IPaymentRepository repository, IAppointmentService appointmentService, IUserService userService, IAsaasService asaasService) : IPaymentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -68,6 +68,20 @@ namespace api_bora_trampar.src.Services
             {
                 Payment entity = ObjectMapper.Map<CreatePaymentRequest, Payment>(request);
 
+                ResponseApi<User?> user = await userService.GetByIdAsync(request.CreatedBy);
+                
+                if (user.Data is null) return new(null, 400, "Cliente não encontrado");
+
+                string asaasCustomerId = await asaasService.GetOrCreateCustomerAsync(user.Data.Name, user.Data.Document, user.Data.Email, user.Data.WhatsApp);
+                var asaasPix = await asaasService.CreatePixPaymentAsync(asaasCustomerId, request.Value, "Diária de Serviço - Bora Trampar");
+                if (asaasPix is null) return new(null, 400, "Falha ao gerar pix");
+
+                entity.MethodPayment = "PIX Instantâneo";
+                entity.Status = "PENDING";
+                entity.AsaasId = asaasPix.Value.paymentId;
+                entity.QrCodeImage = asaasPix.Value.qrCodeImage;
+                entity.QrCodePayload = asaasPix.Value.qrCodePayload;
+
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
                 Payment? payment = await repository.CreateAsync(entity);
@@ -114,13 +128,14 @@ namespace api_bora_trampar.src.Services
 
                 if (!string.IsNullOrEmpty(payment.AppointmentId))
                 {
-                    Appointment? appointment = await appointmentRepository.GetByIdAsync(payment.AppointmentId);
-                    if (appointment is not null)
+                    ResponseApi<Appointment?> appointment = await appointmentService.GetByIdAsync(payment.AppointmentId);
+                    if (appointment.Data is not null)
                     {
-                        appointment.Status = "PendingAcceptance";
-                        appointment.UpdatedBy = userId;
-                        appointment.UpdatedAt = DateTime.UtcNow;
-                        await appointmentRepository.UpdateAsync(appointment);
+                        appointment.Data.Status = "PendingAcceptance";
+                        appointment.Data.UpdatedBy = userId;
+                        appointment.Data.UpdatedAt = DateTime.UtcNow;
+                        UpdateAppointmentRequest app = ObjectMapper.Map<Appointment, UpdateAppointmentRequest>(appointment.Data);
+                        await appointmentService.UpdateAsync(app);
                     }
                 }
 

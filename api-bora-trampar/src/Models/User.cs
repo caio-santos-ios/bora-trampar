@@ -20,6 +20,9 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("photo")]
         public string Photo { get; set; } = string.Empty;
+        
+        [BsonElement("document")]
+        public string Document { get; set; } = string.Empty;
 
         [BsonElement("role")]
         [BsonRepresentation(BsonType.String)]
