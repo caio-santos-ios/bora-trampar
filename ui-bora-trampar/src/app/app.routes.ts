@@ -11,11 +11,14 @@ import { Users } from './pages/users/users';
 import { Settings } from './pages/settings/settings';
 import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
+import { Confirmation } from './pages/confirmation/confirmation';
 import { AuthGuard } from './guards/auth-guard';
 
 export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'reset-password', component: ResetPassword },
+  { path: 'confirmation/:code/:device', component: Confirmation },
+  { path: 'confirmation/:code', component: Confirmation },
   {
     path: '',
     component: DashboardLayout,
