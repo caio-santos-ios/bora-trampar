@@ -2,6 +2,7 @@ import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef, Cha
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Chart, registerables } from 'chart.js';
+import { Loading } from '../../components/loading/loading';
 import { GlobalService } from '../../services/global.service';
 import { api } from '../../services/api';
 
@@ -10,7 +11,7 @@ Chart.register(...registerables);
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, Loading],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css'
 })

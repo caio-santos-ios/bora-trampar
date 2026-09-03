@@ -16,7 +16,8 @@
     </div>
   </div>
 
-  <!-- KPI Cards Grid -->
+  <app-loading [isLoading]="isLoading"></app-loading>
+
   <div class="kpi-grid">
     <div class="kpi-card gold-border">
       <div class="kpi-icon-wrap gold-icon">
@@ -63,7 +64,6 @@
     </div>
   </div>
 
-  <!-- Charts Row -->
   <div class="charts-row">
     <div class="card chart-card large-chart">
       <div class="chart-header">
@@ -91,7 +91,6 @@
     </div>
   </div>
 
-  <!-- Recent Orders Table -->
   <div class="card">
     <div class="table-card-header">
       <div>
@@ -144,7 +143,6 @@
       </div>
     </ng-template>
 
-    <!-- Mobile Cards -->
     <div class="mobile-cards-view" *ngIf="recentAppointments.length > 0">
       <div class="mobile-data-card" *ngFor="let item of recentAppointments">
         <div class="mobile-card-header">
