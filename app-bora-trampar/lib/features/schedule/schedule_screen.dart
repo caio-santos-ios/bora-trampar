@@ -223,7 +223,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     final pending = _appointments.where((a) {
       final s = a.status.toLowerCase();
-      return s == 'pending' || s == 'requested' || s == 'pendingpayment' || s == 'paid';
+      return s.contains('pending') || s.contains('request') || s == 'paid' || s.contains('aguardando');
     }).toList();
 
     return ListView(

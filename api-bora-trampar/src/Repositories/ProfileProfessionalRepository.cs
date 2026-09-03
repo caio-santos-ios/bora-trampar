@@ -33,6 +33,13 @@ namespace api_bora_trampar.src.Repositories
             return entity;
         }
 
+        public async Task<List<ProfileProfessional>> GetAllAsync()
+        {
+            return await appDbContext.ProfileProfessionals
+                .Find(x => !x.Deleted)
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateAvailabilityAsync(string userId, bool isAvailable)
         {
             var update = Builders<ProfileProfessional>.Update

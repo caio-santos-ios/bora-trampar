@@ -17,7 +17,7 @@ namespace api_bora_trampar.src.Repositories
 
         public async Task<Payment?> GetByIdAsync(string id)
         {
-            return await appDbContext.Payments.Find(x => !x.Deleted && x.Id.Equals(id)).FirstOrDefaultAsync();
+            return await appDbContext.Payments.Find(x => !x.Deleted && (x.Id.Equals(id) || (x.AsaasId != null && x.AsaasId.Equals(id)))).FirstOrDefaultAsync();
         }
 
         public async Task<Payment?> CreateAsync(Payment entity)

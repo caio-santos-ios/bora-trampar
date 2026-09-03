@@ -33,7 +33,10 @@ namespace api_bora_trampar.src.Controllers
         {
             if (request == null) return BadRequest("Dados inválidos.");
 
-            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? "";
 
             ResponseApi<Payment?> response = await service.CreateAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
@@ -44,7 +47,10 @@ namespace api_bora_trampar.src.Controllers
         {
             if (request == null) return BadRequest("Dados inválidos.");
 
-            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? "";
 
             ResponseApi<Payment?> response = await service.CreateAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
@@ -53,7 +59,10 @@ namespace api_bora_trampar.src.Controllers
         [HttpPost("confirm/{id}")]
         public async Task<IActionResult> ConfirmPayment(string id)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? "";
             ResponseApi<Payment?> response = await service.ConfirmPaymentAsync(id, userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
@@ -63,7 +72,10 @@ namespace api_bora_trampar.src.Controllers
         {
             if (request == null) return BadRequest("Dados inválidos.");
 
-            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? "";
 
             ResponseApi<Payment?> response = await service.UpdateAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
@@ -72,7 +84,10 @@ namespace api_bora_trampar.src.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? User.FindFirst("sub")?.Value
+                ?? "";
             ResponseApi<Payment?> response = await service.DeleteAsync(new() { Id = id, DeletedBy = userId });
             return StatusCode(response.StatusCode, new { response.Message });
         }

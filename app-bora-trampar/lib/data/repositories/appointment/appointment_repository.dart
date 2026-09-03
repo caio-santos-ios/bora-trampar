@@ -65,22 +65,31 @@ class AppointmentRepository {
       final response = await _api.client.post(
         '/api/appointments',
         data: {
+          'profissionalId': professionalId,
           'profissional_id': professionalId,
+          'customerId': customerId,
           'customer_id': customerId,
           'date': date.toIso8601String(),
           'hour': hour,
           'status': status,
+          'serviceNames': serviceNames,
           'service_names': serviceNames,
+          'categoryName': categoryName,
           'category_name': categoryName,
           'address': address,
           'description': description,
           'notes': notes,
+          'photoUrls': photoUrls,
           'photo_urls': photoUrls,
+          'totalPrice': totalPrice,
           'total_price': totalPrice,
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        if (res is Map && res['data'] != null && res['data'] is Map) {
+          return AppointmentModel.fromJson(Map<String, dynamic>.from(res['data'] as Map));
+        }
         if (res is Map<String, dynamic>) {
           return AppointmentModel.fromJson(res);
         }

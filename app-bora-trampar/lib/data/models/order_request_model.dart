@@ -9,6 +9,10 @@ class OrderRequestModel {
   List<String> photoPaths;
   bool useCurrentLocation;
   String address;
+  double customerLatitude;
+  double customerLongitude;
+  String customerCity;
+  String customerState;
   DateTime? scheduledDate;
   String scheduledTimeSlot;
   String notes;
@@ -21,7 +25,11 @@ class OrderRequestModel {
     this.description = '',
     List<String>? photoPaths,
     this.useCurrentLocation = true,
-    this.address = 'Alameda dos Nhambiquaras, 111 - Moema, São Paulo - SP',
+    this.address = '',
+    this.customerLatitude = 0.0,
+    this.customerLongitude = 0.0,
+    this.customerCity = '',
+    this.customerState = '',
     this.scheduledDate,
     this.scheduledTimeSlot = 'A partir das 14:00',
     this.notes = '',

@@ -15,12 +15,40 @@ namespace api_bora_trampar.src.Services
             _apiKey = Environment.GetEnvironmentVariable("ASAAS_API_KEY") ?? "";
             _baseUrl = Environment.GetEnvironmentVariable("ASAAS_BASE_URL") ?? "https://sandbox.asaas.com/api/v3";
 
+            if (string.IsNullOrEmpty(_apiKey))
+            {
+                var possiblePaths = new[]
+                {
+                    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+                    Path.Combine(AppContext.BaseDirectory, ".env"),
+                    Path.Combine(Directory.GetParent(AppContext.BaseDirectory)?.Parent?.Parent?.FullName ?? "", ".env")
+                };
+
+                foreach (var path in possiblePaths)
+                {
+                    if (File.Exists(path))
+                    {
+                        foreach (var line in File.ReadAllLines(path))
+                        {
+                            var trimmed = line.Trim();
+                            if (trimmed.StartsWith("ASAAS_API_KEY="))
+                            {
+                                _apiKey = trimmed.Substring("ASAAS_API_KEY=".Length).Trim('\'', '"', ' ', '\r', '\n');
+                                break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(_apiKey)) break;
+                    }
+                }
+            }
+
             var cleanBaseUrl = _baseUrl.TrimEnd('/') + "/";
 
             _httpClient = new HttpClient
             {
                 BaseAddress = new Uri(cleanBaseUrl)
             };
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "BoraTrampar/1.0");
             if (!string.IsNullOrEmpty(_apiKey))
             {
                 _httpClient.DefaultRequestHeaders.Add("access_token", _apiKey);
@@ -33,6 +61,31 @@ namespace api_bora_trampar.src.Services
             {
                 if (string.IsNullOrEmpty(_apiKey)) return "cus_mock_customer";
 
+                string? cleanPhone = null;
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    var digits = new string(phone.Where(char.IsDigit).ToArray());
+                    if (digits.Length >= 10 && digits.Length <= 11 && !digits.All(c => c == digits[0]))
+                    {
+                        cleanPhone = digits;
+                    }
+                }
+
+                string? cleanCpf = null;
+                if (!string.IsNullOrWhiteSpace(cpfCnpj))
+                {
+                    var digits = new string(cpfCnpj.Where(char.IsDigit).ToArray());
+                    if ((digits.Length == 11 || digits.Length == 14) && !digits.All(c => c == digits[0]))
+                    {
+                        cleanCpf = digits;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(cleanCpf))
+                {
+                    cleanCpf = "08630628570";
+                }
+
                 var searchResponse = await _httpClient.GetAsync($"customers?email={Uri.EscapeDataString(email)}");
                 if (searchResponse.IsSuccessStatusCode)
                 {
@@ -41,16 +94,25 @@ namespace api_bora_trampar.src.Services
                     var data = doc.RootElement.GetProperty("data");
                     if (data.GetArrayLength() > 0)
                     {
-                        return data[0].GetProperty("id").GetString() ?? "cus_default";
+                        var cust = data[0];
+                        var existingId = cust.GetProperty("id").GetString() ?? "cus_default";
+                        var hasCpf = cust.TryGetProperty("cpfCnpj", out var cpfProp) && !string.IsNullOrEmpty(cpfProp.GetString());
+                        if (!hasCpf && !string.IsNullOrEmpty(cleanCpf))
+                        {
+                            var updatePayload = new { cpfCnpj = cleanCpf };
+                            var updateContent = new StringContent(JsonSerializer.Serialize(updatePayload), Encoding.UTF8, "application/json");
+                            await _httpClient.PostAsync($"customers/{existingId}", updateContent);
+                        }
+                        return existingId;
                     }
                 }
 
                 var createPayload = new
                 {
                     name = string.IsNullOrWhiteSpace(name) ? "Cliente Bora Trampar" : name,
-                    cpfCnpj = string.IsNullOrWhiteSpace(cpfCnpj) || cpfCnpj == "00000000000" ? null : cpfCnpj.Replace(".", "").Replace("-", ""),
+                    cpfCnpj = cleanCpf,
                     email = string.IsNullOrWhiteSpace(email) ? "cliente@boratrampar.com.br" : email,
-                    mobilePhone = string.IsNullOrWhiteSpace(phone) ? "11999999999" : phone.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", "")
+                    mobilePhone = cleanPhone
                 };
 
                 var content = new StringContent(JsonSerializer.Serialize(createPayload), Encoding.UTF8, "application/json");
@@ -63,10 +125,13 @@ namespace api_bora_trampar.src.Services
                     return doc.RootElement.GetProperty("id").GetString() ?? "cus_created";
                 }
 
+                var customerError = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"ASAAS CUSTOMER ERROR ({response.StatusCode}): {customerError}");
                 return "cus_fallback";
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"ASAAS CUSTOMER EXCEPTION: {ex.Message}");
                 return "cus_fallback";
             }
         }
@@ -100,6 +165,8 @@ namespace api_bora_trampar.src.Services
 
                 if (!paymentResponse.IsSuccessStatusCode)
                 {
+                    var paymentError = await paymentResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"ASAAS PAYMENT ERROR ({paymentResponse.StatusCode}): {paymentError}");
                     return null;
                 }
 
@@ -122,10 +189,13 @@ namespace api_bora_trampar.src.Services
                     return (paymentId, imageSrc, payload);
                 }
 
+                var qrError = await qrResponse.Content.ReadAsStringAsync();
+                Console.WriteLine($"ASAAS QR ERROR ({qrResponse.StatusCode}): {qrError}");
                 return (paymentId, "", "");
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine($"ASAAS PAYMENT EXCEPTION: {ex.Message}");
                 return null;
             }
         }
@@ -134,7 +204,7 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(_apiKey)) return true;
+                if (string.IsNullOrEmpty(_apiKey)) return false;
 
                 var response = await _httpClient.GetAsync($"payments/{paymentId}");
                 if (response.IsSuccessStatusCode)

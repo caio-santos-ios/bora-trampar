@@ -91,6 +91,19 @@ namespace api_bora_trampar.src.Services
             }
         }
 
+        public async Task<ResponseApi<List<ProfileProfessional>>> GetAllAsync()
+        {
+            try
+            {
+                var profiles = await repository.GetAllAsync();
+                return new(profiles, 200, "Perfis profissionais listados com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
+            }
+        }
+
         public async Task<ResponseApi<ProfileProfessional?>> SaveAsync(CreateProfileProfessionalRequest request, string userId)
         {
             try

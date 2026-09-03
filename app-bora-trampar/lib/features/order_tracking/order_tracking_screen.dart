@@ -4,52 +4,136 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/order_request_model.dart';
-import '../onboarding/welcome_screen.dart';
+import '../../data/repositories/appointment/appointment_repository.dart';
+import '../main/main_navigation_screen.dart';
+import '../professionals/professionals_list_screen.dart';
+
+enum TrackingStatus { waiting, accepted, declined, expired }
 
 class OrderTrackingScreen extends StatefulWidget {
   final OrderRequestModel orderRequest;
+  final String appointmentId;
 
-  const OrderTrackingScreen({super.key, required this.orderRequest});
+  const OrderTrackingScreen({
+    super.key,
+    required this.orderRequest,
+    this.appointmentId = '',
+  });
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
 }
 
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
-  int _remainingSeconds = 30;
-  Timer? _timer;
-  bool _isConfirmed = false;
+  final AppointmentRepository _appointmentRepository = AppointmentRepository();
+
+  int _remainingSeconds = 60;
+  Timer? _countdownTimer;
+  Timer? _pollTimer;
+  TrackingStatus _status = TrackingStatus.waiting;
+
+  bool get _isToday {
+    final date = widget.orderRequest.scheduledDate ?? DateTime.now();
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    _startTracking();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 1) {
-        setState(() {
-          _remainingSeconds--;
-        });
-      } else {
-        _timer?.cancel();
-        setState(() {
-          _remainingSeconds = 0;
-          _isConfirmed = true;
-        });
-      }
+  void _startTracking() {
+    if (_isToday) {
+      _countdownTimer?.cancel();
+      _remainingSeconds = 60;
+      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_remainingSeconds > 1) {
+          if (mounted) {
+            setState(() {
+              _remainingSeconds--;
+            });
+          }
+        } else {
+          _countdownTimer?.cancel();
+          if (mounted && _status == TrackingStatus.waiting) {
+            setState(() {
+              _remainingSeconds = 0;
+              _status = TrackingStatus.expired;
+            });
+          }
+        }
+      });
+    }
+
+    _pollTimer?.cancel();
+    _checkAppointmentStatus();
+    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkAppointmentStatus();
     });
+  }
+
+  Future<void> _checkAppointmentStatus() async {
+    if (widget.appointmentId.isEmpty) return;
+
+    final apt = await _appointmentRepository.getAppointmentById(widget.appointmentId);
+    if (!mounted || apt == null) return;
+
+    final s = apt.status.toLowerCase();
+    if (s == 'accepted' || s == 'aceito' || s == 'confirmed' || s == 'confirmado') {
+      _countdownTimer?.cancel();
+      _pollTimer?.cancel();
+      setState(() {
+        _status = TrackingStatus.accepted;
+      });
+    } else if (s == 'declined' || s == 'recusado' || s == 'cancelled' || s == 'cancelado') {
+      _countdownTimer?.cancel();
+      _pollTimer?.cancel();
+      setState(() {
+        _status = TrackingStatus.declined;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    _countdownTimer?.cancel();
+    _pollTimer?.cancel();
     super.dispose();
   }
 
-  void _showCancelDialog() {
-    showDialog(
+  void _chooseAnotherProfessional() {
+    _countdownTimer?.cancel();
+    _pollTimer?.cancel();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => ProfessionalsListScreen(orderRequest: widget.orderRequest),
+      ),
+    );
+  }
+
+  void _continueWaiting() {
+    setState(() {
+      _status = TrackingStatus.waiting;
+      _remainingSeconds = 60;
+    });
+    _startTracking();
+  }
+
+  void _goToMyOrders() {
+    _countdownTimer?.cancel();
+    _pollTimer?.cancel();
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => const MainNavigationScreen(initialIndex: 1),
+      ),
+      (route) => false,
+    );
+  }
+
+  Future<void> _cancelAppointment() async {
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
@@ -66,7 +150,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
           ),
           content: Text(
-            'Você não será cobrado caso cancele agora.',
+            'Seu agendamento será cancelado e o valor será estornado.',
             style: GoogleFonts.inter(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -74,22 +158,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(context).pop(false),
               child: Text(
                 'Manter',
                 style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w600),
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-                  (route) => false,
-                );
-              },
+              onPressed: () => Navigator.of(context).pop(true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
+                backgroundColor: AppColors.errorRed,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Sim, cancelar'),
@@ -98,6 +176,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         );
       },
     );
+
+    if (confirmed == true && mounted) {
+      _countdownTimer?.cancel();
+      _pollTimer?.cancel();
+
+      if (widget.appointmentId.isNotEmpty) {
+        await _appointmentRepository.deleteAppointment(widget.appointmentId);
+      }
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const MainNavigationScreen(initialIndex: 0),
+        ),
+        (route) => false,
+      );
+    }
   }
 
   @override
@@ -106,9 +202,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final serviceName = widget.orderRequest.serviceNamesDisplay;
     final dateDisplay = widget.orderRequest.scheduledDate != null
         ? DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(widget.orderRequest.scheduledDate!)
-        : '29 de agosto de 2026';
+        : 'Hoje, ${DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now())}';
 
-    final progress = _remainingSeconds / 30.0;
+    final progress = _remainingSeconds / 60.0;
     final formattedTime = '00:${_remainingSeconds.toString().padLeft(2, '0')}';
 
     return Scaffold(
@@ -116,7 +212,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            if (_status == TrackingStatus.accepted || !_isToday) {
+              _goToMyOrders();
+            } else {
+              Navigator.of(context).pop();
+            }
+          },
         ),
         title: Text(
           'Acompanhar pedido',
@@ -126,503 +228,766 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.primaryGold),
-            onPressed: () {},
-          ),
-        ],
       ),
       body: SafeArea(
         child: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              children: [
-                // Top Countdown Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.primaryGold, width: 1.5),
-                          color: const Color(0xFF1E1A10),
-                        ),
-                        child: const Icon(
-                          Icons.access_time_rounded,
-                          color: AppColors.primaryGold,
-                          size: 22,
-                        ),
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                children: [
+                  _buildStatusHeaderCard(progress, formattedTime, dateDisplay),
+                  const SizedBox(height: 14),
+                  _buildInfoNoticeCard(dateDisplay),
+                  const SizedBox(height: 20),
+                  _buildTimelineStepper(),
+                  const SizedBox(height: 20),
+                  if (prof != null) ...[
+                    Text(
+                      'Profissional selecionado',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isConfirmed ? 'Profissional Confirmado!' : 'Aguardando confirmação',
-                              style: GoogleFonts.inter(
-                                color: AppColors.primaryGold,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _isConfirmed
-                                  ? 'Carlos aceitou o serviço e está a caminho!'
-                                  : 'O profissional tem 30 segundos para aceitar sua solicitação.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      // Circular Progress Ring
-                      SizedBox(
-                        width: 70,
-                        height: 70,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CircularProgressIndicator(
-                              value: _isConfirmed ? 1.0 : progress,
-                              strokeWidth: 3.5,
-                              backgroundColor: AppColors.cardBorder,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _isConfirmed ? AppColors.success : AppColors.primaryGold,
-                              ),
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _isConfirmed ? '✓ OK' : formattedTime,
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                Text(
-                                  'Tempo restante',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textMuted,
-                                    fontSize: 7,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Lightning alert box
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E190E),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primaryGold.withValues(alpha: 0.3),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.bolt_rounded, color: AppColors.primaryGold, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'Assim que o profissional aceitar, você será notificado imediatamente.',
-                          style: GoogleFonts.inter(
-                            color: AppColors.textPrimary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Status Timeline Stepper
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildTimelineStep(
-                        icon: Icons.send_rounded,
-                        title: 'Solicitação\nenviada',
-                        subtitle: '29/08 14:05',
-                        isCompleted: true,
-                      ),
-                      _buildTimelineConnector(isCompleted: true),
-                      _buildTimelineStep(
-                        icon: Icons.access_time_rounded,
-                        title: 'Aguardando\nconfirmação',
-                        subtitle: '',
-                        isActive: !_isConfirmed,
-                        isCompleted: _isConfirmed,
-                      ),
-                      _buildTimelineConnector(isCompleted: _isConfirmed),
-                      _buildTimelineStep(
-                        icon: Icons.calendar_today_outlined,
-                        title: 'Serviço\nconfirmado',
-                        subtitle: '',
-                        isCompleted: false,
-                      ),
-                      _buildTimelineConnector(isCompleted: false),
-                      _buildTimelineStep(
-                        icon: Icons.handyman_outlined,
-                        title: 'Serviço\nem andamento',
-                        subtitle: '',
-                        isCompleted: false,
-                      ),
-                      _buildTimelineConnector(isCompleted: false),
-                      _buildTimelineStep(
-                        icon: Icons.check_circle_outline_rounded,
-                        title: 'Serviço\nconcluído',
-                        subtitle: '',
-                        isCompleted: false,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Profissional selecionado card
-                if (prof != null) ...[
-                  Text(
-                    'Profissional selecionado',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 28,
-                              backgroundImage: NetworkImage(prof.avatarUrl),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.cardBackground, width: 2),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    prof.name,
-                                    style: GoogleFonts.inter(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 15),
-                                ],
-                              ),
-                              Text(
-                                prof.role,
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
-                                    style: GoogleFonts.inter(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'A partir de',
-                              style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 10),
-                            ),
-                            Text(
-                              'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 12),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Chega em até\n${prof.arrivalTimeMinutes} min',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 9,
-                                  ),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    _buildProfessionalInfoCard(prof),
+                    const SizedBox(height: 16),
+                  ],
+                  _buildOrderSummaryCard(serviceName, dateDisplay),
+                  const SizedBox(height: 20),
                 ],
-
-                // Resumo do pedido card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Resumo do pedido',
-                        style: GoogleFonts.inter(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.foundation_rounded, color: AppColors.primaryGold, size: 20),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Serviço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                                Text(
-                                  '$serviceName - ${widget.orderRequest.description.isNotEmpty ? widget.orderRequest.description : "Levantamento de parede no quintal"}',
-                                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.calendar_today_outlined, color: AppColors.primaryGold, size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Data', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                                Text(dateDisplay, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Horário', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                                Text(widget.orderRequest.scheduledTimeSlot, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Endereço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                                Text(widget.orderRequest.address, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Icon(Icons.attach_money_rounded, color: AppColors.primaryGold, size: 18),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Valor', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                                Text('R\$ ${widget.orderRequest.servicePrice.toStringAsFixed(2).replaceAll('.', ',')}', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                // Fallback guarantee card
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.primaryGold, size: 22),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Não se preocupe!',
-                              style: GoogleFonts.inter(
-                                color: AppColors.primaryGold,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Se o profissional não aceitar em 30 segundos, buscaremos outro disponível automaticamente.',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 11,
-                                height: 1.3,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.watch_later_outlined, color: AppColors.textMuted, size: 28),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-
-          // Bottom Button: "Cancelar solicitação"
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(
-                top: BorderSide(color: AppColors.divider, width: 1),
               ),
             ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: _showCancelDialog,
-                icon: const Icon(Icons.close_rounded, color: AppColors.primaryGold, size: 18),
-                label: Text(
-                  'Cancelar solicitação',
+            _buildBottomActionBar(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusHeaderCard(double progress, String formattedTime, String dateDisplay) {
+    Color cardBorderColor;
+    Color iconBgColor;
+    IconData icon;
+    String title;
+    String subtitle;
+    Widget trailingWidget;
+
+    switch (_status) {
+      case TrackingStatus.accepted:
+        cardBorderColor = AppColors.success.withValues(alpha: 0.5);
+        iconBgColor = AppColors.success.withValues(alpha: 0.15);
+        icon = Icons.check_circle_rounded;
+        title = 'Profissional Confirmado!';
+        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} aceitou o serviço e está confirmado!';
+        trailingWidget = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.success.withValues(alpha: 0.15),
+            border: Border.all(color: AppColors.success, width: 2),
+          ),
+          child: const Center(
+            child: Icon(Icons.check_rounded, color: AppColors.success, size: 28),
+          ),
+        );
+        break;
+
+      case TrackingStatus.declined:
+        cardBorderColor = AppColors.errorRed.withValues(alpha: 0.5);
+        iconBgColor = AppColors.errorRed.withValues(alpha: 0.15);
+        icon = Icons.cancel_outlined;
+        title = 'Solicitação não aceita';
+        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não pôde atender a este chamado no momento.';
+        trailingWidget = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.errorRed.withValues(alpha: 0.15),
+            border: Border.all(color: AppColors.errorRed, width: 2),
+          ),
+          child: const Center(
+            child: Icon(Icons.close_rounded, color: AppColors.errorRed, size: 28),
+          ),
+        );
+        break;
+
+      case TrackingStatus.expired:
+        cardBorderColor = AppColors.primaryGold.withValues(alpha: 0.5);
+        iconBgColor = const Color(0xFF1E1A10);
+        icon = Icons.timer_off_outlined;
+        title = 'Tempo de resposta esgotado';
+        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não respondeu à solicitação a tempo.';
+        trailingWidget = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF1E1A10),
+            border: Border.all(color: AppColors.primaryGold, width: 2),
+          ),
+          child: Center(
+            child: Text(
+              '00:00',
+              style: GoogleFonts.inter(
+                color: AppColors.primaryGold,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        );
+        break;
+
+      case TrackingStatus.waiting:
+        cardBorderColor = AppColors.cardBorder;
+        iconBgColor = const Color(0xFF1E1A10);
+        icon = _isToday ? Icons.access_time_rounded : Icons.event_available_rounded;
+        title = _isToday ? 'Aguardando confirmação' : 'Solicitação agendada enviada!';
+        subtitle = _isToday
+            ? 'O profissional tem até 60 segundos para responder à sua solicitação imediata.'
+            : 'Aguardando confirmação de ${widget.orderRequest.selectedProfessional?.name ?? 'profissional'} para $dateDisplay.';
+        trailingWidget = _isToday
+            ? SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 3.5,
+                      backgroundColor: AppColors.cardBorder,
+                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                    ),
+                    Text(
+                      formattedTime,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1A10),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                ),
+                child: Text(
+                  'Agendado',
                   style: GoogleFonts.inter(
                     color: AppColors.primaryGold,
-                    fontSize: 15,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              );
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cardBorderColor),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.primaryGold, width: 1.5),
+              color: iconBgColor,
+            ),
+            child: Icon(icon, color: AppColors.primaryGold, size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          trailingWidget,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoNoticeCard(String dateDisplay) {
+    if (_status == TrackingStatus.accepted) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.verified_outlined, color: AppColors.success, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Tudo pronto! O profissional entrará em contato ou comparecerá no horário agendado.',
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
               ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_status == TrackingStatus.declined || _status == TrackingStatus.expired) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E190E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, color: AppColors.primaryGold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Você pode escolher outro profissional agora mesmo sem perder os dados da solicitação.',
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isToday) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E190E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.notifications_active_outlined, color: AppColors.primaryGold, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'O profissional tem até a véspera para confirmar. Você pode acompanhar o status em Meus Pedidos.',
+                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E190E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.bolt_rounded, color: AppColors.primaryGold, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Assim que o profissional aceitar, seu pedido será confirmado imediatamente.',
+              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
             ),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _buildTimelineStepper() {
+    final isConfirmed = _status == TrackingStatus.accepted;
+    final isDeclinedOrExpired = _status == TrackingStatus.declined || _status == TrackingStatus.expired;
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildTimelineStep(
+            icon: Icons.send_rounded,
+            title: 'Solicitação\nenviada',
+            subtitle: '',
+            isCompleted: true,
+          ),
+          _buildTimelineConnector(isCompleted: true),
+          _buildTimelineStep(
+            icon: Icons.access_time_rounded,
+            title: 'Aguardando\nresposta',
+            subtitle: '',
+            isActive: _status == TrackingStatus.waiting,
+            isCompleted: isConfirmed,
+          ),
+          _buildTimelineConnector(isCompleted: isConfirmed),
+          _buildTimelineStep(
+            icon: Icons.calendar_today_outlined,
+            title: isDeclinedOrExpired ? 'Não\nconfirmado' : 'Serviço\nconfirmado',
+            subtitle: '',
+            isActive: false,
+            isCompleted: isConfirmed,
+          ),
+          _buildTimelineConnector(isCompleted: false),
+          _buildTimelineStep(
+            icon: Icons.handyman_outlined,
+            title: 'Serviço\nem andamento',
+            subtitle: '',
+            isCompleted: false,
+          ),
+          _buildTimelineConnector(isCompleted: false),
+          _buildTimelineStep(
+            icon: Icons.check_circle_outline_rounded,
+            title: 'Serviço\nconcluído',
+            subtitle: '',
+            isCompleted: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfessionalInfoCard(dynamic prof) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: AppColors.cardElevated,
+            backgroundImage: prof.avatarUrl.isNotEmpty ? NetworkImage(prof.avatarUrl) : null,
+            child: prof.avatarUrl.isEmpty
+                ? Text(
+                    prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                    style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        prof.name,
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 15),
+                  ],
+                ),
+                Text(
+                  prof.role,
+                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Valor do serviço',
+                style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 10),
+              ),
+              Text(
+                'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderSummaryCard(String serviceName, String dateDisplay) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Resumo da solicitação',
+            style: GoogleFonts.inter(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.build_outlined, color: AppColors.primaryGold, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Serviço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
+                    Text(serviceName, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.calendar_month_outlined, color: AppColors.primaryGold, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Data e Horário', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
+                    Text('$dateDisplay às ${widget.orderRequest.scheduledTimeSlot}', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Endereço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
+                    Text(widget.orderRequest.address, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar() {
+    if (_status == TrackingStatus.accepted) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton.icon(
+            onPressed: _goToMyOrders,
+            icon: const Icon(Icons.assignment_turned_in_outlined, color: AppColors.textDark, size: 18),
+            label: Text(
+              'Acompanhar em Meus Pedidos',
+              style: GoogleFonts.inter(
+                color: AppColors.textDark,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_status == TrackingStatus.expired) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _chooseAnotherProfessional,
+                icon: const Icon(Icons.replay_rounded, color: AppColors.textDark, size: 18),
+                label: Text(
+                  'Escolher outro profissional',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _continueWaiting,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryGold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Continuar aguardando',
+                      style: GoogleFonts.inter(
+                        color: AppColors.primaryGold,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelAppointment,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.errorRed),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Cancelar solicitação',
+                      style: GoogleFonts.inter(
+                        color: AppColors.errorRed,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_status == TrackingStatus.declined) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _chooseAnotherProfessional,
+                icon: const Icon(Icons.people_outline_rounded, color: AppColors.textDark, size: 18),
+                label: Text(
+                  'Escolher outro profissional disponível',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 42,
+              child: OutlinedButton(
+                onPressed: _cancelAppointment,
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.cardBorder),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  'Cancelar e voltar ao início',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isToday) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _goToMyOrders,
+                icon: const Icon(Icons.assignment_outlined, color: AppColors.textDark, size: 18),
+                label: Text(
+                  'Acompanhar em Meus Pedidos',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _cancelAppointment,
+              child: Text(
+                'Cancelar solicitação',
+                style: GoogleFonts.inter(
+                  color: AppColors.errorRed,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      decoration: const BoxDecoration(
+        color: AppColors.background,
+        border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: 48,
+        child: OutlinedButton.icon(
+          onPressed: _cancelAppointment,
+          icon: const Icon(Icons.close_rounded, color: AppColors.primaryGold, size: 18),
+          label: Text(
+            'Cancelar solicitação',
+            style: GoogleFonts.inter(
+              color: AppColors.primaryGold,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildTimelineStep({
@@ -667,10 +1032,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: GoogleFonts.inter(
-              color: AppColors.textMuted,
-              fontSize: 9,
-            ),
+            style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 9),
           ),
         ],
       ],

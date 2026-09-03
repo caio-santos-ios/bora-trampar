@@ -8,6 +8,7 @@ import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../data/models/order_request_model.dart';
+import '../../core/utils/location_helper.dart';
 import '../professionals/professionals_list_screen.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
@@ -25,6 +26,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   bool _useCurrentLocation = true;
+  LocationResult? _detectedLocation;
+  bool _isLocating = false;
   DateTime _selectedDate = DateTime.now();
   String _selectedTimeSlot = 'A partir das 14:00';
   final List<String> _photos = [];
@@ -223,7 +226,37 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  void _onFindProfessionals() {
+  Future<void> _fetchCurrentLocation() async {
+    setState(() {
+      _useCurrentLocation = true;
+      _isLocating = true;
+    });
+
+    final loc = await LocationHelper.getCurrentLocation();
+    if (!mounted) return;
+
+    if (loc != null) {
+      setState(() {
+        _detectedLocation = loc;
+        _isLocating = false;
+      });
+    } else {
+      setState(() {
+        _isLocating = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Não foi possível obter a localização GPS. Digite seu endereço.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.cardElevated,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onFindProfessionals() async {
     if (_descController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -250,12 +283,37 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return;
     }
 
+    setState(() => _isLocating = true);
+
+    if (_useCurrentLocation) {
+      _detectedLocation ??= await LocationHelper.getCurrentLocation();
+      if (_detectedLocation != null) {
+        widget.orderRequest.customerLatitude = _detectedLocation!.latitude;
+        widget.orderRequest.customerLongitude = _detectedLocation!.longitude;
+        widget.orderRequest.customerCity = _detectedLocation!.city;
+        widget.orderRequest.customerState = _detectedLocation!.state;
+        widget.orderRequest.address = _detectedLocation!.address;
+      } else {
+        widget.orderRequest.address = 'Localização Atual';
+      }
+    } else {
+      final manualAddr = _addressController.text.trim();
+      widget.orderRequest.address = manualAddr;
+      final geocoded = await LocationHelper.geocodeAddress(manualAddr);
+      if (geocoded != null) {
+        widget.orderRequest.customerLatitude = geocoded.latitude;
+        widget.orderRequest.customerLongitude = geocoded.longitude;
+        widget.orderRequest.customerCity = geocoded.city;
+        widget.orderRequest.customerState = geocoded.state;
+      }
+    }
+
+    if (!mounted) return;
+    setState(() => _isLocating = false);
+
     widget.orderRequest.description = _descController.text.trim();
     widget.orderRequest.notes = _notesController.text.trim();
     widget.orderRequest.useCurrentLocation = _useCurrentLocation;
-    widget.orderRequest.address = _useCurrentLocation
-        ? 'Localização Atual'
-        : _addressController.text.trim();
     widget.orderRequest.scheduledDate = _selectedDate;
     widget.orderRequest.scheduledTimeSlot = _selectedTimeSlot;
     widget.orderRequest.photoPaths = _photos;
@@ -621,7 +679,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   ),
                   const SizedBox(height: 12),
                   InkWell(
-                    onTap: () => setState(() => _useCurrentLocation = true),
+                    onTap: _fetchCurrentLocation,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -652,13 +710,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                Text(
-                                  'Localize-me automaticamente',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12,
+                                const SizedBox(height: 2),
+                                if (_isLocating)
+                                  Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 12,
+                                        height: 12,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.primaryGold,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Buscando sinal GPS...',
+                                        style: GoogleFonts.inter(
+                                          color: AppColors.primaryGold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                else if (_detectedLocation != null)
+                                  Text(
+                                    '📍 ${_detectedLocation!.address}',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                else
+                                  Text(
+                                    'Localize-me automaticamente via GPS',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
                               ],
                             ),
                           ),

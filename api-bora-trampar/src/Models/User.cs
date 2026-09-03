@@ -33,5 +33,17 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("password_reset_expires")]
         public DateTime? PasswordResetExpires { get; set; }
+        
+        [BsonElement("blocked")]
+        public bool Blocked { get; set; } = false;
+        
+        [BsonElement("confirm_account")]
+        public bool ConfirmAccount { get; set; } = false;
+        
+        [BsonElement("confirm_account_code")]
+        public string ConfirmAccountCode { get; set; } = string.Empty;
+        
+        [BsonElement("confirm_account_date")]
+        public DateTime? ConfirmAccountDate { get; set; }
     }
 }

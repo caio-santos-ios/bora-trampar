@@ -532,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final pendingRequests = _appointments.where((a) {
       final s = a.status.toLowerCase();
-      return s == 'pending' || s == 'requested' || s == 'pendingpayment' || s == 'analysis';
+      return s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando');
     }).toList();
 
     final activeAppointments = _appointments.where((a) {

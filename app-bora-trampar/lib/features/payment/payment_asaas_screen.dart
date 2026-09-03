@@ -51,18 +51,18 @@ class _PaymentAsaasScreenState extends State<PaymentAsaasScreen> {
 
   Future<void> _confirmPayment() async {
     setState(() => _isProcessing = true);
-    final success = await _paymentRepository.confirmPayment(widget.paymentId);
+    final result = await _paymentRepository.confirmPayment(widget.paymentId);
 
     if (mounted) {
       setState(() {
         _isProcessing = false;
       });
 
-      if (success) {
+      if (result.success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Pagamento Aprovado pela Asaas! O profissional foi notificado.',
+              result.message,
               style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
             ),
             backgroundColor: AppColors.success,
@@ -73,10 +73,24 @@ class _PaymentAsaasScreenState extends State<PaymentAsaasScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => OrderTrackingScreen(orderRequest: widget.orderRequest),
+              builder: (context) => OrderTrackingScreen(
+                orderRequest: widget.orderRequest,
+                appointmentId: widget.appointmentId,
+              ),
             ),
           );
         }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.message,
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+            ),
+            backgroundColor: AppColors.errorRed,
+            duration: const Duration(seconds: 4),
+          ),
+        );
       }
     }
   }

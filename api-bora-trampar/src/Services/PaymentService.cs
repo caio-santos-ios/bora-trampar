@@ -68,13 +68,23 @@ namespace api_bora_trampar.src.Services
             {
                 Payment entity = ObjectMapper.Map<CreatePaymentRequest, Payment>(request);
 
-                ResponseApi<User?> user = await userService.GetByIdAsync(request.CreatedBy);
+                string userId = request.CreatedBy;
+                if (string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(request.AppointmentId))
+                {
+                    ResponseApi<Appointment?> appointment = await appointmentService.GetByIdAsync(request.AppointmentId);
+                    if (appointment?.Data is not null && !string.IsNullOrEmpty(appointment.Data.CustomerId))
+                    {
+                        userId = appointment.Data.CustomerId;
+                    }
+                }
+
+                ResponseApi<User?> user = await userService.GetByIdAsync(userId);
                 
-                if (user.Data is null) return new(null, 400, "Cliente não encontrado");
+                if (user?.Data is null) return new(null, 400, "Cliente não encontrado");
 
                 string asaasCustomerId = await asaasService.GetOrCreateCustomerAsync(user.Data.Name, user.Data.Document, user.Data.Email, user.Data.WhatsApp);
                 var asaasPix = await asaasService.CreatePixPaymentAsync(asaasCustomerId, request.Value, "Diária de Serviço - Bora Trampar");
-                if (asaasPix is null) return new(null, 400, "Falha ao gerar pix");
+                if (asaasPix is null) return new(null, 400, "Falha ao gerar pix no Asaas");
 
                 entity.MethodPayment = "PIX Instantâneo";
                 entity.Status = "PENDING";
@@ -119,6 +129,14 @@ namespace api_bora_trampar.src.Services
             {
                 Payment? payment = await repository.GetByIdAsync(paymentId);
                 if (payment is null) return new(null, 404, "Pagamento não encontrado");
+
+                string asaasPaymentId = !string.IsNullOrEmpty(payment.AsaasId) ? payment.AsaasId : payment.Id;
+                bool isReceived = await asaasService.IsPaymentReceivedAsync(asaasPaymentId);
+
+                if (!isReceived)
+                {
+                    return new(payment, 400, "O pagamento via PIX ainda não foi identificado pelo Asaas. Se você já realizou o pagamento ou simulou no sandbox, aguarde alguns segundos e tente novamente.");
+                }
 
                 payment.Status = "RECEIVED";
                 payment.UpdatedBy = userId;

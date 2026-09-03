@@ -56,8 +56,10 @@ class PaymentRepository {
       final response = await _api.client.post(
         '/api/payments/asaas/pix',
         data: {
+          'appointmentId': appointmentId,
           'appointment_id': appointmentId,
           'value': value,
+          'methodPayment': 'PIX Instantâneo',
           'method_payment': 'PIX Instantâneo',
           'date': DateTime.now().toIso8601String(),
         },
@@ -65,8 +67,14 @@ class PaymentRepository {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        if (res is Map && res['data'] != null && res['data'] is Map) {
+          return Map<String, dynamic>.from(res['data'] as Map);
+        }
         if (res is Map<String, dynamic>) {
           return res;
+        }
+        if (res is Map) {
+          return Map<String, dynamic>.from(res);
         }
       }
       return null;
@@ -77,14 +85,20 @@ class PaymentRepository {
     }
   }
 
-  Future<bool> confirmPayment(String paymentId) async {
+  Future<({bool success, String message})> confirmPayment(String paymentId) async {
     try {
       final response = await _api.client.post('/api/payments/confirm/$paymentId');
-      return response.statusCode == 200;
-    } on DioException {
-      return false;
+      if (response.statusCode == 200) {
+        return (success: true, message: 'Pagamento Aprovado pelo Asaas! O profissional foi notificado.');
+      }
+      return (success: false, message: 'Pagamento ainda não confirmado.');
+    } on DioException catch (e) {
+      final msg = e.response?.data?['result']?['message']?.toString() ??
+          e.response?.data?['message']?.toString() ??
+          'O pagamento via PIX ainda não foi identificado pelo Asaas. Se você já pagou ou simulou no sandbox, aguarde alguns segundos e tente novamente.';
+      return (success: false, message: msg);
     } catch (_) {
-      return false;
+      return (success: false, message: 'Erro ao verificar pagamento.');
     }
   }
 

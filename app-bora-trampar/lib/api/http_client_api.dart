@@ -1,12 +1,23 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/config/app_config.dart';
+import 'package:flutter/foundation.dart';
 
 class HttpClientApi {
+  static const String _prodUrl = 'https://bora-trampar.onrender.com';
+  static const String _devUrl = 'http://192.168.18.72:5067';
+
+  static String get baseUrl {
+    const customUrl = String.fromEnvironment('BASE_URL');
+    if (customUrl.isNotEmpty) {
+      return customUrl;
+    }
+    return kReleaseMode ? _prodUrl : _devUrl;
+  }
+
   final Dio _dio = Dio();
 
   HttpClientApi() {
-    _dio.options.baseUrl = apiBaseUrl;
+    _dio.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 15);
     _dio.options.receiveTimeout = const Duration(seconds: 15);
 

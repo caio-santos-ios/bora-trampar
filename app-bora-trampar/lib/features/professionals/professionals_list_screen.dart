@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/availability_helper.dart';
+import '../../core/utils/location_helper.dart';
 import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../data/models/order_request_model.dart';
 import '../../data/models/professional_model.dart';
+import '../../data/repositories/appointment/appointment_repository.dart';
+import '../../data/repositories/profile/profile_professional_repository.dart';
 import '../../data/repositories/user/user_repository.dart';
 import 'professional_profile_screen.dart';
 
@@ -19,12 +23,16 @@ class ProfessionalsListScreen extends StatefulWidget {
 
 class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   final UserRepository _userRepository = UserRepository();
+  final ProfileProfessionalRepository _profileRepository = ProfileProfessionalRepository();
+  final AppointmentRepository _appointmentRepository = AppointmentRepository();
 
   List<ProfessionalModel> _professionals = [];
+  Map<String, double> _proDistances = {};
   bool _isLoading = true;
   String _selectedSort = 'Mais bem avaliados';
   final List<String> _sortOptions = [
     'Mais bem avaliados',
+    'Mais próximos',
     'Menor preço',
     'Mais rápidos (chegada)',
     'Mais experientes',
@@ -38,11 +46,61 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
 
   Future<void> _loadProfessionals() async {
     setState(() => _isLoading = true);
-    final list = await _userRepository.getProfessionals();
+    final rawPros = await _userRepository.getProfessionals();
+    final profiles = await _profileRepository.getAllProfiles();
+    final appointments = await _appointmentRepository.getAppointments();
+
+    final profileMap = {for (final p in profiles) p.userId: p};
+
+    final customerLat = widget.orderRequest.customerLatitude;
+    final customerLon = widget.orderRequest.customerLongitude;
+    final customerCity = widget.orderRequest.customerCity;
+    final scheduledDate = widget.orderRequest.scheduledDate ?? DateTime.now();
+    final scheduledTimeSlot = widget.orderRequest.scheduledTimeSlot;
+
+    final Map<String, double> distances = {};
+    final List<ProfessionalModel> matchingPros = [];
+
+    for (final pro in rawPros) {
+      final profile = profileMap[pro.id];
+
+      double proLat = profile?.address.latitude ?? 0.0;
+      double proLon = profile?.address.longitude ?? 0.0;
+      final proCity = profile?.address.city ?? pro.region;
+      final radius = profile?.address.serviceRadiusKm ?? 25;
+
+      bool withinRadius = LocationHelper.isWithinRadius(
+        customerLat: customerLat,
+        customerLon: customerLon,
+        customerCity: customerCity,
+        proLat: proLat,
+        proLon: proLon,
+        proCity: proCity,
+        radiusKm: radius,
+      );
+
+      if (customerLat != 0.0 && customerLon != 0.0 && proLat != 0.0 && proLon != 0.0) {
+        final dist = LocationHelper.calculateDistanceKm(customerLat, customerLon, proLat, proLon);
+        distances[pro.id] = dist;
+      }
+
+      bool available = AvailabilityHelper.isProfessionalAvailable(
+        profile: profile,
+        date: scheduledDate,
+        timeSlot: scheduledTimeSlot,
+        appointments: appointments,
+        proUserId: pro.id,
+      );
+
+      if (withinRadius && available) {
+        matchingPros.add(pro);
+      }
+    }
 
     if (mounted) {
       setState(() {
-        _professionals = list;
+        _proDistances = distances;
+        _professionals = matchingPros;
         _isLoading = false;
       });
     }
@@ -50,7 +108,13 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
 
   List<ProfessionalModel> get _sortedProfessionals {
     final list = List<ProfessionalModel>.from(_professionals);
-    if (_selectedSort == 'Menor preço') {
+    if (_selectedSort == 'Mais próximos') {
+      list.sort((a, b) {
+        final distA = _proDistances[a.id] ?? 999999.0;
+        final distB = _proDistances[b.id] ?? 999999.0;
+        return distA.compareTo(distB);
+      });
+    } else if (_selectedSort == 'Menor preço') {
       list.sort((a, b) => a.basePrice.compareTo(b.basePrice));
     } else if (_selectedSort == 'Mais rápidos (chegada)') {
       list.sort((a, b) => a.arrivalTimeMinutes.compareTo(b.arrivalTimeMinutes));
@@ -302,13 +366,13 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                             child: Column(
                               children: [
                                 const Icon(
-                                  Icons.engineering_outlined,
+                                  Icons.location_off_outlined,
                                   size: 44,
                                   color: AppColors.primaryGold,
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'Nenhum profissional encontrado',
+                                  'Nenhum profissional disponível',
                                   style: GoogleFonts.inter(
                                     color: AppColors.textPrimary,
                                     fontSize: 15,
@@ -317,12 +381,32 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                 ),
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Ainda não há profissionais cadastrados com esta categoria.',
+                                  'Não encontramos profissionais que atendem no seu endereço ou tenham horário livre para esta data e horário.',
                                   style: GoogleFonts.inter(
                                     color: AppColors.textSecondary,
                                     fontSize: 12,
                                   ),
                                   textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.edit_calendar_outlined, size: 16, color: AppColors.primaryGold),
+                                  label: Text(
+                                    'Alterar data, horário ou local',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: AppColors.primaryGold),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  ),
                                 ),
                               ],
                             ),
@@ -591,6 +675,66 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                         ),
                       ),
                     ],
+                    Builder(
+                      builder: (context) {
+                        final dist = _proDistances[prof.id];
+                        if (dist != null && dist > 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.near_me_outlined, size: 12, color: AppColors.primaryGold),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${dist.toStringAsFixed(1)} km de você',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else if (prof.region.isNotEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.location_on_outlined, size: 12, color: AppColors.textSecondary),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    prof.region,
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.check_circle_outline, size: 12, color: AppColors.success),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Horário disponível',
+                          style: GoogleFonts.inter(
+                            color: AppColors.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
                     if (prof.highlightBadge.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Container(

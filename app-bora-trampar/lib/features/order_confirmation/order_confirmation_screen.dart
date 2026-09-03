@@ -110,13 +110,32 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       customerName: user?.name ?? 'Cliente',
     );
 
-    final paymentId = paymentData?['id']?.toString() ?? paymentData?['_id']?.toString() ?? 'pay_${DateTime.now().millisecondsSinceEpoch}';
-    final qrCodeImage = paymentData?['qr_code_image']?.toString() ??
-        'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=boratrampar_pix_asaas';
-    final qrCodePayload = paymentData?['qr_code_payload']?.toString() ??
-        '00020126580014br.gov.bcb.pix0136boratrampar@pix.com.br5204000053039865405';
+    final paymentId = paymentData?['id']?.toString() ??
+        paymentData?['_id']?.toString() ??
+        paymentData?['asaasId']?.toString() ??
+        '';
+    final qrCodeImage = paymentData?['qrCodeImage']?.toString() ??
+        paymentData?['qr_code_image']?.toString() ??
+        '';
+    final qrCodePayload = paymentData?['qrCodePayload']?.toString() ??
+        paymentData?['qr_code_payload']?.toString() ??
+        '';
 
     if (!mounted) return;
+
+    if (paymentData == null || qrCodePayload.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Falha ao gerar cobrança PIX no Asaas. Tente novamente.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => PaymentAsaasScreen(
@@ -190,18 +209,14 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       body: SafeArea(
         child: Column(
         children: [
-          // Stepper bar (Step 5 active)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: AppStepper(totalSteps: 5, currentStep: 5),
           ),
-
-          // Scrollable Content
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               children: [
-                // Title + Logo
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -244,7 +259,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // Card 1: Selected Professional
                 if (prof != null)
                   Container(
                     padding: const EdgeInsets.all(14),
@@ -366,7 +380,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                   ),
                 const SizedBox(height: 12),
 
-                // Card 2: Requested Service
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -444,7 +457,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Card 3: Service Details
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -510,7 +522,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Card 4: Resumo do pedido
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -603,7 +614,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Card 5: Forma de pagamento
                 InkWell(
                   onTap: _showPaymentMethodModal,
                   borderRadius: BorderRadius.circular(14),
@@ -647,7 +657,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Reassurance banner
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -700,7 +709,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
             ),
           ),
 
-          // Bottom Button CTA
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             decoration: const BoxDecoration(

@@ -47,6 +47,29 @@ class ProfileProfessionalRepository {
     }
   }
 
+  Future<List<ProfileProfessionalModel>> getAllProfiles() async {
+    try {
+      final response = await _api.client.get('/api/profile-professionals');
+
+      if (response.statusCode == 200 && response.data != null) {
+        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        if (res is Map && res['data'] != null) {
+          res = res['data'];
+        }
+        if (res is List) {
+          return res
+              .map((item) => ProfileProfessionalModel.fromJson(Map<String, dynamic>.from(item as Map)))
+              .toList();
+        }
+      }
+      return [];
+    } on DioException {
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   Future<ProfileProfessionalModel?> saveProfile(ProfileProfessionalModel profile) async {
     try {
       final response = await _api.client.post(

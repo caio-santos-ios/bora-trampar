@@ -40,6 +40,14 @@ namespace api_bora_trampar.src.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            ResponseApi<List<ProfileProfessional>> response = await service.GetAllAsync();
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] CreateProfileProfessionalRequest request)
         {
