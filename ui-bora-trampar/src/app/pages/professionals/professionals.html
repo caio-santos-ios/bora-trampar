@@ -77,8 +77,11 @@
         <button class="filter-chip" [class.active]="filterStatus === 'verified'" (click)="filterStatus = 'verified'">
           Verificados ({{ stats.verifiedPros }})
         </button>
+        <button class="filter-chip" [class.active]="filterStatus === 'unverified'" (click)="filterStatus = 'unverified'">
+          Não Verificados ({{ stats.unverifiedPros }})
+        </button>
         <button class="filter-chip" [class.active]="filterStatus === 'pending'" (click)="filterStatus = 'pending'">
-          Em Análise
+          Em Análise ({{ stats.pendingPros }})
         </button>
         <button class="filter-chip" [class.active]="filterStatus === 'blocked'" (click)="filterStatus = 'blocked'">
           Bloqueados

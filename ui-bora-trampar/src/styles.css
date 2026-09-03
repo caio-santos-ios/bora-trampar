@@ -165,6 +165,14 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .kpi-card {
@@ -177,6 +185,8 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   gap: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .kpi-card:hover {

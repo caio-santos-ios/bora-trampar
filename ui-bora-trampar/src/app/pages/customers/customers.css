@@ -3,6 +3,14 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 .kpi-card {
@@ -15,6 +23,8 @@
   gap: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .kpi-card:hover {
@@ -156,16 +166,23 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .user-cell-name {
   font-weight: 700;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-cell-sub {
   font-size: 12px;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .avatar-circle {
@@ -220,11 +237,18 @@
   .desktop-table-view {
     display: none;
   }
+  .card:has(.mobile-card-list) {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
   .mobile-card-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    padding: 12px;
+    padding: 0;
+    width: 100%;
   }
   .user-card-item {
     background: var(--bg-sidebar);
@@ -234,24 +258,56 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   .user-card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+  }
+  .user-card-header .user-cell {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .user-card-header .user-cell > div:last-child {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .user-card-header .status-badge {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
   .user-card-body {
     display: flex;
     flex-direction: column;
     gap: 6px;
     font-size: 13px;
+    min-width: 0;
   }
   .user-card-row {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
   }
   .user-card-row .label {
     color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .user-card-row span:last-child {
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .user-card-actions {
     display: flex;

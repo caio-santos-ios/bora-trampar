@@ -51,6 +51,8 @@ export class Professionals implements OnInit {
     totalPros: 0,
     activePros: 0,
     verifiedPros: 0,
+    unverifiedPros: 0,
+    pendingPros: 0,
     avgRating: 0
   };
 
@@ -108,7 +110,7 @@ export class Professionals implements OnInit {
           const isBlocked = u.isBlocked === true || u.status === 'blocked';
 
           let verStatus: 'approved' | 'pending' | 'rejected' | 'not_sent' = 'not_sent';
-          let verLabel = 'Não enviado';
+          let verLabel = 'Não Verificado';
 
           if (prof.isVerified === true || u.isVerified === true) {
             verStatus = 'approved';
@@ -171,6 +173,8 @@ export class Professionals implements OnInit {
     this.stats.totalPros = this.professionals.length;
     this.stats.activePros = this.professionals.filter(p => p.status === 'active').length;
     this.stats.verifiedPros = this.professionals.filter(p => p.verificationStatus === 'approved').length;
+    this.stats.pendingPros = this.professionals.filter(p => p.verificationStatus === 'pending').length;
+    this.stats.unverifiedPros = this.professionals.filter(p => p.verificationStatus !== 'approved').length;
 
     const ratedPros = this.professionals.filter(p => p.rating > 0);
     this.stats.avgRating = ratedPros.length > 0
@@ -183,6 +187,8 @@ export class Professionals implements OnInit {
 
     if (this.filterStatus === 'verified') {
       list = list.filter(p => p.verificationStatus === 'approved');
+    } else if (this.filterStatus === 'unverified') {
+      list = list.filter(p => p.verificationStatus !== 'approved');
     } else if (this.filterStatus === 'pending') {
       list = list.filter(p => p.verificationStatus === 'pending');
     } else if (this.filterStatus === 'blocked') {
