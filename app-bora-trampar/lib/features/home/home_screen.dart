@@ -538,7 +538,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProfessionalView() {
     final now = DateTime.now();
-
     final completedAppointments = _appointments.where((a) {
       final s = a.status.toLowerCase();
       return s == 'completed' || s == 'finished' || s == 'confirmed' || s == 'paid';

@@ -6,16 +6,16 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
-import 'login_screen.dart';
+import '../../features/auth/login_screen.dart';
 
-class ProfessionalRegisterScreen extends StatefulWidget {
-  const ProfessionalRegisterScreen({super.key});
+class CustomerRegisterScreen extends StatefulWidget {
+  const CustomerRegisterScreen({super.key});
 
   @override
-  State<ProfessionalRegisterScreen> createState() => _ProfessionalRegisterScreenState();
+  State<CustomerRegisterScreen> createState() => _CustomerRegisterScreenState();
 }
 
-class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen> {
+class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -56,7 +56,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
 
     setState(() => _isLoading = true);
 
-    final res = await AuthService().registerProfessional(
+    final res = await AuthService().registerCustomer(
       name: _nameController.text,
       email: _emailController.text,
       whatsApp: _whatsappController.text,
@@ -70,7 +70,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            res['message'] ?? 'Conta profissional criada com sucesso! Faça login.',
+            res['message'] ?? 'Conta de cliente criada com sucesso! Faça login.',
             style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
           ),
           backgroundColor: AppColors.primaryGold,
@@ -78,7 +78,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
         ),
       );
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const LoginScreen(initialRole: 'Profissional')),
+        MaterialPageRoute(builder: (context) => const LoginScreen(initialRole: 'Customer')),
         (route) => false,
       );
     } else {
@@ -117,7 +117,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
                 const Center(child: BoraTrampaLogo(size: 48)),
                 const SizedBox(height: 24),
                 Text(
-                  'Cadastro Profissional',
+                  'Cadastro de Cliente',
                   style: GoogleFonts.inter(
                     fontSize: 26,
                     fontWeight: FontWeight.w800,
@@ -126,7 +126,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Crie seu perfil profissional e comece a receber propostas de diárias na sua região.',
+                  'Crie seu perfil de cliente para contratar diaristas e profissionais qualificados.',
                   style: GoogleFonts.inter(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -148,7 +148,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
                   textCapitalization: TextCapitalization.words,
                   style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: 'Ex: Carlos Alberto Souza',
+                    hintText: 'Ex: Ana Clara Silva',
                     hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
                     prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.textMuted, size: 20),
                     filled: true,
@@ -399,7 +399,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
                 ),
                 const SizedBox(height: 28),
                 PrimaryButton(
-                  text: 'Criar Perfil Profissional',
+                  text: 'Criar Perfil de Cliente',
                   isLoading: _isLoading,
                   onPressed: _handleRegister,
                 ),
@@ -409,7 +409,7 @@ class _ProfessionalRegisterScreenState extends State<ProfessionalRegisterScreen>
                     onTap: () {
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(initialRole: 'Profissional'),
+                          builder: (context) => const LoginScreen(initialRole: 'Customer'),
                         ),
                       );
                     },

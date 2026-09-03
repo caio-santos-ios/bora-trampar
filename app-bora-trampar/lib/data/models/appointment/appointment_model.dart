@@ -36,7 +36,22 @@ class AppointmentModel {
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
     DateTime parsedDate;
     try {
-      parsedDate = json['date'] != null ? DateTime.parse(json['date'].toString()) : DateTime.now();
+      final rawDate = json['date'] ?? json['Date'];
+      if (rawDate is DateTime) {
+        parsedDate = rawDate;
+      } else if (rawDate is Map) {
+        final dVal = rawDate[r'$date'] ?? rawDate['date'];
+        if (dVal is Map && dVal[r'$numberLong'] != null) {
+          final millis = int.tryParse(dVal[r'$numberLong'].toString());
+          parsedDate = millis != null ? DateTime.fromMillisecondsSinceEpoch(millis) : DateTime.now();
+        } else {
+          parsedDate = DateTime.tryParse(dVal?.toString() ?? '') ?? DateTime.now();
+        }
+      } else if (rawDate != null) {
+        parsedDate = DateTime.parse(rawDate.toString());
+      } else {
+        parsedDate = DateTime.now();
+      }
     } catch (_) {
       parsedDate = DateTime.now();
     }
@@ -47,24 +62,47 @@ class AppointmentModel {
       photosList = rawPhotos.map((p) => p.toString()).toList();
     }
 
+    String parseString(dynamic val) {
+      if (val == null) return '';
+      if (val is String) return val;
+      if (val is Map) {
+        return val[r'$oid']?.toString() ?? val['id']?.toString() ?? val['_id']?.toString() ?? val.toString();
+      }
+      return val.toString();
+    }
+
+    double? parsePrice(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val.replaceAll(',', '.'));
+      if (val is Map) {
+        final inner = val[r'$numberDecimal'] ?? val['numberDecimal'] ?? val['value'] ?? val['amount'];
+        if (inner != null) {
+          if (inner is num) return inner.toDouble();
+          return double.tryParse(inner.toString().replaceAll(',', '.'));
+        }
+      }
+      return null;
+    }
+
+    final rawPrice = json['total_price'] ?? json['totalPrice'] ?? json['price'] ?? json['value'];
+
     return AppointmentModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      profissionalId: json['profissional_id'] ?? json['profissionalId'] ?? json['ProfissionalId'] ?? '',
-      customerId: json['customer_id'] ?? json['customerId'] ?? json['CustomerId'] ?? '',
+      id: parseString(json['id'] ?? json['_id']),
+      profissionalId: parseString(json['profissional_id'] ?? json['profissionalId'] ?? json['ProfissionalId']),
+      customerId: parseString(json['customer_id'] ?? json['customerId'] ?? json['CustomerId']),
       date: parsedDate,
-      hour: json['hour'] ?? json['Hour'] ?? '',
-      serviceName: json['service_names'] ?? json['serviceName'] ?? json['service'] ?? json['Service'],
-      categoryName: json['category_name'] ?? json['categoryName'] ?? json['CategoryName'],
-      customerName: json['customerName'] ?? json['customer'] ?? json['Customer'],
-      professionalName: json['professionalName'] ?? json['professional'] ?? json['Professional'],
-      address: json['address'] ?? json['Address'],
-      description: json['description'] ?? json['Description'],
-      notes: json['notes'] ?? json['Notes'],
+      hour: json['hour']?.toString() ?? json['Hour']?.toString() ?? '',
+      serviceName: json['service_names']?.toString() ?? json['serviceName']?.toString() ?? json['service']?.toString() ?? json['Service']?.toString(),
+      categoryName: json['category_name']?.toString() ?? json['categoryName']?.toString() ?? json['CategoryName']?.toString(),
+      customerName: json['customerName']?.toString() ?? json['customer']?.toString() ?? json['Customer']?.toString(),
+      professionalName: json['professionalName']?.toString() ?? json['professional']?.toString() ?? json['Professional']?.toString(),
+      address: json['address']?.toString() ?? json['Address']?.toString(),
+      description: json['description']?.toString() ?? json['Description']?.toString(),
+      notes: json['notes']?.toString() ?? json['Notes']?.toString(),
       photoUrls: photosList,
-      price: json['total_price'] != null
-          ? (json['total_price'] as num).toDouble()
-          : (json['price'] != null ? (json['price'] as num).toDouble() : (json['value'] != null ? (json['value'] as num).toDouble() : null)),
-      status: json['status'] ?? json['Status'] ?? 'PendingPayment',
+      price: parsePrice(rawPrice),
+      status: json['status']?.toString() ?? json['Status']?.toString() ?? 'PendingPayment',
     );
   }
 

@@ -10,9 +10,9 @@ import '../../data/repositories/profile/profile_professional_repository.dart';
 import '../main/main_navigation_screen.dart';
 import '../onboarding/identity_verification_pending_screen.dart';
 import '../onboarding/professional_onboarding_screen.dart';
-import 'customer_register_screen.dart';
+import '../../pages/customer/customer_register_screen.dart';
 import 'forgot_password_screen.dart';
-import 'professional_register_screen.dart';
+import '../../pages/professional/professional_register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String initialRole;

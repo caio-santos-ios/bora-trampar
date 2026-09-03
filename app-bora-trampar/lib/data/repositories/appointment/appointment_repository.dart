@@ -8,14 +8,18 @@ class AppointmentRepository {
   Future<List<AppointmentModel>> getAppointments() async {
     try {
       final response = await _api.client.get('/api/appointments');
-
       if (response.statusCode == 200 && response.data != null) {
         dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is List) {
-          return res.map((item) => AppointmentModel.fromJson(item as Map<String, dynamic>)).toList();
+          return res.map((item) {
+            if (item is Map) {
+              return AppointmentModel.fromJson(Map<String, dynamic>.from(item));
+            }
+            return null;
+          }).whereType<AppointmentModel>().toList();
         }
       }
       return [];
