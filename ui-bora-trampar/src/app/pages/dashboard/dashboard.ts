@@ -79,14 +79,12 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
 
         this.recentAppointments = data.recentAppointments || [];
 
-        // Update Line Chart (Revenue History)
         if (this.chart && data.revenueHistory && data.revenueHistory.length > 0) {
           this.chart.data.labels = data.revenueHistory.map((h: any) => h.label);
           this.chart.data.datasets[0].data = data.revenueHistory.map((h: any) => h.revenue);
           this.chart.update();
         }
 
-        // Update Donut Chart (Categories Distribution)
         if (this.donutChart) {
           if (data.categoryDistribution && data.categoryDistribution.length > 0) {
             this.donutChart.data.labels = data.categoryDistribution.map((c: any) => c.name);
@@ -100,6 +98,20 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           this.donutChart.update();
         }
       }
+
+      try {
+        const resApprovals = await api.get('/api/approvals');
+        const apprList = resApprovals.data?.result || resApprovals.data?.data || resApprovals.data || [];
+        if (Array.isArray(apprList)) {
+          const pendingCount = apprList.filter((a: any) => {
+            const s = (a.status || '').toString().toLowerCase().trim();
+            return !a.approved && s !== 'approved' && s !== 'rejected';
+          }).length;
+          if (pendingCount > 0 || this.stats.pendingVerifications === 0) {
+            this.stats.pendingVerifications = pendingCount;
+          }
+        }
+      } catch {}
     } catch (e) {
       console.warn('Fallback ao carregar dashboard:', e);
     } finally {

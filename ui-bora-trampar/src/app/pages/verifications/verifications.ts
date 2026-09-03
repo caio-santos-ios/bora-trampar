@@ -13,7 +13,7 @@ export interface VerificationItem {
   email: string;
   phone: string;
   category: string;
-  documentType: 'RG' | 'CNH';
+  documentType: 'RG' | 'Passaporte' | 'CNH' | string;
   documentNumber: string;
   submittedAt: string;
   status: 'pending' | 'analysis' | 'approved' | 'correction' | 'rejected';

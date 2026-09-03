@@ -37,7 +37,7 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
   bool _isLoading = false;
   bool _isSearchingCep = false;
 
-  String _docType = 'CNH';
+  String _docType = 'RG';
   final TextEditingController _docNumberController = TextEditingController();
   XFile? _docFrontPhoto;
   XFile? _docBackPhoto;
@@ -525,27 +525,52 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           children: [
             Expanded(
               child: ChoiceChip(
-                label: const Center(child: Text('CNH Digital / Física')),
-                selected: _docType == 'CNH',
-                selectedColor: AppColors.primaryGold,
-                labelStyle: GoogleFonts.inter(
-                  color: _docType == 'CNH' ? AppColors.textDark : AppColors.textSecondary,
-                  fontWeight: FontWeight.w700,
-                ),
-                onSelected: (_) => setState(() => _docType = 'CNH'),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ChoiceChip(
-                label: const Center(child: Text('RG Oficial')),
+                label: const Center(child: Text('RG')),
                 selected: _docType == 'RG',
                 selectedColor: AppColors.primaryGold,
                 labelStyle: GoogleFonts.inter(
                   color: _docType == 'RG' ? AppColors.textDark : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                onSelected: (_) => setState(() => _docType = 'RG'),
+                onSelected: (_) => setState(() {
+                  _docType = 'RG';
+                  _docNumberController.clear();
+                }),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ChoiceChip(
+                label: const Center(child: Text('Passaporte')),
+                selected: _docType == 'Passaporte',
+                selectedColor: AppColors.primaryGold,
+                labelStyle: GoogleFonts.inter(
+                  color: _docType == 'Passaporte' ? AppColors.textDark : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+                onSelected: (_) => setState(() {
+                  _docType = 'Passaporte';
+                  _docNumberController.clear();
+                }),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ChoiceChip(
+                label: const Center(child: Text('CNH')),
+                selected: _docType == 'CNH',
+                selectedColor: AppColors.primaryGold,
+                labelStyle: GoogleFonts.inter(
+                  color: _docType == 'CNH' ? AppColors.textDark : AppColors.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+                onSelected: (_) => setState(() {
+                  _docType = 'CNH';
+                  _docNumberController.clear();
+                }),
               ),
             ),
           ],
@@ -562,7 +587,11 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               : null,
           style: GoogleFonts.inter(color: AppColors.textPrimary),
           decoration: InputDecoration(
-            labelText: _docType == 'CNH' ? 'CPF do Titular' : 'Número do RG',
+            labelText: _docType == 'CNH'
+                ? 'CPF do Titular (CNH)'
+                : _docType == 'Passaporte'
+                    ? 'Número do Passaporte'
+                    : 'Número do RG',
             labelStyle: GoogleFonts.inter(color: AppColors.textSecondary),
             filled: true,
             fillColor: AppColors.cardBackground,
