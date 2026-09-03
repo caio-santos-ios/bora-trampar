@@ -26,29 +26,29 @@ namespace api_bora_trampar.src.Services
                         {
                             {"input", "$customer_id"},
                             {"to", "objectId"},
-                            {"onError", null},
-                            {"onNull", null}
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
                         })},
                         {"profissionalObjectId", new BsonDocument("$convert", new BsonDocument
                         {
                             {"input", "$profissional_id"},
                             {"to", "objectId"},
-                            {"onError", null},
-                            {"onNull", null}
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
                         })},
                         {"categoryObjectId", new BsonDocument("$convert", new BsonDocument
                         {
                             {"input", "$category_id"},
                             {"to", "objectId"},
-                            {"onError", null},
-                            {"onNull", null}
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
                         })},
                         {"serviceObjectId", new BsonDocument("$convert", new BsonDocument
                         {
                             {"input", "$service_id"},
                             {"to", "objectId"},
-                            {"onError", null},
-                            {"onNull", null}
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
                         })}
                     }),
                     new("$lookup", new BsonDocument
@@ -89,42 +89,42 @@ namespace api_bora_trampar.src.Services
                         {"service_id", 1},
                         {"customerName", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$customer_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
                             ""
                         })},
                         {"customer_name", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$customer_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
                             ""
                         })},
                         {"professionalName", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$professional_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
                             ""
                         })},
                         {"professional_name", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$professional_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
                             ""
                         })},
                         {"categoryName", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$category_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$category_lookup.name", 0 }),
                             new BsonDocument("$ifNull", new BsonArray { "$category_name", "" })
                         })},
                         {"category_name", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$category_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$category_lookup.name", 0 }),
                             new BsonDocument("$ifNull", new BsonArray { "$category_name", "" })
                         })},
                         {"serviceName", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$service_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$service_lookup.name", 0 }),
                             new BsonDocument("$ifNull", new BsonArray { "$service_names", "" })
                         })},
                         {"service_names", new BsonDocument("$ifNull", new BsonArray
                         {
-                            new BsonDocument("$first", "$service_lookup.name"),
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$service_lookup.name", 0 }),
                             new BsonDocument("$ifNull", new BsonArray { "$service_names", "" })
                         })},
                         {"date", 1},
