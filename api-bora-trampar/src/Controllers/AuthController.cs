@@ -53,5 +53,12 @@ namespace api_bora_trampar.src.Controllers
             ResponseApi<dynamic> response = await service.ResetPasswordAsync(request);
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
+
+        [HttpGet("confirm-account/{code}")]
+        public async Task<IActionResult> ConfirmAccount([FromRoute] string code)
+        {
+            ResponseApi<dynamic> response = await service.ConfirmAccountAsync(code);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
     }
 }

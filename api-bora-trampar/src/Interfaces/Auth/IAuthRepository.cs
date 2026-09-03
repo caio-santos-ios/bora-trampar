@@ -10,6 +10,7 @@ namespace api_bora_trampar.src.Interfaces.Auth
         Task<User?> GetByDocumentAsync(string document);
         Task<User?> GetByIdAsync(string id);
         Task<User?> GetByResetTokenAsync(string token);
+        Task<User?> GetByConfirmationCodeAsync(string code);
         Task<User?> UpdateAsync(User entity);
     }
 }

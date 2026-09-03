@@ -10,5 +10,6 @@ namespace api_bora_trampar.src.Interfaces.Auth
         Task<ResponseApi<dynamic>> RefreshTokenAsync(RefreshTokenRequest request);
         Task<ResponseApi<dynamic>> ForgotPasswordAsync(ForgotPasswordRequest request);
         Task<ResponseApi<dynamic>> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<ResponseApi<dynamic>> ConfirmAccountAsync(string code);
     }
 }

@@ -39,11 +39,11 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       const currentPath = window.location.pathname;
 
-      if (!refreshToken || currentPath === '/login' || currentPath.startsWith('/reset-password')) {
+      if (!refreshToken || currentPath === '/login' || currentPath.startsWith('/reset-password') || currentPath.startsWith('/confirmation')) {
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        if (currentPath !== '/login' && !currentPath.startsWith('/reset-password')) {
+        if (currentPath !== '/login' && !currentPath.startsWith('/reset-password') && !currentPath.startsWith('/confirmation')) {
           window.location.href = '/login';
         }
         return Promise.reject(error);

@@ -36,6 +36,11 @@ namespace api_bora_trampar.src.Repositories
             return await appDbContext.Users.Find(x => !x.Deleted && x.PasswordResetToken != null && x.PasswordResetToken.Equals(token)).FirstOrDefaultAsync();
         }
 
+        public async Task<User?> GetByConfirmationCodeAsync(string code)
+        {
+            return await appDbContext.Users.Find(x => !x.Deleted && x.ConfirmAccountCode != null && x.ConfirmAccountCode.Equals(code)).FirstOrDefaultAsync();
+        }
+
         public async Task<User?> UpdateAsync(User entity)
         {
             await appDbContext.Users.ReplaceOneAsync(x => x.Id.Equals(entity.Id), entity);

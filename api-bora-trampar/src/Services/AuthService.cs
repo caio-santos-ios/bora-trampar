@@ -254,6 +254,37 @@ namespace api_bora_trampar.src.Services
             }
         }
 
+        public async Task<ResponseApi<dynamic>> ConfirmAccountAsync(string code)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code)) return new(null, 400, "Código de confirmação inválido.");
+
+                User? user = await authRepository.GetByConfirmationCodeAsync(code.Trim());
+                if (user is null) return new(null, 404, "Código de confirmação inválido ou expirado.");
+
+                user.ConfirmAccount = true;
+                user.ConfirmAccountCode = string.Empty;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await authRepository.UpdateAsync(user);
+
+                var result = new
+                {
+                    id = user.Id,
+                    name = user.Name,
+                    email = user.Email,
+                    role = user.Role.ToString()
+                };
+
+                return new(result, 200, "Conta confirmada com sucesso!");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
         private static string GenerateJwtToken(User user, bool refresh = false)
         {
             string secretKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? "";
