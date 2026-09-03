@@ -1,88 +1,56 @@
-<div class="sidebar-wrapper" [class.open]="isOpen">
-  <div class="sidebar-header">
-    <div class="brand-container">
-      <img src="assets/logo-bora-trampar.jpeg" alt="Bora Trampar" class="brand-logo-img" />
-      <div class="brand-text">
-        <span class="brand-title">BORA <span class="gold-text">TRAMPAR</span></span>
-        <span class="brand-badge">ADMIN</span>
-      </div>
-    </div>
-    <button class="btn-close-sidebar" (click)="closeSidebar.emit()">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
+<aside class="sidebar">
+  <div class="sidebar-header" style="display: flex; justify-content: center; align-items: center;">
+    <img src="assets/logo-bora-trampar.jpeg" alt="Bora Trampar Logo" style="max-height: 48px; max-width: 100%; object-fit: contain; border-radius: 8px;" />
   </div>
-
-  <div class="sidebar-menu">
-    <div class="menu-section-label">OPERACIONAL</div>
-
-    <a routerLink="/dashboard" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-chart-pie"></i>
+  
+  <nav class="sidebar-nav">
+    <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-chart-pie nav-icon"></i>
       <span>Dashboard</span>
     </a>
-
-    <a routerLink="/verifications" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-id-card"></i>
+    <a routerLink="/verifications" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-id-card nav-icon"></i>
       <span>Verificações</span>
-      <span class="menu-pill-badge">Doc</span>
     </a>
-
-    <a routerLink="/appointments" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-calendar-check"></i>
+    <a routerLink="/appointments" routerLinkActive="active" class="nav-item">
+      <i class="fa-regular fa-calendar-check nav-icon"></i>
       <span>Agendamentos</span>
     </a>
-
-    <a routerLink="/disputes" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-shield-halved"></i>
+    <a routerLink="/disputes" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-shield-halved nav-icon"></i>
       <span>Contestações</span>
     </a>
-
-    <div class="menu-section-label">CATÁLOGO & DADOS</div>
-
-    <a routerLink="/categories" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-layer-group"></i>
+    <a routerLink="/categories" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-layer-group nav-icon"></i>
       <span>Categorias</span>
     </a>
-
-    <a routerLink="/services" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-briefcase"></i>
+    <a routerLink="/services" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-briefcase nav-icon"></i>
       <span>Serviços</span>
     </a>
-
-    <a routerLink="/users" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-users"></i>
+    <a routerLink="/users" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-users nav-icon"></i>
       <span>Usuários</span>
     </a>
-
-    <div class="menu-section-label">FINANCEIRO & SISTEMA</div>
-
-    <a routerLink="/payments" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-money-bill-wave"></i>
-      <span>Financeiro & Pix</span>
+    <a routerLink="/payments" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-money-bill-wave nav-icon"></i>
+      <span>Financeiro</span>
     </a>
-
-    <a routerLink="/settings" routerLinkActive="active" (click)="onNavigate()" class="menu-item">
-      <i class="fa-solid fa-gear"></i>
+    <a routerLink="/settings" routerLinkActive="active" class="nav-item">
+      <i class="fa-solid fa-gear nav-icon"></i>
       <span>Configurações</span>
     </a>
-  </div>
-
-  <div class="sidebar-footer">
-    <button class="theme-toggle-btn" (click)="toggleTheme()">
-      <i class="fa-solid" [ngClass]="currentTheme === 'dark' ? 'fa-sun' : 'fa-moon'"></i>
-      <span>{{ currentTheme === 'dark' ? 'Modo Claro' : 'Modo Escuro' }}</span>
+    <a href="https://wa.me/5511965079106?text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20sistema%20Bora%20Trampar" target="_blank" rel="noopener noreferrer" class="nav-item" style="color: #25d366; display: flex; align-items: center; gap: 10px;">
+      <i class="fa-brands fa-whatsapp nav-icon" style="font-size: 16px;"></i>
+      <span>Suporte WhatsApp</span>
+    </a>
+    <button (click)="themeService.toggleTheme()" class="nav-item" style="background: none; border: none; width: 100%; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; color: var(--text-sidebar-muted);">
+      <i class="fa-solid nav-icon" [ngClass]="themeService.isDark() ? 'fa-sun' : 'fa-moon'" style="font-size: 14px; width: 16px; text-align: center;"></i>
+      <span>{{ themeService.isDark() ? 'Modo Claro' : 'Modo Escuro' }}</span>
     </button>
-
-    <div class="user-profile-bar">
-      <div class="avatar-circle">
-        {{ (user?.name || 'Admin')[0].toUpperCase() }}
-      </div>
-      <div class="user-info">
-        <span class="user-name">{{ user?.name || 'Administrador' }}</span>
-        <span class="user-role">Super Admin</span>
-      </div>
-      <button class="btn-logout" (click)="logout()" title="Sair do painel">
-        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-      </button>
-    </div>
-  </div>
-</div>
+    <a (click)="logout()" class="nav-item logout-btn" style="cursor: pointer; margin-top: auto; margin-bottom: 1rem; color: #ff4d4f; display: flex; align-items: center; justify-content: center; gap: 8px;">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      <span>Sair</span>
+    </a>
+  </nav>
+</aside>

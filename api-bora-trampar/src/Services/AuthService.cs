@@ -32,7 +32,7 @@ namespace api_bora_trampar.src.Services
                     string link = $"{uriUi}/confirmation/{code}/app";
                     string html = $"Segue o link pra confirmar sua conta {link}";
 
-                    await mailHandler.SendMailAsync(user.Email, "Novo Link Confirmação de conta", link);
+                    await mailHandler.SendMailAsync(user.Email, "Confirmação de conta - Bora Trampar", html);
 
                     user.ConfirmAccount = false;
                     user.ConfirmAccountCode = code;
@@ -108,7 +108,7 @@ namespace api_bora_trampar.src.Services
                 string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
                 string link = $"{uriUi}/confirmation/{code}/app";
                 string html = $"Segue o link pra confirmar sua conta {link}";
-                await mailHandler.SendMailAsync(user.Email, "Confirmação de conta", link);
+                await mailHandler.SendMailAsync(user.Email, "Confirmação de conta - Bora Trampar", link);
 
                 return new(null, 201, "Conta criada com sucesso");
             }

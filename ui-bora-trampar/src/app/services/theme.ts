@@ -21,6 +21,10 @@ export class ThemeService {
     return this.currentTheme;
   }
 
+  isDark(): boolean {
+    return this.currentTheme === 'dark';
+  }
+
   toggleTheme(): 'light' | 'dark' {
     this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
     if (this.isBrowser) {
