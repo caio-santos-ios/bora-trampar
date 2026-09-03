@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace api_bora_trampar.src.Controllers
 {
     [ApiController]
-    [AllowAnonymous]
+    [Authorize]
     [Route("api/uploads")]
     public class UploadController(ICloudinaryHandler cloudinaryHandler) : ControllerBase
     {

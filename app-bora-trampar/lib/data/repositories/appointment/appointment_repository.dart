@@ -35,8 +35,8 @@ class AppointmentRepository {
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
-        if (res is Map<String, dynamic>) {
-          return AppointmentModel.fromJson(res);
+        if (res is Map) {
+          return AppointmentModel.fromJson(Map<String, dynamic>.from(res));
         }
       }
       return null;
@@ -53,8 +53,8 @@ class AppointmentRepository {
     required DateTime date,
     required String hour,
     String status = 'PendingPayment',
-    String serviceNames = '',
-    String categoryName = '',
+    String categoryId = '',
+    String serviceId = '',
     String address = '',
     String description = '',
     String notes = '',
@@ -69,13 +69,13 @@ class AppointmentRepository {
           'profissional_id': professionalId,
           'customerId': customerId,
           'customer_id': customerId,
+          'categoryId': categoryId,
+          'category_id': categoryId,
+          'serviceId': serviceId,
+          'service_id': serviceId,
           'date': date.toIso8601String(),
           'hour': hour,
           'status': status,
-          'serviceNames': serviceNames,
-          'service_names': serviceNames,
-          'categoryName': categoryName,
-          'category_name': categoryName,
           'address': address,
           'description': description,
           'notes': notes,

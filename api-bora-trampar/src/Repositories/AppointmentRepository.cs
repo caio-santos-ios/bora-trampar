@@ -10,29 +10,8 @@ namespace api_bora_trampar.src.Repositories
     {
         public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
         {
-            var list = await appDbContext.Appointments
-                .Find(x => !x.Deleted)
-                .SortByDescending(x => x.CreatedAt)
-                .ToListAsync();
-
-            return list.Select(a => (dynamic)new
-            {
-                id = a.Id,
-                customer_id = a.CustomerId,
-                profissional_id = a.ProfissionalId,
-                date = a.Date,
-                hour = a.Hour,
-                status = a.Status,
-                service_names = a.ServiceNames,
-                category_name = a.CategoryName,
-                address = a.Address,
-                description = a.Description,
-                notes = a.Notes,
-                photo_urls = a.PhotoUrls,
-                total_price = a.TotalPrice,
-                asaas_payment_id = a.AsaasPaymentId,
-                createdAt = a.CreatedAt
-            }).ToList();
+            List<BsonDocument> list = await appDbContext.Appointments.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return list.Select(doc => BsonTypeMapper.MapToDotNetValue(doc)).ToList();
         }
 
         public async Task<Appointment?> GetByIdAsync(string id)

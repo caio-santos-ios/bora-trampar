@@ -13,7 +13,6 @@ namespace api_bora_trampar.src.Controllers
     [Route("api/appointments")]
     public class AppointmentController(IAppointmentService service) : ControllerBase
     {
-        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -21,7 +20,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {
@@ -29,7 +27,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAppointmentRequest request)
         {
@@ -41,7 +38,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateAppointmentRequest request)
         {
@@ -53,7 +49,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPut("{id}/accept")]
         public async Task<IActionResult> Accept(string id)
         {
@@ -62,7 +57,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPut("{id}/decline")]
         public async Task<IActionResult> Decline(string id)
         {
@@ -71,7 +65,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

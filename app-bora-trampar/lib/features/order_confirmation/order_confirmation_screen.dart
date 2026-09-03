@@ -87,14 +87,19 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final date = widget.orderRequest.scheduledDate ?? DateTime.now();
     final hour = widget.orderRequest.scheduledTimeSlot;
 
+    final catId = widget.orderRequest.selectedCategory?.id ?? '';
+    final srvId = widget.orderRequest.selectedServices.isNotEmpty
+        ? widget.orderRequest.selectedServices.first.id
+        : '';
+
     final appointment = await AppointmentRepository().createAppointment(
       professionalId: profId,
       customerId: customerId,
       date: date,
       hour: hour,
       status: 'PendingPayment',
-      serviceNames: widget.orderRequest.serviceNamesDisplay,
-      categoryName: widget.orderRequest.selectedCategory?.title ?? '',
+      categoryId: catId,
+      serviceId: srvId,
       address: widget.orderRequest.address,
       description: widget.orderRequest.description,
       notes: widget.orderRequest.notes,

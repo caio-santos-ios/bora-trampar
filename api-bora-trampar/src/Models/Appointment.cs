@@ -19,11 +19,21 @@ namespace api_bora_trampar.src.Models
         [BsonElement("status")]
         public string Status { get; set; } = "PendingPayment";
 
+        [BsonElement("category_id")]
+        public string CategoryId { get; set; } = string.Empty;
+
+        [BsonElement("service_id")]
+        public string ServiceId { get; set; } = string.Empty;
+
         [BsonElement("service_names")]
-        public string ServiceNames { get; set; } = string.Empty;
+        [BsonIgnoreIfNull]
+        [BsonIgnoreIfDefault]
+        public string? ServiceNames { get; set; }
 
         [BsonElement("category_name")]
-        public string CategoryName { get; set; } = string.Empty;
+        [BsonIgnoreIfNull]
+        [BsonIgnoreIfDefault]
+        public string? CategoryName { get; set; }
 
         [BsonElement("address")]
         public string Address { get; set; } = string.Empty;

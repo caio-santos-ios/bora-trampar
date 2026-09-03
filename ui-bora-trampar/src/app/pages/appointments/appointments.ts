@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { Loading } from '../../components/loading/loading';
@@ -67,17 +67,17 @@ export class Appointments implements OnInit {
     }
   }
 
-  get filteredList(): AppointmentItem[] {
-    return this.appointments.filter(item => {
-      const matchStatus = this.filterStatus === 'all' || item.status === this.filterStatus;
-      const matchQuery = !this.searchQuery ||
-        item.id.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.customerName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.professionalName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        item.serviceName.toLowerCase().includes(this.searchQuery.toLowerCase());
-      return matchStatus && matchQuery;
-    });
-  }
+  // get filteredList(): AppointmentItem[] {
+  //   return this.appointments.filter(item => {
+  //     const matchStatus = this.filterStatus === 'all' || item.status === this.filterStatus;
+  //     const matchQuery = !this.searchQuery ||
+  //       item.id.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+  //       item.customerName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+  //       item.professionalName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+  //       item.serviceName.toLowerCase().includes(this.searchQuery.toLowerCase());
+  //     return matchStatus && matchQuery;
+  //   });
+  // }
 
   viewDetails(item: AppointmentItem) {
     this.selectedItem = item;

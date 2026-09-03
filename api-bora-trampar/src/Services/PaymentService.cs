@@ -130,8 +130,8 @@ namespace api_bora_trampar.src.Services
                 Payment? payment = await repository.GetByIdAsync(paymentId);
                 if (payment is null) return new(null, 404, "Pagamento não encontrado");
 
-                string asaasPaymentId = !string.IsNullOrEmpty(payment.AsaasId) ? payment.AsaasId : payment.Id;
-                bool isReceived = await asaasService.IsPaymentReceivedAsync(asaasPaymentId);
+                string? asaasPaymentId = !string.IsNullOrEmpty(payment.AsaasId) ? payment.AsaasId : payment.Id;
+                bool isReceived = await asaasService.IsPaymentReceivedAsync(asaasPaymentId ?? "");
 
                 if (!isReceived)
                 {

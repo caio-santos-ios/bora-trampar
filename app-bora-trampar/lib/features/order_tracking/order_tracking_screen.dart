@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/order_request_model.dart';
+import '../../data/models/appointment/appointment_model.dart';
 import '../../data/repositories/appointment/appointment_repository.dart';
 import '../main/main_navigation_screen.dart';
 import '../professionals/professionals_list_screen.dart';
@@ -75,24 +76,45 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _checkAppointmentStatus() async {
-    if (widget.appointmentId.isEmpty) return;
+    AppointmentModel? apt;
+    if (widget.appointmentId.isNotEmpty) {
+      apt = await _appointmentRepository.getAppointmentById(widget.appointmentId);
+    }
+    if (apt == null) {
+      final all = await _appointmentRepository.getAppointments();
+      if (all.isNotEmpty) {
+        final profId = widget.orderRequest.selectedProfessional?.id;
+        final matches = all.where((a) {
+          if (widget.appointmentId.isNotEmpty && a.id == widget.appointmentId) return true;
+          if (profId != null && profId.isNotEmpty && a.profissionalId == profId) return true;
+          return false;
+        }).toList();
 
-    final apt = await _appointmentRepository.getAppointmentById(widget.appointmentId);
+        if (matches.isNotEmpty) {
+          apt = matches.first;
+        }
+      }
+    }
+
     if (!mounted || apt == null) return;
 
     final s = apt.status.toLowerCase();
     if (s == 'accepted' || s == 'aceito' || s == 'confirmed' || s == 'confirmado') {
       _countdownTimer?.cancel();
       _pollTimer?.cancel();
-      setState(() {
-        _status = TrackingStatus.accepted;
-      });
+      if (mounted) {
+        setState(() {
+          _status = TrackingStatus.accepted;
+        });
+      }
     } else if (s == 'declined' || s == 'recusado' || s == 'cancelled' || s == 'cancelado') {
       _countdownTimer?.cancel();
       _pollTimer?.cancel();
-      setState(() {
-        _status = TrackingStatus.declined;
-      });
+      if (mounted) {
+        setState(() {
+          _status = TrackingStatus.declined;
+        });
+      }
     }
   }
 

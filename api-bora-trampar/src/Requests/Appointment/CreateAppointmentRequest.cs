@@ -50,6 +50,32 @@ namespace api_bora_trampar.src.Requests
         [JsonPropertyName("status")]
         public string Status { get; set; } = "PendingPayment";
 
+        [JsonPropertyName("categoryId")]
+        public string CategoryId { get; set; } = string.Empty;
+
+        [JsonPropertyName("category_id")]
+        public string CategoryIdSnake
+        {
+            get => CategoryId;
+            set
+            {
+                if (!string.IsNullOrEmpty(value)) CategoryId = value;
+            }
+        }
+
+        [JsonPropertyName("serviceId")]
+        public string ServiceId { get; set; } = string.Empty;
+
+        [JsonPropertyName("service_id")]
+        public string ServiceIdSnake
+        {
+            get => ServiceId;
+            set
+            {
+                if (!string.IsNullOrEmpty(value)) ServiceId = value;
+            }
+        }
+
         [Display(Order = 6)]
         [JsonPropertyName("serviceNames")]
         public string ServiceNames { get; set; } = string.Empty;

@@ -9,10 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace api_bora_trampar.src.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/approvals")]
     public class ApprovalController(IApprovalService service) : ControllerBase
     {
-        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -20,7 +20,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {
@@ -28,7 +27,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateApprovalRequest request)
         {
@@ -40,7 +38,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] UpdateApprovalRequest request)
         {
@@ -52,7 +49,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {

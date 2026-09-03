@@ -18,7 +18,66 @@ namespace api_bora_trampar.src.Services
                 [
                     new("$match", new BsonDocument
                     {
-                        {"deleted", false},
+                        {"deleted", false}
+                    }),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"customerObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$customer_id"},
+                            {"to", "objectId"},
+                            {"onError", null},
+                            {"onNull", null}
+                        })},
+                        {"profissionalObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$profissional_id"},
+                            {"to", "objectId"},
+                            {"onError", null},
+                            {"onNull", null}
+                        })},
+                        {"categoryObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$category_id"},
+                            {"to", "objectId"},
+                            {"onError", null},
+                            {"onNull", null}
+                        })},
+                        {"serviceObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$service_id"},
+                            {"to", "objectId"},
+                            {"onError", null},
+                            {"onNull", null}
+                        })}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "customerObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "customer_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "profissionalObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "professional_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "categories"},
+                        {"localField", "categoryObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "category_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "services"},
+                        {"localField", "serviceObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "service_lookup"}
                     }),
                     new("$project", new BsonDocument
                     {
@@ -26,11 +85,51 @@ namespace api_bora_trampar.src.Services
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"profissional_id", 1},
                         {"customer_id", 1},
+                        {"category_id", 1},
+                        {"service_id", 1},
+                        {"customerName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$customer_lookup.name"),
+                            ""
+                        })},
+                        {"customer_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$customer_lookup.name"),
+                            ""
+                        })},
+                        {"professionalName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$professional_lookup.name"),
+                            ""
+                        })},
+                        {"professional_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$professional_lookup.name"),
+                            ""
+                        })},
+                        {"categoryName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$category_lookup.name"),
+                            new BsonDocument("$ifNull", new BsonArray { "$category_name", "" })
+                        })},
+                        {"category_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$category_lookup.name"),
+                            new BsonDocument("$ifNull", new BsonArray { "$category_name", "" })
+                        })},
+                        {"serviceName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$service_lookup.name"),
+                            new BsonDocument("$ifNull", new BsonArray { "$service_names", "" })
+                        })},
+                        {"service_names", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$first", "$service_lookup.name"),
+                            new BsonDocument("$ifNull", new BsonArray { "$service_names", "" })
+                        })},
                         {"date", 1},
                         {"hour", 1},
                         {"status", 1},
-                        {"service_names", 1},
-                        {"category_name", 1},
                         {"address", 1},
                         {"description", 1},
                         {"notes", 1},
@@ -73,6 +172,8 @@ namespace api_bora_trampar.src.Services
             {
                 Appointment entity = ObjectMapper.Map<CreateAppointmentRequest, Appointment>(request);
 
+                entity.ServiceNames = null;
+                entity.CategoryName = null;
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
                 Appointment? appointment = await repository.CreateAsync(entity);
@@ -91,6 +192,9 @@ namespace api_bora_trampar.src.Services
             try
             {
                 Appointment entity = ObjectMapper.Map<UpdateAppointmentRequest, Appointment>(request);
+
+                entity.ServiceNames = null;
+                entity.CategoryName = null;
 
                 entity.UpdatedAt = DateTime.UtcNow;
                 Appointment? appointment = await repository.UpdateAsync(entity);
@@ -115,7 +219,7 @@ namespace api_bora_trampar.src.Services
                 appointment.UpdatedBy = userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
-                Appointment updated = await repository.UpdateAsync(appointment);
+                Appointment? updated = await repository.UpdateAsync(appointment);
                 return new(updated, 200, "Agendamento aceito com sucesso");
             }
             catch (Exception ex)
@@ -135,7 +239,7 @@ namespace api_bora_trampar.src.Services
                 appointment.UpdatedBy = userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
-                Appointment updated = await repository.UpdateAsync(appointment);
+                Appointment? updated = await repository.UpdateAsync(appointment);
                 return new(updated, 200, "Agendamento recusado");
             }
             catch (Exception ex)

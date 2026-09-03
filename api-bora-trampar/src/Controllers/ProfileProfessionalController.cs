@@ -23,7 +23,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUserId(string userId)
         {
@@ -31,7 +30,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
@@ -39,7 +37,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -47,7 +44,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] CreateProfileProfessionalRequest request)
         {
@@ -58,7 +54,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] CreateProfileProfessionalRequest request)
         {
@@ -77,7 +72,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
-        [AllowAnonymous]
         [HttpPost("identity")]
         public async Task<IActionResult> SaveIdentity([FromBody] IdentityVerificationRequest request)
         {

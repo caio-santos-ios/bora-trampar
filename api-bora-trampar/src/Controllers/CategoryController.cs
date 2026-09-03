@@ -13,7 +13,6 @@ namespace api_bora_trampar.src.Controllers
     [Route("api/categories")]
     public class CategoryController(ICategoryService service) : ControllerBase
     {
-        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -21,7 +20,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {
