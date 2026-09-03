@@ -44,32 +44,6 @@ namespace api_bora_trampar.src.Controllers
         {
             if (request == null) return BadRequest("Dados inválidos.");
 
-            // string customerName = User.FindFirst("name")?.Value
-            //     ?? User.FindFirst(ClaimTypes.Name)?.Value
-            //     ?? "Cliente Bora Trampar";
-            // string customerEmail = User.FindFirst(JwtRegisteredClaimNames.Email)?.Value
-            //     ?? User.FindFirst("email")?.Value
-            //     ?? User.FindFirst(ClaimTypes.Email)?.Value
-            //     ?? "cliente@boratrampar.com.br";
-
-            // string asaasCustomerId = await asaasService.GetOrCreateCustomerAsync(customerName, "00000000000", customerEmail, "11999999999");
-            // var asaasPix = await asaasService.CreatePixPaymentAsync(asaasCustomerId, request.Value, $"Diária de Serviço - Bora Trampar");
-
-            // request.MethodPayment = "PIX Instantâneo";
-            // request.Status = "PENDING";
-            // if (asaasPix != null)
-            // {
-            //     request.AsaasId = asaasPix.Value.paymentId;
-            //     request.QrCodeImage = asaasPix.Value.qrCodeImage;
-            //     request.QrCodePayload = asaasPix.Value.qrCodePayload;
-            // }
-            // else
-            // {
-            //     request.AsaasId = $"pay_asaas_{Guid.NewGuid().ToString("N")[..12]}";
-            //     request.QrCodeImage = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020126580014br.gov.bcb.pix0136boratrampar@pix.com.br5204000053039865405" + request.Value.ToString("F2") + "5802BR5912BORA TRAMPAR6009SAO PAULO62070503***6304";
-            //     request.QrCodePayload = "00020126580014br.gov.bcb.pix0136boratrampar@pix.com.br5204000053039865405" + request.Value.ToString("F2").Replace(",", ".") + "5802BR5912BORA TRAMPAR6009SAO PAULO62070503***6304ABCD";
-            // }
-
             request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
             ResponseApi<Payment?> response = await service.CreateAsync(request);
