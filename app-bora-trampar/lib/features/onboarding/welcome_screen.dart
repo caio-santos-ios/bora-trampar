@@ -11,243 +11,194 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
-    final screenHeight = mediaQuery.size.height;
-    final heroHeight = (screenHeight * 0.58).clamp(460.0, 560.0);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                height: heroHeight,
-                width: screenWidth,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _GoldenWavePainter(),
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      bottom: 0,
-                      right: -25,
-                      child: Image.asset(
-                        'assets/images/fundadora.jpeg',
-                        fit: BoxFit.fitHeight,
-                        alignment: Alignment.bottomCenter,
-                      ),
-                    ),
-                    Positioned(
-                      right: 14,
-                      top: heroHeight * 0.40,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Gabrieli',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
-                            ),
-                          ),
-                          Text(
-                            'Godoi Simões',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              height: 1.15,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Fundadora do',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              height: 1.15,
-                            ),
-                          ),
-                          Text(
-                            'Bora Trampa',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              height: 1.15,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20, top: 12),
-                      child: SizedBox(
-                        width: screenWidth * 0.54,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final heroHeight = (constraints.maxHeight * 0.62).clamp(460.0, 580.0);
+
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        height: heroHeight,
+                        width: screenWidth,
+                        child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            const BoraTrampaLogo(size: 38),
-                            const SizedBox(height: 18),
-                            RichText(
-                              text: TextSpan(
-                                style: GoogleFonts.inter(
-                                  fontSize: 27,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.12,
-                                  color: AppColors.textPrimary,
-                                ),
-                                children: const [
-                                  TextSpan(text: 'Trampo por\ndiária, '),
-                                  TextSpan(
-                                    text: 'do\nseu jeito.',
-                                    style: TextStyle(color: AppColors.primaryGold),
+                            Positioned.fill(
+                              child: CustomPaint(
+                                painter: _GoldenWavePainter(),
+                              ),
+                            ),
+                            Positioned(
+                              top: 35,
+                              bottom: 0,
+                              right: -25,
+                              child: Image.asset(
+                                'assets/images/fundadora.png',
+                                fit: BoxFit.fitHeight,
+                                alignment: Alignment.bottomCenter,
+                              ),
+                            ),
+                            Positioned(
+                              right: 14,
+                              top: heroHeight * 0.44,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Gabrieli',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Godoi Simões',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    'Fundadora do',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.15,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Bora Trampa',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.15,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              'Contrate ou trabalhe com profissionais qualificados de forma rápida, segura e prática.',
-                              style: GoogleFonts.inter(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.textSecondary,
-                                height: 1.35,
+                            Padding(
+                              padding: const EdgeInsets.only(left: 20, top: 12),
+                              child: SizedBox(
+                                width: screenWidth * 0.54,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const BoraTrampaLogo(size: 38),
+                                    const SizedBox(height: 18),
+                                    RichText(
+                                      text: TextSpan(
+                                        style: GoogleFonts.inter(
+                                          fontSize: 27,
+                                          fontWeight: FontWeight.w900,
+                                          height: 1.12,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        children: const [
+                                          TextSpan(text: 'Trampo por\ndiária, '),
+                                          TextSpan(
+                                            text: 'do\nseu jeito.',
+                                            style: TextStyle(color: AppColors.primaryGold),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    SizedBox(
+                                      width: 120,
+                                      child: Text(
+                                        'Contrate ou trabalhe com profissionais qualificados de forma rápida, segura e prática.',
+                                        style: GoogleFonts.inter(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w400,
+                                          color: AppColors.textSecondary,
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    _buildFeatureItem(
+                                      icon: Icons.bolt_rounded,
+                                      title: 'Rápido',
+                                      description: 'Encontre ou seja\nencontrado mais rápido.',
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildFeatureItem(
+                                      icon: Icons.verified_user_outlined,
+                                      title: 'Seguro',
+                                      description: 'Perfis verificados e\npagamentos protegidos.',
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildFeatureItem(
+                                      icon: Icons.groups_outlined,
+                                      title: 'Conectado',
+                                      description: 'Profissionais e clientes\nperto de você.',
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 20),
-                            _buildFeatureItem(
-                              icon: Icons.bolt_rounded,
-                              title: 'Rápido',
-                              description: 'Encontre ou seja\nencontrado mais rápido.',
-                            ),
-                            const SizedBox(height: 16),
-                            _buildFeatureItem(
-                              icon: Icons.verified_user_outlined,
-                              title: 'Seguro',
-                              description: 'Perfis verificados e\npagamentos protegidos.',
-                            ),
-                            const SizedBox(height: 16),
-                            _buildFeatureItem(
-                              icon: Icons.groups_outlined,
-                              title: 'Conectado',
-                              description: 'Profissionais e clientes\nperto de você.',
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 22,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold,
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF424242),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF424242),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _buildActionButton(
-                      title: 'Sou cliente',
-                      subtitle: 'Quero contratar um profissional',
-                      isPrimary: true,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(initialRole: 'Customer'),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _buildActionButton(
-                      title: 'Sou profissional',
-                      subtitle: 'Quero trabalhar',
-                      isPrimary: false,
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(initialRole: 'Profissional'),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Já tem uma conta? ',
-                          style: GoogleFonts.inter(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'Entrar',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                      const Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _buildActionButton(
+                              title: 'Sou cliente',
+                              subtitle: 'Quero contratar um profissional',
+                              isPrimary: true,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(initialRole: 'Customer'),
+                                  ),
+                                );
+                              },
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            _buildActionButton(
+                              title: 'Sou profissional',
+                              subtitle: 'Quero trabalhar',
+                              isPrimary: false,
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(initialRole: 'Profissional'),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -381,11 +332,11 @@ class _GoldenWavePainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     final path1 = Path();
-    path1.moveTo(0, size.height * 0.42);
+    path1.moveTo(0, size.height * 0.44);
     path1.cubicTo(
-      size.width * 0.25, size.height * 0.44,
-      size.width * 0.45, size.height * 0.52,
-      size.width, size.height * 0.55,
+      size.width * 0.25, size.height * 0.46,
+      size.width * 0.45, size.height * 0.54,
+      size.width, size.height * 0.57,
     );
     canvas.drawPath(path1, paint1);
 
@@ -395,11 +346,11 @@ class _GoldenWavePainter extends CustomPainter {
       ..strokeWidth = 1.2;
 
     final path2 = Path();
-    path2.moveTo(0, size.height * 0.44);
+    path2.moveTo(0, size.height * 0.46);
     path2.cubicTo(
-      size.width * 0.28, size.height * 0.48,
-      size.width * 0.52, size.height * 0.57,
-      size.width, size.height * 0.61,
+      size.width * 0.28, size.height * 0.50,
+      size.width * 0.52, size.height * 0.59,
+      size.width, size.height * 0.63,
     );
     canvas.drawPath(path2, paint2);
   }
