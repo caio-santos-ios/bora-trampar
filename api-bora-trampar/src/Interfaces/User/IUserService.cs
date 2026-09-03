@@ -11,5 +11,6 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<User?>> GetByIdAsync(string id);
         Task<ResponseApi<User?>> UpdateAsync(UpdateUserRequest request);
         Task<ResponseApi<User?>> DeleteAsync(DeleteRequest request);
+        Task<ResponseApi<decimal>> UpdateWalletBalanceAsync(string userId, decimal amountDelta);
     }
 }

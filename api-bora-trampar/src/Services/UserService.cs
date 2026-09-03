@@ -31,6 +31,8 @@ namespace api_bora_trampar.src.Services
                         {"role", 1},
                         {"photo", new BsonDocument("$ifNull", new BsonArray { "$photo", "" })},
                         {"active", new BsonDocument("$ifNull", new BsonArray { "$active", true })},
+                        {"walletBalance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
+                        {"wallet_balance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
@@ -104,5 +106,24 @@ namespace api_bora_trampar.src.Services
             }
         }
         #endregion
+
+        public async Task<ResponseApi<decimal>> UpdateWalletBalanceAsync(string userId, decimal amountDelta)
+        {
+            try
+            {
+                User? user = await repository.GetByIdAsync(userId);
+                if (user is null) return new(0, 404, "Usuário não encontrado");
+
+                user.WalletBalance = Math.Max(0, user.WalletBalance + amountDelta);
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await repository.UpdateAsync(user);
+                return new(user.WalletBalance, 200, "Saldo atualizado com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(0, 500, $"Erro ao atualizar saldo: {ex.Message}");
+            }
+        }
     }
 }

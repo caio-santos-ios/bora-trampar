@@ -162,4 +162,15 @@ class AppointmentRepository {
       return false;
     }
   }
+
+  Future<bool> cancelByCustomer(String id) async {
+    try {
+      final response = await _api.client.put('/api/appointments/$id/cancel-by-customer');
+      return response.statusCode == 200;
+    } on DioException {
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
 }

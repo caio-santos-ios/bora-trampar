@@ -45,5 +45,8 @@ namespace api_bora_trampar.src.Models
         
         [BsonElement("confirm_account_date")]
         public DateTime? ConfirmAccountDate { get; set; }
+
+        [BsonElement("wallet_balance")]
+        public decimal WalletBalance { get; set; } = 0;
     }
 }

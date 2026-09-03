@@ -76,6 +76,34 @@ namespace api_bora_trampar.src.Services
                     {
                         userId = appointment.Data.CustomerId;
                     }
+
+                    List<BsonDocument> checkPipeline =
+                    [
+                        new("$match", new BsonDocument
+                        {
+                            {"deleted", false},
+                            {"appointment_id", request.AppointmentId},
+                            {"status", "PENDING"}
+                        }),
+                        new("$project", new BsonDocument
+                        {
+                            {"_id", 0},
+                            {"id", new BsonDocument("$toString", "$_id")}
+                        })
+                    ];
+                    var existingList = await repository.GetAllAsync(checkPipeline);
+                    if (existingList != null && existingList.Count > 0)
+                    {
+                        string existingId = existingList[0].id?.ToString() ?? "";
+                        if (!string.IsNullOrEmpty(existingId))
+                        {
+                            Payment? existing = await repository.GetByIdAsync(existingId);
+                            if (existing != null && !string.IsNullOrEmpty(existing.QrCodePayload))
+                            {
+                                return new(existing, 200, "Cobrança Pix pendente recuperada");
+                            }
+                        }
+                    }
                 }
 
                 ResponseApi<User?> user = await userService.GetByIdAsync(userId);

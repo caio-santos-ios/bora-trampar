@@ -5,6 +5,7 @@ class UserModel {
   final String? role;
   final String? photo;
   final String? whatsapp;
+  final double walletBalance;
 
   UserModel({
     required this.id,
@@ -13,6 +14,7 @@ class UserModel {
     this.role,
     this.photo,
     this.whatsapp,
+    this.walletBalance = 0.0,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -23,6 +25,9 @@ class UserModel {
       role: json['role']?.toString(),
       photo: json['photo']?.toString(),
       whatsapp: json['whatsapp'] ?? json['whatsApp'],
+      walletBalance: (json['walletBalance'] as num?)?.toDouble() ??
+          (json['wallet_balance'] as num?)?.toDouble() ??
+          0.0,
     );
   }
 
@@ -34,6 +39,7 @@ class UserModel {
       'role': role,
       'photo': photo,
       'whatsapp': whatsapp,
+      'walletBalance': walletBalance,
     };
   }
 }

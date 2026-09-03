@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -25,11 +26,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   bool _isProfessional = false;
   DateTime _selectedDay = DateTime.now();
   int _selectedFilterIndex = 0;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        _reloadAppointmentsSilently();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _reloadAppointmentsSilently() async {
+    if (!_isProfessional) return;
+    final fresh = await _appointmentRepo.getAppointments();
+    if (mounted && fresh.isNotEmpty) {
+      setState(() {
+        _appointments = fresh;
+      });
+    }
   }
 
   Future<void> _loadData() async {

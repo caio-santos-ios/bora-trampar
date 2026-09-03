@@ -93,7 +93,34 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
       );
 
       if (withinRadius && available) {
-        matchingPros.add(pro);
+        double dailyRate = pro.basePrice;
+        if (profile != null && profile.services.isNotEmpty) {
+          final matchingService = profile.services.firstWhere(
+            (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
+            orElse: () => profile.services.first,
+          );
+          dailyRate = matchingService.price > 0 ? matchingService.price : profile.services.first.price;
+        }
+        if (dailyRate <= 0) dailyRate = 150.0;
+
+        final updatedPro = ProfessionalModel(
+          id: pro.id,
+          name: pro.name,
+          role: (profile?.profession.isNotEmpty == true) ? profile!.profession : pro.role,
+          rating: (profile?.rating ?? 0) > 0 ? profile!.rating : pro.rating,
+          reviewCount: (profile?.reviewCount ?? 0) > 0 ? profile!.reviewCount : pro.reviewCount,
+          completedServicesCount: pro.completedServicesCount,
+          arrivalTimeMinutes: pro.arrivalTimeMinutes,
+          basePrice: dailyRate,
+          highlightBadge: pro.highlightBadge,
+          avatarUrl: (profile?.identitySelfieUrl.isNotEmpty == true) ? profile!.identitySelfieUrl : pro.avatarUrl,
+          bio: (profile?.bio.isNotEmpty == true) ? profile!.bio : pro.bio,
+          offeredServices: profile?.services.map((s) => s.serviceName).toList() ?? pro.offeredServices,
+          reviews: pro.reviews,
+          region: pro.region,
+        );
+
+        matchingPros.add(updatedPro);
       }
     }
 

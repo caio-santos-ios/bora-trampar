@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -49,11 +50,36 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isAvailable = true;
   bool _showBalance = true;
   String _customerSearchQuery = '';
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _pollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted) {
+        _reloadAppointmentsSilently();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _reloadAppointmentsSilently() async {
+    final role = (_user?.role ?? '').toLowerCase();
+    final isPro = role.contains('prof') || role.contains('prestador');
+    if (!isPro) return;
+
+    final fresh = await _appointmentRepo.getAppointments();
+    if (mounted && fresh.isNotEmpty) {
+      setState(() {
+        _appointments = fresh;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -531,12 +557,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final completedCount = completedAppointments.length;
 
     final pendingRequests = _appointments.where((a) {
+      final isForMe = _user == null ||
+          a.profissionalId.isEmpty ||
+          a.profissionalId == 'prof_default' ||
+          a.profissionalId.trim() == _user!.id.trim();
+      if (!isForMe) return false;
+
       final s = a.status.toLowerCase();
-      return (s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando')) &&
+      return (s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando') || s == 'paid') &&
           s != 'accepted' &&
           s != 'confirmed' &&
           s != 'declined' &&
-          s != 'cancelled';
+          s != 'cancelled' &&
+          !s.contains('cancelledbycustomer');
     }).toList();
 
     final activeAppointments = _appointments.where((a) {

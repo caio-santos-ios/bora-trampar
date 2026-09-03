@@ -18,6 +18,8 @@ class OrderRequestModel {
   String notes;
   ProfessionalModel? selectedProfessional;
   double appFee;
+  double creditApplied;
+  String? previousAppointmentId;
 
   OrderRequestModel({
     this.selectedCategory,
@@ -34,12 +36,16 @@ class OrderRequestModel {
     this.scheduledTimeSlot = 'A partir das 14:00',
     this.notes = '',
     this.selectedProfessional,
-    this.appFee = 9.90,
+    this.appFee = 0.0,
+    this.creditApplied = 0.0,
+    this.previousAppointmentId,
   })  : selectedServices = selectedServices ?? [],
         photoPaths = photoPaths ?? [];
 
   double get servicePrice => selectedProfessional?.basePrice ?? 150.0;
-  double get totalPrice => servicePrice + appFee;
+  double get totalPrice => servicePrice;
+  double get amountToPay => (servicePrice - creditApplied).clamp(0.0, double.infinity);
+  double get remainingCredit => (creditApplied - servicePrice).clamp(0.0, double.infinity);
 
   String get serviceNamesDisplay {
     if (selectedServices.isEmpty) return 'Pedreiro';

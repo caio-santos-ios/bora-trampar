@@ -128,6 +128,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   void _chooseAnotherProfessional() {
     _countdownTimer?.cancel();
     _pollTimer?.cancel();
+
+    final previouslyPaid = widget.orderRequest.creditApplied > 0
+        ? (widget.orderRequest.creditApplied + widget.orderRequest.amountToPay)
+        : widget.orderRequest.servicePrice;
+
+    if (widget.appointmentId.isNotEmpty) {
+      _appointmentRepository.deleteAppointment(widget.appointmentId);
+    }
+
+    widget.orderRequest.creditApplied = previouslyPaid;
+    widget.orderRequest.previousAppointmentId = widget.appointmentId;
+    widget.orderRequest.selectedProfessional = null;
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) => ProfessionalsListScreen(orderRequest: widget.orderRequest),
@@ -155,6 +168,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<void> _cancelAppointment() async {
+    final paidValue = widget.orderRequest.creditApplied > 0
+        ? (widget.orderRequest.creditApplied + widget.orderRequest.amountToPay)
+        : widget.orderRequest.servicePrice;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -172,7 +189,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
           ),
           content: Text(
-            'Seu agendamento será cancelado e o valor será estornado.',
+            'Seu agendamento será cancelado e o valor de R\$ ${paidValue.toStringAsFixed(2).replaceAll('.', ',')} ficará como saldo positivo na sua conta para novos chamados.',
             style: GoogleFonts.inter(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -204,10 +221,21 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       _pollTimer?.cancel();
 
       if (widget.appointmentId.isNotEmpty) {
-        await _appointmentRepository.deleteAppointment(widget.appointmentId);
+        await _appointmentRepository.cancelByCustomer(widget.appointmentId);
       }
 
       if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Agendamento cancelado pelo cliente. O valor de R\$ ${paidValue.toStringAsFixed(2).replaceAll('.', ',')} ficou como saldo positivo na sua carteira!',
+            style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: AppColors.primaryGold,
+          duration: const Duration(seconds: 4),
+        ),
+      );
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(

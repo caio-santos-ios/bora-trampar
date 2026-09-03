@@ -9,6 +9,8 @@ import '../../core/widgets/primary_button.dart';
 import '../../data/models/order_request_model.dart';
 import '../../data/repositories/appointment/appointment_repository.dart';
 import '../../data/repositories/payment/payment_repository.dart';
+import '../../data/repositories/user/user_repository.dart';
+import '../order_tracking/order_tracking_screen.dart';
 import '../payment/payment_asaas_screen.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
@@ -23,6 +25,7 @@ class OrderConfirmationScreen extends StatefulWidget {
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   String _selectedPaymentMethod = 'PIX Instantâneo';
+  bool _isSubmitting = false;
 
   void _showPaymentMethodModal() {
     showModalBottomSheet(
@@ -81,6 +84,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   }
 
   Future<void> _onConfirmOrder() async {
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
+
     final user = await AuthService().getCurrentUser();
     final customerId = user?.id ?? 'customer_default';
     final profId = widget.orderRequest.selectedProfessional?.id ?? 'prof_default';
@@ -92,26 +98,61 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         ? widget.orderRequest.selectedServices.first.id
         : '';
 
+    final amountToPay = widget.orderRequest.amountToPay;
+    final remainingCredit = widget.orderRequest.remainingCredit;
+    final isFullyCovered = amountToPay <= 0;
+
     final appointment = await AppointmentRepository().createAppointment(
       professionalId: profId,
       customerId: customerId,
       date: date,
       hour: hour,
-      status: 'PendingPayment',
+      status: isFullyCovered ? 'PendingAcceptance' : 'PendingPayment',
       categoryId: catId,
       serviceId: srvId,
       address: widget.orderRequest.address,
       description: widget.orderRequest.description,
       notes: widget.orderRequest.notes,
       photoUrls: widget.orderRequest.photoPaths,
-      totalPrice: widget.orderRequest.totalPrice,
+      totalPrice: widget.orderRequest.servicePrice,
     );
 
     final appointmentId = appointment?.id ?? 'app_${DateTime.now().millisecondsSinceEpoch}';
 
+    if (isFullyCovered) {
+      if (remainingCredit > 0) {
+        await UserRepository().creditWallet(remainingCredit, reason: 'Sobra de troca de profissional');
+      }
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            remainingCredit > 0
+                ? 'Solicitação enviada! A sobra de R\$ ${remainingCredit.toStringAsFixed(2).replaceAll('.', ',')} foi adicionada ao seu saldo.'
+                : 'Solicitação enviada com sucesso sem custo adicional!',
+            style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+          ),
+          backgroundColor: AppColors.primaryGold,
+        ),
+      );
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => OrderTrackingScreen(
+            orderRequest: widget.orderRequest,
+            appointmentId: appointmentId,
+          ),
+        ),
+      );
+      return;
+    }
+
     final paymentData = await PaymentRepository().createAsaasPixPayment(
       appointmentId: appointmentId,
-      value: widget.orderRequest.totalPrice,
+      value: amountToPay,
       customerName: user?.name ?? 'Cliente',
     );
 
@@ -127,6 +168,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         '';
 
     if (!mounted) return;
+    setState(() => _isSubmitting = false);
 
     if (paymentData == null || qrCodePayload.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -163,8 +205,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         : 'Hoje, ${DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now())}';
 
     final servicePrice = widget.orderRequest.servicePrice;
-    final appFee = widget.orderRequest.appFee;
-    final totalPrice = widget.orderRequest.totalPrice;
+    final creditApplied = widget.orderRequest.creditApplied;
+    final amountToPay = widget.orderRequest.amountToPay;
+    final remainingCredit = widget.orderRequest.remainingCredit;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -550,7 +593,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Valor do serviço (a partir de)',
+                            'Diária do profissional',
                             style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
                           ),
                           Text(
@@ -559,26 +602,38 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Taxa do app',
-                                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.help_outline_rounded, size: 14, color: AppColors.textMuted),
-                            ],
-                          ),
-                          Text(
-                            'R\$ ${appFee.toStringAsFixed(2).replaceAll('.', ',')}',
-                            style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
+                      if (creditApplied > 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Crédito já pago (anterior)',
+                              style: GoogleFonts.inter(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              '- R\$ ${creditApplied.toStringAsFixed(2).replaceAll('.', ',')}',
+                              style: GoogleFonts.inter(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (remainingCredit > 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Sobra adicionada ao seu saldo',
+                              style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                            Text(
+                              '+ R\$ ${remainingCredit.toStringAsFixed(2).replaceAll('.', ',')}',
+                              style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 13, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ],
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 10),
                         child: Divider(color: AppColors.divider),
@@ -587,13 +642,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Total',
+                            amountToPay > 0 ? 'Diferença a pagar' : 'Total a pagar agora',
                             style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700),
                           ),
                           Text(
-                            'R\$ ${totalPrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                            'R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')}',
                             style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
+                              color: amountToPay > 0 ? AppColors.primaryGold : AppColors.success,
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                             ),
@@ -726,8 +781,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 PrimaryButton(
-                  text: '🔒 Confirmar e solicitar profissional',
-                  onPressed: _onConfirmOrder,
+                  text: _isSubmitting
+                      ? 'Processando...'
+                      : (amountToPay <= 0
+                          ? 'Confirmar solicitação (Sem custo)'
+                          : (creditApplied > 0
+                              ? '🔒 Pagar diferença (R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')})'
+                              : '🔒 Confirmar e solicitar profissional')),
+                  isLoading: _isSubmitting,
+                  onPressed: _isSubmitting ? null : _onConfirmOrder,
                 ),
                 const SizedBox(height: 10),
                 Row(

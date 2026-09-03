@@ -42,7 +42,8 @@ namespace api_bora_trampar.src.Services
                         email = user.Email,
                         role = user.Role.ToString(),
                         photo = user.Photo,
-                        whatsapp = user.WhatsApp
+                        whatsapp = user.WhatsApp,
+                        walletBalance = user.WalletBalance
                     }
                 };
 

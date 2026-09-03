@@ -20,6 +20,24 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [HttpGet("me")]
+        public async Task<IActionResult> GetMe()
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            ResponseApi<User?> response = await service.GetByIdAsync(userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [HttpPost("wallet/credit")]
+        public async Task<IActionResult> CreditWallet([FromBody] CreditWalletRequest request)
+        {
+            if (request == null || request.Amount <= 0) return BadRequest("Valor inválido.");
+
+            string userId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : (User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "");
+            ResponseApi<decimal> response = await service.UpdateWalletBalanceAsync(userId, request.Amount);
+            return StatusCode(response.StatusCode, new { newBalance = response.Result });
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
         {

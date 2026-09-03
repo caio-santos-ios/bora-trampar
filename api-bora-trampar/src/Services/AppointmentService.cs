@@ -8,7 +8,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class AppointmentService(IAppointmentRepository repository) : IAppointmentService
+    public class AppointmentService(IAppointmentRepository repository, IUserRepository userRepository) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -241,6 +241,38 @@ namespace api_bora_trampar.src.Services
 
                 Appointment? updated = await repository.UpdateAsync(appointment);
                 return new(updated, 200, "Agendamento recusado");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
+        public async Task<ResponseApi<Appointment?>> CancelByCustomerAsync(string id, string userId)
+        {
+            try
+            {
+                Appointment? appointment = await repository.GetByIdAsync(id);
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                appointment.Status = "CancelledByCustomer";
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedAt = DateTime.UtcNow;
+
+                Appointment? updated = await repository.UpdateAsync(appointment);
+
+                if (appointment.TotalPrice > 0 && !string.IsNullOrEmpty(appointment.CustomerId))
+                {
+                    User? customer = await userRepository.GetByIdAsync(appointment.CustomerId);
+                    if (customer != null)
+                    {
+                        customer.WalletBalance += appointment.TotalPrice;
+                        customer.UpdatedAt = DateTime.UtcNow;
+                        await userRepository.UpdateAsync(customer);
+                    }
+                }
+
+                return new(updated, 200, "Agendamento cancelado pelo cliente e saldo creditado");
             }
             catch (Exception ex)
             {

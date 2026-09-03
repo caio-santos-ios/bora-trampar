@@ -65,6 +65,14 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [HttpPut("{id}/cancel-by-customer")]
+        public async Task<IActionResult> CancelByCustomer(string id)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            ResponseApi<Appointment?> response = await service.CancelByCustomerAsync(id, userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
