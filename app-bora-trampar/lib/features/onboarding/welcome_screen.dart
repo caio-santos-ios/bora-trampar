@@ -9,122 +9,147 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final screenHeight = mediaQuery.size.height;
+    final heroHeight = (screenHeight * 0.58).clamp(460.0, 560.0);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
-              const BoraTrampaLogo(size: 44),
-              const SizedBox(height: 28),
-              RichText(
-                text: TextSpan(
-                  style: GoogleFonts.inter(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    height: 1.15,
-                    color: AppColors.textPrimary,
-                  ),
-                  children: const [
-                    TextSpan(text: 'Trampo por\ndiária, '),
-                    TextSpan(
-                      text: 'do\nseu jeito.',
-                      style: TextStyle(color: AppColors.primaryGold),
+              SizedBox(
+                height: heroHeight,
+                width: screenWidth,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _GoldenWavePainter(),
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      right: -25,
+                      child: Image.asset(
+                        'assets/images/fundadora.jpeg',
+                        fit: BoxFit.fitHeight,
+                        alignment: Alignment.bottomCenter,
+                      ),
+                    ),
+                    Positioned(
+                      right: 14,
+                      top: heroHeight * 0.40,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Gabrieli',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
+                          ),
+                          Text(
+                            'Godoi Simões',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              height: 1.15,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Fundadora do',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              height: 1.15,
+                            ),
+                          ),
+                          Text(
+                            'Bora Trampa',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              height: 1.15,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 20, top: 12),
+                      child: SizedBox(
+                        width: screenWidth * 0.54,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const BoraTrampaLogo(size: 38),
+                            const SizedBox(height: 18),
+                            RichText(
+                              text: TextSpan(
+                                style: GoogleFonts.inter(
+                                  fontSize: 27,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.12,
+                                  color: AppColors.textPrimary,
+                                ),
+                                children: const [
+                                  TextSpan(text: 'Trampo por\ndiária, '),
+                                  TextSpan(
+                                    text: 'do\nseu jeito.',
+                                    style: TextStyle(color: AppColors.primaryGold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Contrate ou trabalhe com profissionais qualificados de forma rápida, segura e prática.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.textSecondary,
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            _buildFeatureItem(
+                              icon: Icons.bolt_rounded,
+                              title: 'Rápido',
+                              description: 'Encontre ou seja\nencontrado mais rápido.',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureItem(
+                              icon: Icons.verified_user_outlined,
+                              title: 'Seguro',
+                              description: 'Perfis verificados e\npagamentos protegidos.',
+                            ),
+                            const SizedBox(height: 16),
+                            _buildFeatureItem(
+                              icon: Icons.groups_outlined,
+                              title: 'Conectado',
+                              description: 'Profissionais e clientes\nperto de você.',
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 14),
-              Text(
-                'Contrate ou trabalhe com profissionais qualificados de forma rápida, segura e prática.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
-                  height: 1.45,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.cardBorder),
-                      gradient: const RadialGradient(
-                        center: Alignment(0.8, -0.5),
-                        radius: 1.2,
-                        colors: [
-                          Color(0xFF252115),
-                          Color(0xFF141414),
-                        ],
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildFeatureItem(
-                          icon: Icons.bolt_rounded,
-                          title: 'Rápido',
-                          description: 'Encontre ou seja encontrado mais rápido.',
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFeatureItem(
-                          icon: Icons.verified_user_outlined,
-                          title: 'Seguro',
-                          description: 'Perfis verificados e pagamentos protegidos.',
-                        ),
-                        const SizedBox(height: 20),
-                        _buildFeatureItem(
-                          icon: Icons.groups_outlined,
-                          title: 'Conectado',
-                          description: 'Profissionais e clientes perto de você.',
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: 14,
-                    right: 14,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.6),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.cardBorder),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'Gabrieli Godoi Simões',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textPrimary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            'Fundadora do Bora Trampa',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -156,149 +181,71 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(initialRole: 'Customer'),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    _buildActionButton(
+                      title: 'Sou cliente',
+                      subtitle: 'Quero contratar um profissional',
+                      isPrimary: true,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(initialRole: 'Customer'),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryGold.withValues(alpha: 0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Sou cliente',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textDark,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Quero contratar um profissional',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textDark.withValues(alpha: 0.8),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.textDark,
-                        size: 28,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(initialRole: 'Profissional'),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      title: 'Sou profissional',
+                      subtitle: 'Quero trabalhar',
+                      isPrimary: false,
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(initialRole: 'Profissional'),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardElevated,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder, width: 1.2),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Sou profissional',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Quero trabalhar',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppColors.textPrimary,
-                        size: 28,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 22),
-              Center(
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                  child: RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const TextSpan(text: 'Já tem uma conta? '),
-                        TextSpan(
-                          text: 'Entrar',
+                        Text(
+                          'Já tem uma conta? ',
                           style: GoogleFonts.inter(
-                            color: AppColors.primaryGold,
-                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Entrar',
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 18),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -315,22 +262,22 @@ class WelcomeScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 38,
-          height: 38,
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.primaryGold, width: 1.5),
-            color: const Color(0xFF1E1A10),
+            color: Colors.transparent,
           ),
           child: Center(
             child: Icon(
               icon,
               color: AppColors.primaryGold,
-              size: 20,
+              size: 18,
             ),
           ),
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,17 +286,17 @@ class WelcomeScreen extends StatelessWidget {
                 title,
                 style: GoogleFonts.inter(
                   color: AppColors.textPrimary,
-                  fontSize: 15,
+                  fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 description,
                 style: GoogleFonts.inter(
                   color: AppColors.textSecondary,
-                  fontSize: 12,
-                  height: 1.3,
+                  fontSize: 11,
+                  height: 1.25,
                 ),
               ),
             ],
@@ -358,4 +305,105 @@ class WelcomeScreen extends StatelessWidget {
       ],
     );
   }
+
+  Widget _buildActionButton({
+    required String title,
+    required String subtitle,
+    required bool isPrimary,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: isPrimary ? AppColors.primaryGold : const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(16),
+          border: isPrimary ? null : Border.all(color: const Color(0xFF242424)),
+          boxShadow: isPrimary
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGold.withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.inter(
+                      color: isPrimary ? AppColors.textDark : AppColors.textPrimary,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.inter(
+                      color: isPrimary
+                          ? AppColors.textDark.withValues(alpha: 0.8)
+                          : AppColors.textSecondary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: isPrimary ? AppColors.textDark : AppColors.textPrimary,
+              size: 28,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GoldenWavePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..color = const Color(0xFFF5B800).withValues(alpha: 0.7)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final path1 = Path();
+    path1.moveTo(0, size.height * 0.42);
+    path1.cubicTo(
+      size.width * 0.25, size.height * 0.44,
+      size.width * 0.45, size.height * 0.52,
+      size.width, size.height * 0.55,
+    );
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color(0xFFF5B800).withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    final path2 = Path();
+    path2.moveTo(0, size.height * 0.44);
+    path2.cubicTo(
+      size.width * 0.28, size.height * 0.48,
+      size.width * 0.52, size.height * 0.57,
+      size.width, size.height * 0.61,
+    );
+    canvas.drawPath(path2, paint2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

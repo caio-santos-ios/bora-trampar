@@ -66,15 +66,36 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
 
   final List<String> _daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
   final Map<int, bool> _activeDays = {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false};
-  String _startHour = '08:00';
-  String _endHour = '18:00';
-  String _breakStart = '12:00';
-  String _breakEnd = '13:00';
+  final TextEditingController _startHourController = TextEditingController(text: '08:00');
+  final TextEditingController _endHourController = TextEditingController(text: '18:00');
+  final TextEditingController _breakStartController = TextEditingController(text: '12:00');
+  final TextEditingController _breakEndController = TextEditingController(text: '13:00');
+  bool _isStepLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _docNumberController.dispose();
+    _professionController.dispose();
+    _bioController.dispose();
+    _cepController.dispose();
+    _streetController.dispose();
+    _numberController.dispose();
+    _complementController.dispose();
+    _neighborhoodController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _servicePriceController.dispose();
+    _startHourController.dispose();
+    _endHourController.dispose();
+    _breakStartController.dispose();
+    _breakEndController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInitialData() async {
@@ -172,7 +193,32 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
   }
 
   void _addService() {
-    if (_selectedServiceForAdd == null) return;
+    if (_selectedServiceForAdd == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Selecione um serviço para adicionar.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final isAlreadyAdded = _selectedServices.any((s) => s.serviceId == _selectedServiceForAdd!.id);
+    if (isAlreadyAdded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Este serviço já foi adicionado na sua lista.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
 
     final price = double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ?? 200.0;
     final item = ProfessionalServiceItemModel(
@@ -187,9 +233,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
     );
 
     setState(() {
-      _selectedServices.removeWhere((s) => s.serviceId == item.serviceId);
       _selectedServices.add(item);
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Serviço adicionado com sucesso!',
+          style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: AppColors.primaryGold,
+      ),
+    );
   }
 
   Future<void> _submitOnboarding() async {
@@ -217,10 +272,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         dayOfWeek: i,
         dayName: _daysOfWeek[i],
         isActive: _activeDays[i] ?? false,
-        startHour: _startHour,
-        endHour: _endHour,
-        breakStart: _breakStart,
-        breakEnd: _breakEnd,
+        startHour: _startHourController.text.trim().isNotEmpty ? _startHourController.text.trim() : '08:00',
+        endHour: _endHourController.text.trim().isNotEmpty ? _endHourController.text.trim() : '18:00',
+        breakStart: _breakStartController.text.trim().isNotEmpty ? _breakStartController.text.trim() : '12:00',
+        breakEnd: _breakEndController.text.trim().isNotEmpty ? _breakEndController.text.trim() : '13:00',
       );
     });
 
@@ -303,7 +358,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
     }
   }
 
-  void _nextStep() {
+  Future<void> _nextStep() async {
+    if (_isStepLoading || _isLoading) return;
+
     if (_currentStep == 1) {
       if (_docNumberController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -312,8 +369,15 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         return;
       }
     }
+
     if (_currentStep < _totalSteps) {
-      setState(() => _currentStep++);
+      setState(() => _isStepLoading = true);
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (!mounted) return;
+      setState(() {
+        _currentStep++;
+        _isStepLoading = false;
+      });
     } else {
       _submitOnboarding();
     }
@@ -412,7 +476,8 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               ),
               child: PrimaryButton(
                 text: _currentStep == _totalSteps ? 'Finalizar Cadastro' : 'Continuar',
-                onPressed: _isLoading ? null : _nextStep,
+                isLoading: _currentStep < _totalSteps && _isStepLoading,
+                onPressed: (_isLoading || _isStepLoading) ? null : _nextStep,
               ),
             ),
           ],
@@ -528,7 +593,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12),
         ),
         const SizedBox(height: 10),
-        _buildPhotoUploadSlot('Selfie segurando o documento', _docSelfiePhoto, () => _pickImage(3), height: 120),
+        SizedBox(
+          width: double.infinity,
+          child: _buildPhotoUploadSlot('Selfie segurando o documento', _docSelfiePhoto, () => _pickImage(3), height: 140),
+        ),
       ],
     );
   }
@@ -538,6 +606,7 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       onTap: onTap,
       child: Container(
         height: height,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
           borderRadius: BorderRadius.circular(12),
@@ -556,17 +625,21 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   height: double.infinity,
                 ),
               )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.add_a_photo_outlined, color: AppColors.primaryGold, size: 24),
-                  const SizedBox(height: 6),
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 11),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            : SizedBox(
+                width: double.infinity,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.add_a_photo_outlined, color: AppColors.primaryGold, size: 28),
+                    const SizedBox(height: 6),
+                    Text(
+                      label,
+                      style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
       ),
     );
@@ -991,26 +1064,40 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _startHour,
-                      dropdownColor: AppColors.cardBackground,
-                      decoration: const InputDecoration(labelText: 'Início'),
-                      items: ['07:00', '08:00', '09:00', '10:00'].map((h) {
-                        return DropdownMenuItem(value: h, child: Text(h));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _startHour = val ?? '08:00'),
+                    child: TextField(
+                      controller: _startHourController,
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        HoraInputFormatter(),
+                      ],
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Início',
+                        hintText: '08:00',
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _endHour,
-                      dropdownColor: AppColors.cardBackground,
-                      decoration: const InputDecoration(labelText: 'Término'),
-                      items: ['17:00', '18:00', '19:00', '20:00', '21:00'].map((h) {
-                        return DropdownMenuItem(value: h, child: Text(h));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _endHour = val ?? '18:00'),
+                    child: TextField(
+                      controller: _endHourController,
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        HoraInputFormatter(),
+                      ],
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Término',
+                        hintText: '18:00',
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ),
                 ],
@@ -1019,26 +1106,40 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _breakStart,
-                      dropdownColor: AppColors.cardBackground,
-                      decoration: const InputDecoration(labelText: 'Almoço Início'),
-                      items: ['11:30', '12:00', '12:30', '13:00'].map((h) {
-                        return DropdownMenuItem(value: h, child: Text(h));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _breakStart = val ?? '12:00'),
+                    child: TextField(
+                      controller: _breakStartController,
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        HoraInputFormatter(),
+                      ],
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Almoço Início',
+                        hintText: '12:00',
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _breakEnd,
-                      dropdownColor: AppColors.cardBackground,
-                      decoration: const InputDecoration(labelText: 'Almoço Fim'),
-                      items: ['12:30', '13:00', '13:30', '14:00'].map((h) {
-                        return DropdownMenuItem(value: h, child: Text(h));
-                      }).toList(),
-                      onChanged: (val) => setState(() => _breakEnd = val ?? '13:00'),
+                    child: TextField(
+                      controller: _breakEndController,
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        HoraInputFormatter(),
+                      ],
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        labelText: 'Almoço Fim',
+                        hintText: '13:00',
+                        filled: true,
+                        fillColor: AppColors.cardBackground,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
                     ),
                   ),
                 ],
