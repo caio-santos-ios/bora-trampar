@@ -27,6 +27,7 @@ class HttpClientApi {
         onRequest: (options, handler) async {
           final prefs = await SharedPreferences.getInstance();
           final String token = prefs.getString('auth_token') ?? '';
+          print(token);
 
           if (token.isNotEmpty) {
             if (options.path.contains('/auth/refresh-token')) {

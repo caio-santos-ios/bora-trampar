@@ -19,28 +19,15 @@ namespace api_bora_trampar.src.Services
             {
                 Pagination<Category> pagination = new(request.QueryParams);
 
-                if (!pagination.PipelineFilter.Contains("deleted"))
-                {
-                    pagination.PipelineFilter.Add("deleted", new BsonDocument("$ne", true));
-                }
-
                 List<BsonDocument> countPipeline =
                 [
                     new("$match", pagination.PipelineFilter)
                 ];
 
-                var sortDoc = pagination.PipelineSort;
-                if (sortDoc.Contains("createdAt"))
-                {
-                    var sortVal = sortDoc["createdAt"];
-                    sortDoc.Remove("createdAt");
-                    sortDoc.Add("created_at", sortVal);
-                }
-
                 List<BsonDocument> pipeline =
                 [
                     new("$match", pagination.PipelineFilter),
-                    new("$sort", sortDoc),
+                    new("$sort", pagination.PipelineSort),
                     new("$skip", pagination.Skip),
                     new("$limit", pagination.Limit),
                     new("$project", new BsonDocument
@@ -50,7 +37,7 @@ namespace api_bora_trampar.src.Services
                         {"name", 1},
                         {"description", 1},
                         {"icon", 1},
-                        {"createdAt", new BsonDocument("$ifNull", new BsonArray { "$created_at", "$createdAt" })}
+                        {"created_at", 1}
                     })
                 ];
 
@@ -60,6 +47,36 @@ namespace api_bora_trampar.src.Services
                 PaginationApi<List<dynamic>> data = new(categories, count, pagination.PageNumber, pagination.PageSize);
 
                 return new(data, 200, "Categorias listadas com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllRequest request)
+        {
+            try
+            {
+                Pagination<Category> pagination = new(request.QueryParams);
+
+                List<BsonDocument> pipeline =
+                [
+                    new("$match", pagination.PipelineFilter),
+                    new("$sort", pagination.PipelineSort),
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"name", 1},
+                        {"description", 1},
+                        {"icon", 1},
+                        {"created_at", 1}
+                    })
+                ];
+
+                List<dynamic> categories = await repository.GetAllAsync(pipeline);
+
+                return new(categories, 200, "Categorias listadas com sucesso");
             }
             catch (Exception ex)
             {
@@ -84,7 +101,7 @@ namespace api_bora_trampar.src.Services
         #region CREATE
         public async Task<ResponseApi<Category?>> CreateAsync(CreateCategoryRequest request)
         {
-           try
+            try
             {
                 Category entity = ObjectMapper.Map<CreateCategoryRequest, Category>(request);
 

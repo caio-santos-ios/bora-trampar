@@ -5,7 +5,6 @@ namespace api_bora_trampar.src.Utils
 {
     public class Pagination<T>
     {
-        public SortDefinition<T>? Sort {get;set;}
         public BsonDocument PipelineSort {get;set;}
         public BsonDocument PipelineFilter {get;set;}
         public int Skip {get;set;}
@@ -183,7 +182,6 @@ namespace api_bora_trampar.src.Utils
 
             PipelineSort = pipelineSort;
             PipelineFilter = pipelineFilter;
-            Sort = sortDefinition;
             Skip = skip;
             Limit = limit;
             PageSize = pageSize;

@@ -10,6 +10,7 @@ namespace api_bora_trampar.src.Interfaces
     public interface ICategoryService
     {
         Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request);
+        Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllRequest request);
         Task<ResponseApi<Category?>> GetByIdAsync(string id);
         Task<ResponseApi<Category?>> CreateAsync(CreateCategoryRequest request);
         Task<ResponseApi<Category?>> UpdateAsync(UpdateCategoryRequest request);

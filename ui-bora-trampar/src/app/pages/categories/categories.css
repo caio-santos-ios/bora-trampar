@@ -196,9 +196,9 @@
 }
 
 .page-btn.active {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
-  color: #ffffff;
+  background-color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #000000;
   font-weight: 700;
 }
 

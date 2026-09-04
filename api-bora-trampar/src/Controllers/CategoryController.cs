@@ -22,6 +22,14 @@ namespace api_bora_trampar.src.Controllers
             ResponseApi<PaginationApi<List<dynamic>>> response = await service.GetAllAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+       
+        [HttpGet("select")]
+        public async Task<IActionResult> GetSelect()
+        {
+            GetAllRequest request = new(Request.Query);
+            ResponseApi<List<dynamic>> response = await service.GetSelectAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)

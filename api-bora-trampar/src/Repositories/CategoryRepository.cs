@@ -11,23 +11,24 @@ namespace api_bora_trampar.src.Repositories
     {
         public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
         {
-            List<BsonDocument> results = await appDbContext.Categories.Aggregate<BsonDocument>(pipeline).ToListAsync();
-            return results.Select(c => (dynamic)new
+            var list = await appDbContext.Categories
+                .Find(x => !x.Deleted)
+                .SortByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            return list.Select(c => (dynamic)new
             {
-                id = c.Contains("id") ? c["id"].AsString : (c.Contains("_id") ? c["_id"].ToString() : ""),
-                name = c.Contains("name") ? c["name"].AsString : "",
-                description = c.Contains("description") && !c["description"].IsBsonNull ? c["description"].AsString : "",
-                icon = c.Contains("icon") && !c["icon"].IsBsonNull ? c["icon"].AsString : "fa-layer-group",
-                createdAt = c.Contains("createdAt") && !c["createdAt"].IsBsonNull ? c["createdAt"].ToUniversalTime() : DateTime.UtcNow
+                id = c.Id,
+                name = c.Name,
+                description = c.Description,
+                icon = c.Icon,
+                createdAt = c.CreatedAt
             }).ToList();
         }
         public async Task<long> GetCountAsync(List<BsonDocument> pipeline)
         {
-            List<BsonDocument> countPipeline = new(pipeline);
-            countPipeline.Add(new BsonDocument("$count", "total"));
-            var result = await appDbContext.Categories.Aggregate<BsonDocument>(countPipeline).FirstOrDefaultAsync();
-            if (result == null) return 0;
-            return result.Contains("total") ? result["total"].ToInt64() : 0;
+            List<BsonDocument> results = await appDbContext.Categories.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
         }
         public async Task<Category?> GetByIdAsync(string id)
         {
