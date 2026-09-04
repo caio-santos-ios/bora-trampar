@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/pages/main/main_navigation_screen.dart';
 import 'package:app_bora_trampar/pages/onboarding/identity_verification_pending_screen.dart';
@@ -7,13 +8,14 @@ import 'package:app_bora_trampar/repositories/profile/profile_professional_repos
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../customer/customer_register_screen.dart';
 import 'forgot_password_screen.dart';
 import '../professional/professional_register_screen.dart';
-import 'package:hive/hive.dart';
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final String initialRole;
@@ -27,7 +29,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _authRepository = AuthRepository();
   final _profileProfessionalRepository = ProfileProfessionalRepository();
-  final _boraTramparHive = Hive.box("smt");
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -53,10 +54,38 @@ class _LoginScreenState extends State<LoginScreen> {
         "role": widget.initialRole,
       });
 
-      setState(() {
-        String token = response.data["result"]["data"]["token"];
-        _boraTramparHive.put("token", token);
-      });
+      final result = response.data["result"];
+      final resultData = result is Map ? (result["data"] ?? result) : response.data;
+      final token = (resultData is Map ? (resultData["token"] ?? resultData["data"]?["token"]) : null)?.toString() ?? '';
+      final refreshToken = (resultData is Map ? (resultData["refreshToken"] ?? resultData["data"]?["refreshToken"]) : null)?.toString();
+      final rawUser = resultData is Map ? (resultData["user"] ?? resultData["data"]?["user"]) : null;
+
+      Map<String, dynamic>? userMap;
+      if (rawUser is Map) {
+        userMap = Map<String, dynamic>.from(rawUser);
+        if (userMap["role"] == null || userMap["role"].toString().isEmpty) {
+          userMap["role"] = widget.initialRole;
+        }
+      }
+
+      if (token.isNotEmpty) {
+        await StorageService.setToken(token);
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await StorageService.setRefreshToken(refreshToken);
+        }
+        if (userMap != null) {
+          await StorageService.setUser(userMap);
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('auth_token', token);
+        if (refreshToken != null && refreshToken.isNotEmpty) {
+          await prefs.setString('refresh_token', refreshToken);
+        }
+        if (userMap != null) {
+          await prefs.setString('user_profile', jsonEncode(userMap));
+        }
+      }
 
       if (widget.initialRole == "Customer") {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -77,8 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else {
-        bool isProfileCompleted =
-            response.data["result"]["data"]["isProfileCompleted"];
+        bool isProfileCompleted = (resultData is Map ? (resultData["isProfileCompleted"] ?? resultData["data"]?["isProfileCompleted"]) : null) ?? false;
 
         if (!isProfileCompleted) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -90,8 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        String useridentityVerificationStatusId = response
-            .data["result"]["data"]["user"]["identityVerificationStatus"];
+        final userObj = resultData is Map ? (resultData["user"] ?? resultData["data"]?["user"]) : null;
+        String useridentityVerificationStatusId = (userObj is Map ? userObj["identityVerificationStatus"] : null)?.toString() ?? '';
 
         if (useridentityVerificationStatusId == "Approved") {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -114,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
             (route) => false,
           );
         } else {
-          String userId = response.data["result"]["data"]["user"]["id"];
+          String userId = (userObj is Map ? userObj["id"] : null)?.toString() ?? '';
 
           ProfileProfessionalModel? profile =
               await _profileProfessionalRepository.getByUserId(userId);
@@ -127,8 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    } on DioException catch (err) {
-      // deixe vazio, futuramente vou fazer o tratamento
+    } on DioException {
     } finally {
       setState(() => _isLoading = false);
     }

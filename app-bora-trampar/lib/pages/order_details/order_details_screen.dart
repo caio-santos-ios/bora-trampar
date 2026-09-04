@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -29,7 +31,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   LocationResult? _detectedLocation;
   bool _isLocating = false;
   DateTime _selectedDate = DateTime.now();
-  String _selectedTimeSlot = '';
   final TextEditingController _timeController = TextEditingController();
   final List<String> _photos = [];
 
@@ -213,6 +214,34 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         ),
       );
       return;
+    }
+
+    final rawTime = _timeController.text.trim();
+    if (rawTime.isNotEmpty) {
+      final timeParts = rawTime.split(':');
+      final hour = timeParts.isNotEmpty ? int.tryParse(timeParts[0]) : null;
+      final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) : null;
+      final isValidTime = rawTime.length == 5 &&
+          timeParts.length == 2 &&
+          hour != null &&
+          hour >= 0 &&
+          hour <= 23 &&
+          minute != null &&
+          minute >= 0 &&
+          minute <= 59;
+
+      if (!isValidTime) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Por favor, informe um horário válido (Ex: 09:00).',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLocating = true);
@@ -872,10 +901,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             const SizedBox(height: 8),
                             TextField(
                               controller: _timeController,
-                              keyboardType: TextInputType.datetime,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                HoraInputFormatter(),
+                              ],
                               style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13),
                               decoration: InputDecoration(
-                                hintText: 'Ex: 08:00',
+                                hintText: '09:00',
                                 hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
                                 prefixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
                                 filled: true,

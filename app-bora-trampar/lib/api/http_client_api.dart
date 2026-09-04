@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 
 class HttpClientApi {
   static const String _prodUrl = 'https://bora-trampar.onrender.com';
@@ -25,13 +26,19 @@ class HttpClientApi {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final prefs = await SharedPreferences.getInstance();
-          final String token = prefs.getString('auth_token') ?? '';
-          print(token);
+          String token = StorageService.getToken();
+          if (token.isEmpty) {
+            final prefs = await SharedPreferences.getInstance();
+            token = prefs.getString('auth_token') ?? '';
+          }
 
           if (token.isNotEmpty) {
             if (options.path.contains('/auth/refresh-token')) {
-              final String refreshToken = prefs.getString('refresh_token') ?? '';
+              String refreshToken = StorageService.getRefreshToken();
+              if (refreshToken.isEmpty) {
+                final prefs = await SharedPreferences.getInstance();
+                refreshToken = prefs.getString('refresh_token') ?? '';
+              }
               options.headers['Authorization'] = 'Bearer $refreshToken';
             } else {
               options.headers['Authorization'] = 'Bearer $token';

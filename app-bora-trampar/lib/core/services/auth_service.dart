@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_model.dart';
 import '../../repositories/auth/auth_repository.dart';
+import 'storage_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -202,6 +203,14 @@ class AuthService {
   }
 
   Future<void> _saveSession(String token, String? refreshToken, dynamic user) async {
+    await StorageService.setToken(token);
+    if (refreshToken != null) {
+      await StorageService.setRefreshToken(refreshToken);
+    }
+    if (user != null) {
+      await StorageService.setUser(user);
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     if (refreshToken != null) {
@@ -213,6 +222,24 @@ class AuthService {
   }
 
   Future<UserModel?> getCurrentUser() async {
+    final hiveUser = StorageService.getUser();
+    if (hiveUser != null) {
+      try {
+        if (hiveUser is UserModel) {
+          return hiveUser;
+        }
+        if (hiveUser is Map) {
+          return UserModel.fromJson(Map<String, dynamic>.from(hiveUser));
+        }
+        if (hiveUser is String && hiveUser.isNotEmpty) {
+          final decoded = jsonDecode(hiveUser);
+          if (decoded is Map) {
+            return UserModel.fromJson(Map<String, dynamic>.from(decoded));
+          }
+        }
+      } catch (_) {}
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString('user_profile');
     if (raw != null) {
@@ -225,6 +252,7 @@ class AuthService {
   }
 
   Future<void> logout() async {
+    await StorageService.clear();
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('auth_token');
     await prefs.remove('refresh_token');
