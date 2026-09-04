@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../features/notifications/notifications_screen.dart';
+import '../../pages/notifications/notifications_screen.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import 'bora_trampa_logo.dart';

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../data/models/auth/user_model.dart';
-import '../../data/repositories/auth/auth_repository.dart';
+import '../../models/user_model.dart';
+import '../../repositories/auth/auth_repository.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();

@@ -1,5 +1,5 @@
-import '../../data/models/appointment/appointment_model.dart';
-import '../../data/models/profile/profile_professional_model.dart';
+import '../../models/appointment_model.dart';
+import '../../models/profile_professional_model.dart';
 
 class AvailabilityHelper {
   static int _getWeekdayIndex(DateTime date) {

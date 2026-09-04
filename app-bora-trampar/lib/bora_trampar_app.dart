@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
-import 'features/onboarding/welcome_screen.dart';
+import 'pages/onboarding/welcome_screen.dart';
 
 class BoraTrampaApp extends StatelessWidget {
   const BoraTrampaApp({super.key});

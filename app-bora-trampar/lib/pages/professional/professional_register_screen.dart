@@ -6,7 +6,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
-import '../../features/auth/login_screen.dart';
+import '../auth/login_screen.dart';
 
 class ProfessionalRegisterScreen extends StatefulWidget {
   const ProfessionalRegisterScreen({super.key});
