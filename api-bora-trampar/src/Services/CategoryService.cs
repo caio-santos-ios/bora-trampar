@@ -1,7 +1,9 @@
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
+using api_bora_trampar.src.Models._Base;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using api_bora_trampar.src.Requests._Base;
 using api_bora_trampar.src.Requests.Base;
 using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
@@ -11,16 +13,15 @@ namespace api_bora_trampar.src.Services
     public class CategoryService(ICategoryRepository repository) : ICategoryService
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
+        public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request)
         {
             try
             {
+                Pagination<Category> pagination = new(request.QueryParams);
+
                 List<BsonDocument> pipeline =
                 [
-                    new("$match", new BsonDocument
-                    {
-                        {"deleted", false},
-                    }),
+                    new("$match", pagination.PipelineFilter),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -30,12 +31,16 @@ namespace api_bora_trampar.src.Services
                         {"icon", 1},
                         {"createdAt", 1}
                     }),
-                    new("$sort", new BsonDocument { { "createdAt", -1 } } )
+                    new("$limit", pagination.Limit),
+                    new("$sort", pagination.PipelineSort)
                 ];
 
                 List<dynamic> categories = await repository.GetAllAsync(pipeline);
+                long count = await repository.GetCountAsync(pipeline);
 
-                return new(categories, 200, "Categorias listadas com sucesso");
+                PaginationApi<List<dynamic>> data = new(categories, count, pagination.PageNumber, pagination.PageSize);
+
+                return new(data, 200, "Categorias listadas com sucesso");
             }
             catch (Exception ex)
             {

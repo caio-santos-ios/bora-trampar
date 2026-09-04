@@ -2,6 +2,7 @@ using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Repositories
@@ -24,7 +25,11 @@ namespace api_bora_trampar.src.Repositories
                 createdAt = c.CreatedAt
             }).ToList();
         }
-
+        public async Task<long> GetCountAsync(List<BsonDocument> pipeline)
+        {
+            List<BsonDocument> results = await appDbContext.Categories.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).Count();
+        }
         public async Task<Category?> GetByIdAsync(string id)
         {
             return await appDbContext.Categories.Find(x => !x.Deleted && x.Id.Equals(id)).FirstOrDefaultAsync();
