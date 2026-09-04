@@ -25,6 +25,7 @@ class AuthService {
       });
 
       final data = response.data;
+      print(data);
       final result = data['result'] ?? data['data'] ?? data;
       final payload = result is Map ? (result['data'] ?? result) : data;
 
@@ -43,6 +44,7 @@ class AuthService {
       };
     } on DioException catch (e) {
       final errorData = e.response?.data;
+      print(e.response);
       String errorMsg = 'Falha na autenticação.';
 
       if (errorData is Map) {

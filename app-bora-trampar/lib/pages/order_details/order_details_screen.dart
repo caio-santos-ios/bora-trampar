@@ -29,18 +29,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   LocationResult? _detectedLocation;
   bool _isLocating = false;
   DateTime _selectedDate = DateTime.now();
-  String _selectedTimeSlot = 'A partir das 14:00';
+  String _selectedTimeSlot = '';
+  final TextEditingController _timeController = TextEditingController();
   final List<String> _photos = [];
-
-  final List<String> _timeSlots = [
-    'A partir das 08:00',
-    'A partir das 10:00',
-    'A partir das 12:00',
-    'A partir das 14:00',
-    'A partir das 16:00',
-    'A partir das 18:00',
-    'Horário comercial',
-  ];
 
   @override
   void initState() {
@@ -61,6 +52,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     _descController.dispose();
     _notesController.dispose();
     _addressController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -141,6 +133,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
+      locale: const Locale('pt', 'BR'),
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
@@ -162,69 +155,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-  void _showTimeSlotModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.cardBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Selecione o Horário',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _timeSlots.length,
-                    itemBuilder: (context, index) {
-                      final slot = _timeSlots[index];
-                      final isSelected = slot == _selectedTimeSlot;
-                      return ListTile(
-                        onTap: () {
-                          setState(() {
-                            _selectedTimeSlot = slot;
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        leading: Icon(
-                          Icons.access_time_rounded,
-                          color: isSelected ? AppColors.primaryGold : AppColors.textSecondary,
-                        ),
-                        title: Text(
-                          slot,
-                          style: GoogleFonts.inter(
-                            color: isSelected ? AppColors.primaryGold : AppColors.textPrimary,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
-                            : null,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+
+
 
   Future<void> _fetchCurrentLocation() async {
     setState(() {
@@ -315,7 +247,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     widget.orderRequest.notes = _notesController.text.trim();
     widget.orderRequest.useCurrentLocation = _useCurrentLocation;
     widget.orderRequest.scheduledDate = _selectedDate;
-    widget.orderRequest.scheduledTimeSlot = _selectedTimeSlot;
+    widget.orderRequest.scheduledTimeSlot = _timeController.text.trim().isNotEmpty
+        ? _timeController.text.trim()
+        : 'A combinar';
     widget.orderRequest.photoPaths = _photos;
 
     Navigator.of(context).push(
@@ -936,43 +870,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            InkWell(
-                              onTap: _showTimeSlotModal,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                                decoration: BoxDecoration(
-                                  color: AppColors.cardBackground,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.cardBorder),
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.access_time_rounded,
-                                      color: AppColors.primaryGold,
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        _selectedTimeSlot,
-                                        style: GoogleFonts.inter(
-                                          color: AppColors.textPrimary,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      color: AppColors.textMuted,
-                                      size: 20,
-                                    ),
-                                  ],
-                                ),
+                            TextField(
+                              controller: _timeController,
+                              keyboardType: TextInputType.datetime,
+                              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13),
+                              decoration: InputDecoration(
+                                hintText: 'Ex: 08:00',
+                                hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                                prefixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
+                                filled: true,
+                                fillColor: AppColors.cardBackground,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                               ),
                             ),
                           ],
