@@ -24,14 +24,11 @@ class AuthService {
         'role': normalizedRole,
       });
 
-      final data = response.data;
-      print(data);
-      final result = data['result'] ?? data['data'] ?? data;
-      final payload = result is Map ? (result['data'] ?? result) : data;
-
-      final token = payload is Map ? (payload['token'] ?? (result is Map ? result['token'] : null)) : null;
-      final refreshToken = payload is Map ? (payload['refreshToken'] ?? (result is Map ? result['refreshToken'] : null)) : null;
-      final userJson = payload is Map ? (payload['user'] ?? (result is Map ? result['user'] : null)) : null;
+      final data = response.data as Map<String, dynamic>? ?? {};
+      final result = data['result'];
+      final token = result is Map ? result['token']?.toString() : null;
+      final refreshToken = result is Map ? result['refreshToken']?.toString() : null;
+      final userJson = result is Map ? result['user'] : null;
 
       if (token != null) {
         await _saveSession(token, refreshToken, userJson);
@@ -39,19 +36,22 @@ class AuthService {
 
       return {
         'success': true,
-        'message': data['message'] ?? 'Login realizado com sucesso!',
-        'user': userJson != null ? UserModel.fromJson(userJson) : null,
+        'message': data['message']?.toString() ?? 'Login realizado com sucesso!',
+        'user': userJson != null ? UserModel.fromJson(Map<String, dynamic>.from(userJson as Map)) : null,
       };
     } on DioException catch (e) {
       final errorData = e.response?.data;
       String errorMsg = 'Falha na autenticação.';
 
       if (errorData is Map) {
+        final result = errorData['result'];
         if (errorData['errors'] is List && (errorData['errors'] as List).isNotEmpty) {
           final firstError = (errorData['errors'] as List)[0];
           errorMsg = firstError is Map ? (firstError['message'] ?? firstError['Message'] ?? errorMsg) : firstError.toString();
-        } else if (errorData["result"]['message'] != null) {
-          errorMsg = errorData["result"]['message'].toString();
+        } else if (result is Map && result['message'] != null) {
+          errorMsg = result['message'].toString();
+        } else if (errorData['message'] != null) {
+          errorMsg = errorData['message'].toString();
         } else if (errorData['title'] != null) {
           errorMsg = errorData['title'].toString();
         }

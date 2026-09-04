@@ -15,7 +15,7 @@ namespace api_bora_trampar.src.Controllers
             if (request == null) return BadRequest("Dados inválidos.");
 
             ResponseApi<dynamic> response = await service.LoginAsync(request);
-            return StatusCode(response.StatusCode, new { response.Result });
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
         [HttpPost("registers")]
