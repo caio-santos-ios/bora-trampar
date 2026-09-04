@@ -44,15 +44,14 @@ class AuthService {
       };
     } on DioException catch (e) {
       final errorData = e.response?.data;
-      print(e.response);
       String errorMsg = 'Falha na autenticação.';
 
       if (errorData is Map) {
         if (errorData['errors'] is List && (errorData['errors'] as List).isNotEmpty) {
           final firstError = (errorData['errors'] as List)[0];
           errorMsg = firstError is Map ? (firstError['message'] ?? firstError['Message'] ?? errorMsg) : firstError.toString();
-        } else if (errorData['message'] != null) {
-          errorMsg = errorData['message'].toString();
+        } else if (errorData["result"]['message'] != null) {
+          errorMsg = errorData["result"]['message'].toString();
         } else if (errorData['title'] != null) {
           errorMsg = errorData['title'].toString();
         }

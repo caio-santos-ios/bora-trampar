@@ -5,8 +5,8 @@ namespace api_bora_trampar.src.Handlers
 {
     public class MailHandler
     {
-        private readonly string EmailFrom = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
-        private readonly string Password = Environment.GetEnvironmentVariable("PASSWORD_EMAIL") ?? "";
+        private readonly string EmailFrom = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? "";
+        private readonly string Password = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? "";
         public async Task SendMailAsync(string recipient, string subject, string body)
         {
             try
