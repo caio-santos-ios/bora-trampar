@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { Auth } from '../../services/auth';
+import { Subscription } from 'rxjs';
+import { Auth, UserSession } from '../../services/auth';
 import { ThemeService } from '../../services/theme';
 
 @Component({
@@ -11,10 +12,29 @@ import { ThemeService } from '../../services/theme';
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
-export class Sidebar {
-  constructor(private auth: Auth, private router: Router, public themeService: ThemeService) {}
+export class Sidebar implements OnInit, OnDestroy {
+  user: UserSession | null = null;
+  private sub?: Subscription;
 
-  logout() {
+  constructor(public auth: Auth, private router: Router, public themeService: ThemeService) {}
+
+  ngOnInit() {
+    this.user = this.auth.getUser();
+    this.sub = this.auth.user$.subscribe(u => {
+      this.user = u;
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
+
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
+
+  logout(event?: Event) {
+    if (event) event.stopPropagation();
     this.auth.clearSession();
     this.router.navigate(['/login']);
   }

@@ -211,23 +211,39 @@ export class Professionals implements OnInit {
     return list;
   }
 
-  async toggleBlock(pro: ProfessionalData) {
-    const newStatus = pro.status === 'blocked' ? 'active' : 'blocked';
-    const actionLabel = newStatus === 'blocked' ? 'bloquear' : 'desbloquear';
+  proToBlock: ProfessionalData | null = null;
+  isBlockModalOpen = false;
 
-    if (!confirm(`Deseja realmente ${actionLabel} o profissional ${pro.name}?`)) return;
+  openBlockModal(pro: ProfessionalData) {
+    this.proToBlock = pro;
+    this.isBlockModalOpen = true;
+  }
+
+  closeBlockModal() {
+    this.proToBlock = null;
+    this.isBlockModalOpen = false;
+  }
+
+  async executeBlock() {
+    if (!this.proToBlock) return;
+    const pro = this.proToBlock;
+    const isBlocking = pro.status !== 'blocked';
+    const newStatus = isBlocking ? 'blocked' : 'active';
+    const actionLabel = isBlocking ? 'bloquear' : 'desbloquear';
 
     try {
       await api.put('/api/users', {
         id: pro.userId,
-        isBlocked: newStatus === 'blocked',
-        status: newStatus
+        name: pro.name,
+        email: pro.email,
+        blocked: isBlocking
       });
 
       pro.status = newStatus;
-      pro.statusLabel = newStatus === 'blocked' ? 'Bloqueado' : 'Ativo';
+      pro.statusLabel = isBlocking ? 'Bloqueado' : 'Ativo';
       this.calculateStats();
-      this.toastr.success(`Profissional ${pro.name} ${newStatus === 'blocked' ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
+      this.toastr.success(`Profissional ${pro.name} ${isBlocking ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
+      this.closeBlockModal();
     } catch {
       this.toastr.error(`Erro ao ${actionLabel} profissional`);
     }

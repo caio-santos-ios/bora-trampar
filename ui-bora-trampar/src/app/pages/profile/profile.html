@@ -1,0 +1,79 @@
+<div class="profile-container">
+  <div class="page-header">
+    <div class="header-left">
+      <h1 class="page-title">Meu Perfil</h1>
+      <p class="page-subtitle">Gerencie suas informações pessoais e foto de perfil</p>
+    </div>
+  </div>
+
+  <app-loading *ngIf="isLoading"></app-loading>
+
+  <div class="profile-content" *ngIf="!isLoading">
+    <div class="profile-card">
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <div class="avatar-large" *ngIf="photo">
+            <img [src]="photo" alt="Foto de perfil" />
+          </div>
+          <div class="avatar-placeholder" *ngIf="!photo">
+            {{ (name || 'A')[0].toUpperCase() }}
+          </div>
+          <div class="avatar-overlay" *ngIf="isUploading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+          </div>
+        </div>
+
+        <div class="avatar-actions">
+          <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none;" />
+          <button type="button" class="btn btn-primary btn-sm" (click)="fileInput.click()" [disabled]="isUploading">
+            <i class="fa-solid fa-camera"></i>
+            <span>{{ photo ? 'Alterar Foto' : 'Enviar Foto' }}</span>
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm" *ngIf="photo" (click)="removePhoto()" [disabled]="isUploading">
+            <i class="fa-solid fa-trash"></i>
+            <span>Remover</span>
+          </button>
+        </div>
+        <span class="avatar-tip">Formatos aceitos: JPG, PNG ou WEBP. Tamanho máx: 5MB.</span>
+      </div>
+
+      <form (ngSubmit)="saveProfile()" class="profile-form">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label class="form-label">Nome Completo <span class="required">*</span></label>
+            <input type="text" class="form-control" [(ngModel)]="name" name="name" placeholder="Seu nome" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">E-mail <span class="required">*</span></label>
+            <input type="email" class="form-control" [(ngModel)]="email" name="email" placeholder="seu@email.com" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">WhatsApp / Telefone</label>
+            <input type="text" class="form-control" [(ngModel)]="whatsapp" name="whatsapp" placeholder="(00) 00000-0000" />
+          </div>
+
+          <div class="form-group full-width">
+            <label class="form-label">Função no Sistema</label>
+            <div class="role-badge-box">
+              <span class="badge-admin">
+                <i class="fa-solid fa-shield"></i>
+                {{ role }}
+              </span>
+              <span class="role-desc">Acesso total à administração da plataforma</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-footer">
+          <button type="submit" class="btn btn-save" [disabled]="isSaving || isUploading">
+            <i class="fa-solid fa-spinner fa-spin" *ngIf="isSaving"></i>
+            <i class="fa-solid fa-check" *ngIf="!isSaving"></i>
+            <span>{{ isSaving ? 'Salvando...' : 'Salvar Alterações' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -6,7 +6,6 @@
     </div>
   </div>
 
-  <!-- Financial Summary Cards -->
   <div class="kpi-grid">
     <div class="kpi-card gold-border">
       <div class="kpi-icon-wrap gold-icon">
@@ -53,7 +52,6 @@
     </div>
   </div>
 
-  <!-- Filters Card -->
   <div class="card filters-card">
     <div class="filters-wrap">
       <div class="search-box">
@@ -61,7 +59,7 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Buscar por TxID, cliente, profissional ou pedido..."
+          placeholder="Buscar por cliente, profissional ou serviço..."
           [(ngModel)]="searchQuery"
         />
       </div>
@@ -85,14 +83,12 @@
 
   <app-loading [isLoading]="isLoading"></app-loading>
 
-  <!-- Transactions Table -->
   <div class="card" *ngIf="!isLoading">
     <div class="table-responsive desktop-table-view">
       <table class="table">
         <thead>
           <tr>
-            <th>TxID Pix</th>
-            <th>Pedido</th>
+            <th>Serviço</th>
             <th>Cliente</th>
             <th>Profissional</th>
             <th>Data/Hora</th>
@@ -105,11 +101,10 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of filteredList">
-            <td><code class="tx-code">{{ item.txId }}</code></td>
-            <td><strong class="gold-text">{{ item.appointmentId }}</strong></td>
+            <td><strong>{{ item.serviceName }}</strong></td>
             <td>{{ item.customerName }}</td>
             <td>{{ item.professionalName }}</td>
-            <td>{{ item.date }}</td>
+            <td>{{ (item.date | date: 'dd/MM/yyyy HH:mm') || item.date }}</td>
             <td><strong>{{ global.formatCurrency(item.grossValue) }}</strong></td>
             <td><span style="color: var(--text-muted);">{{ global.formatCurrency(item.platformFee) }}</span></td>
             <td><strong class="gold-text">{{ global.formatCurrency(item.netTransferValue) }}</strong></td>
@@ -137,13 +132,11 @@
       </table>
     </div>
 
-    <!-- Mobile View -->
     <div class="mobile-cards-view">
       <div class="mobile-data-card" *ngFor="let item of filteredList">
         <div class="mobile-card-header">
           <div>
-            <strong class="gold-text">{{ item.appointmentId }}</strong>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">{{ item.txId }}</div>
+            <strong class="gold-text">{{ item.serviceName }}</strong>
           </div>
           <span class="status-badge" [ngClass]="item.status === 'released' ? 'active' : item.status === 'held' ? 'pending' : 'inactive'">
             {{ item.statusLabel }}
@@ -157,6 +150,10 @@
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Cliente</span>
             <span class="mobile-card-field-value">{{ item.customerName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data e Hora</span>
+            <span class="mobile-card-field-value">{{ (item.date | date: 'dd/MM/yyyy HH:mm') || item.date }}</span>
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Valor Bruto</span>

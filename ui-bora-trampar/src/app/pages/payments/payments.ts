@@ -9,6 +9,7 @@ import { api } from '../../services/api';
 export interface PaymentTransaction {
   id: string;
   txId: string;
+  serviceName: string;
   appointmentId: string;
   customerName: string;
   professionalName: string;
@@ -80,10 +81,11 @@ export class Payments implements OnInit {
           return {
             id: `PAY-${100 + idx}`,
             txId: a.pixTxId || `PIX-E2E-${a.id?.substring(0, 8) || '102938'}`,
+            serviceName: a.serviceNames || a.serviceName || 'Serviço',
             appointmentId: a.id || a._id,
-            customerName: customer.name || 'Cliente',
-            professionalName: pro.name || 'Profissional',
-            date: a.date ? new Date(a.date).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR'),
+            customerName: customer.name || a.customerName || 'Cliente',
+            professionalName: pro.name || a.professionalName || 'Profissional',
+            date: a.date || a.createdAt || new Date().toISOString(),
             grossValue: gross,
             platformFee: fee,
             netTransferValue: net,

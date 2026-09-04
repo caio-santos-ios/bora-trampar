@@ -1,5 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { BehaviorSubject } from 'rxjs';
 
 export interface UserSession {
   id?: string;
@@ -15,9 +16,14 @@ export interface UserSession {
 })
 export class Auth {
   private isBrowser: boolean;
+  private userSubject: BehaviorSubject<UserSession | null>;
+  user$;
 
   constructor(@Inject(PLATFORM_ID) platformId: Object) {
     this.isBrowser = isPlatformBrowser(platformId);
+    const initialUser = this.getUser();
+    this.userSubject = new BehaviorSubject<UserSession | null>(initialUser);
+    this.user$ = this.userSubject.asObservable();
   }
 
   setToken(token: string) {
@@ -43,6 +49,7 @@ export class Auth {
   setUser(user: UserSession) {
     if (this.isBrowser) {
       localStorage.setItem('user', JSON.stringify(user));
+      this.userSubject.next(user);
     }
   }
 
@@ -59,6 +66,7 @@ export class Auth {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
+      this.userSubject.next(null);
     }
   }
 

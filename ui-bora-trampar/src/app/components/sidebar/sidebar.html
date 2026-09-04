@@ -1,6 +1,6 @@
 <aside class="sidebar">
   <div class="sidebar-header" style="display: flex; justify-content: center; align-items: center;">
-    <img src="assets/logo-bora-trampar.jpeg" alt="Bora Trampar Logo" style="max-height: 48px; max-width: 100%; object-fit: contain; border-radius: 8px;" />
+    <img src="assets/logo-bora-trampar.jpeg" alt="Bora Trampar Logo" style="max-height: 40px; max-width: 100%; object-fit: contain; border-radius: 8px;" />
   </div>
   
   <nav class="sidebar-nav">
@@ -44,17 +44,22 @@
       <i class="fa-solid fa-gear nav-icon"></i>
       <span>Configurações</span>
     </a>
-    <a href="https://wa.me/5511965079106?text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20sistema%20Bora%20Trampar" target="_blank" rel="noopener noreferrer" class="nav-item" style="color: #25d366; display: flex; align-items: center; gap: 10px;">
-      <i class="fa-brands fa-whatsapp nav-icon" style="font-size: 16px;"></i>
-      <span>Suporte WhatsApp</span>
-    </a>
     <button (click)="themeService.toggleTheme()" class="nav-item" style="background: none; border: none; width: 100%; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px; color: var(--text-sidebar-muted);">
       <i class="fa-solid nav-icon" [ngClass]="themeService.isDark() ? 'fa-sun' : 'fa-moon'" style="font-size: 14px; width: 16px; text-align: center;"></i>
       <span>{{ themeService.isDark() ? 'Modo Claro' : 'Modo Escuro' }}</span>
     </button>
-    <a (click)="logout()" class="nav-item logout-btn" style="cursor: pointer; margin-top: auto; margin-bottom: 1rem; color: #ff4d4f; display: flex; align-items: center; justify-content: center; gap: 8px;">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i>
-      <span>Sair</span>
-    </a>
+    <div class="user-profile-bar" (click)="goToProfile()" title="Editar Perfil">
+      <div class="user-avatar-circle">
+        <img *ngIf="user?.photo" [src]="user?.photo" alt="Avatar" />
+        <span *ngIf="!user?.photo">{{ (user?.name || 'A')[0].toUpperCase() }}</span>
+      </div>
+      <div class="user-profile-info">
+        <span class="user-profile-name">{{ user?.name || 'Administrador' }}</span>
+        <span class="user-profile-role">{{ user?.role === 'Admin' || user?.role === 'admin' ? 'Administrador' : (user?.role || 'Admin') }}</span>
+      </div>
+      <button class="btn-logout-mini" (click)="logout($event)" title="Sair do painel">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
   </nav>
 </aside>

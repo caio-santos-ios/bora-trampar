@@ -6,7 +6,6 @@
     </div>
   </div>
 
-  <!-- Filters Card -->
   <div class="card filters-card">
     <div class="filters-wrap">
       <div class="search-box">
@@ -14,7 +13,7 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Buscar por protocolo, cliente, profissional ou pedido..."
+          placeholder="Buscar por cliente, profissional ou serviço..."
           [(ngModel)]="searchQuery"
         />
       </div>
@@ -38,14 +37,12 @@
 
   <app-loading [isLoading]="isLoading"></app-loading>
 
-  <!-- Table View -->
   <div class="card" *ngIf="!isLoading">
     <div class="table-responsive desktop-table-view">
       <table class="table">
         <thead>
           <tr>
-            <th>Protocolo</th>
-            <th>Pedido</th>
+            <th>Serviço</th>
             <th>Cliente Reclamante</th>
             <th>Profissional Contestado</th>
             <th>Valor Retido</th>
@@ -56,12 +53,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of filteredList">
-            <td><strong class="gold-text">{{ item.id }}</strong></td>
-            <td><strong>{{ item.appointmentId }}</strong></td>
+            <td><strong>{{ item.serviceName }}</strong></td>
             <td>{{ item.customerName }}</td>
             <td>{{ item.professionalName }}</td>
             <td><strong class="gold-text">{{ global.formatCurrency(item.totalValue) }}</strong></td>
-            <td>{{ global.formatDateTime(item.openedAt) }}</td>
+            <td>{{ (item.openedAt | date : 'dd/MM/yyyy HH:mm') || item.openedAt }}</td>
             <td>
               <span class="status-badge" [ngClass]="item.status === 'released_pro' ? 'active' : item.status === 'under_review' ? 'pending' : 'correction'">
                 {{ item.statusLabel }}
@@ -75,7 +71,7 @@
             </td>
           </tr>
           <tr *ngIf="filteredList.length === 0">
-            <td colspan="8" class="empty-state-cell">
+            <td colspan="7" class="empty-state-cell">
               <i class="fa-solid fa-shield-halved empty-icon"></i>
               <p>Nenhuma contestação pendente de mediação.</p>
             </td>
@@ -84,13 +80,11 @@
       </table>
     </div>
 
-    <!-- Mobile View -->
     <div class="mobile-cards-view">
       <div class="mobile-data-card" *ngFor="let item of filteredList">
         <div class="mobile-card-header">
           <div>
-            <strong class="gold-text">{{ item.id }}</strong> ({{ item.appointmentId }})
-            <div style="font-size: 14px; font-weight: 700; margin-top: 4px;">{{ item.serviceName }}</div>
+            <strong class="gold-text">{{ item.serviceName }}</strong>
           </div>
           <span class="status-badge" [ngClass]="item.status === 'released_pro' ? 'active' : 'pending'">{{ item.statusLabel }}</span>
         </div>
@@ -109,7 +103,7 @@
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Data de Abertura</span>
-            <span class="mobile-card-field-value">{{ global.formatDateTime(item.openedAt) }}</span>
+            <span class="mobile-card-field-value">{{ (item.openedAt | date : 'dd/MM/yyyy HH:mm') || item.openedAt }}</span>
           </div>
         </div>
         <div class="mobile-card-actions">
@@ -121,13 +115,12 @@
     </div>
   </div>
 
-  <!-- Mediation Modal -->
   <div class="modal-overlay" *ngIf="isModalOpen && selectedItem">
     <div class="modal-content modal-lg">
       <div class="modal-header">
         <div>
-          <h2>Caso de Mediação: {{ selectedItem.id }}</h2>
-          <span class="protocol-sub">Pedido: {{ selectedItem.appointmentId }} • {{ selectedItem.serviceName }}</span>
+          <h2>Caso de Mediação</h2>
+          <span class="protocol-sub">{{ selectedItem.serviceName }}</span>
         </div>
         <button class="btn-close" (click)="closeDetails()">&times;</button>
       </div>
@@ -174,7 +167,7 @@
 
         <div class="audit-box" *ngIf="selectedItem.adminDecision">
           <h4><i class="fa-solid fa-gavel"></i> Decisão Administrativa Registrada</h4>
-          <p><strong>Decidido por:</strong> {{ selectedItem.decidedBy }} em {{ selectedItem.decidedAt }}</p>
+          <p><strong>Decidido por:</strong> {{ selectedItem.decidedBy }} em {{ (selectedItem.decidedAt | date: 'dd/MM/yyyy HH:mm') || selectedItem.decidedAt }}</p>
           <p><strong>Parecer:</strong> {{ selectedItem.adminDecision }}</p>
         </div>
       </div>
@@ -201,7 +194,6 @@
     </div>
   </div>
 
-  <!-- Apply Decision Modal -->
   <div class="modal-overlay" *ngIf="isDecisionModalOpen">
     <div class="modal-content">
       <div class="modal-header">

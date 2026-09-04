@@ -75,6 +75,12 @@ export class Appointments implements OnInit {
     return list;
   }
 
+  getStatusCount(status: string): number {
+    if (!this.appointments) return 0;
+    if (status === 'all') return this.appointments.length;
+    return this.appointments.filter(item => (item.status || '').toLowerCase().trim() === status.toLowerCase().trim()).length;
+  }
+
   async loadAppointments() {
     this.isLoading = true;
     this.cdr.detectChanges();

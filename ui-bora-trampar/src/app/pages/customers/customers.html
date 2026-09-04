@@ -150,7 +150,7 @@
                 <button
                   class="btn-icon"
                   [style.color]="customer.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
-                  (click)="toggleBlock(customer)"
+                  (click)="openBlockModal(customer)"
                   [title]="customer.status === 'blocked' ? 'Desbloquear' : 'Bloquear'"
                 >
                   <i class="fa-solid" [ngClass]="customer.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
@@ -210,7 +210,7 @@
             class="btn-secondary"
             style="flex: 1; padding: 8px;"
             [style.color]="customer.status === 'blocked' ? 'var(--status-active)' : '#ef4444'"
-            (click)="toggleBlock(customer)"
+            (click)="openBlockModal(customer)"
           >
             <i class="fa-solid" [ngClass]="customer.status === 'blocked' ? 'fa-lock-open' : 'fa-ban'"></i>
             {{ customer.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
@@ -293,7 +293,7 @@
                 {{ global.formatCurrency(a.total_price || a.totalPrice || a.price || 0) }}
               </div>
               <span class="status-badge" style="font-size: 10px; padding: 2px 6px;">
-                {{ a.status }}
+                {{ global.normalizeStatus(a.status) }}
               </span>
             </div>
           </div>
@@ -302,6 +302,28 @@
 
       <div class="modal-footer">
         <button class="btn-secondary" (click)="closeDetails()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="isBlockModalOpen && customerToBlock">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ customerToBlock.status === 'blocked' ? 'Desbloquear Cliente' : 'Bloquear Cliente' }}</h2>
+        <button class="btn-close" (click)="closeBlockModal()">&times;</button>
+      </div>
+      <p>
+        Tem certeza de que deseja {{ customerToBlock.status === 'blocked' ? 'desbloquear' : 'bloquear' }} o cliente
+        <strong>{{ customerToBlock.name }}</strong>?
+      </p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+        {{ customerToBlock.status === 'blocked' ? 'O cliente voltará a ter acesso normal à plataforma para solicitar serviços.' : 'O cliente não conseguirá realizar novos agendamentos nem acessar a conta enquanto estiver bloqueado.' }}
+      </p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeBlockModal()">Cancelar</button>
+        <button [class]="customerToBlock.status === 'blocked' ? 'btn-primary' : 'btn-danger'" (click)="executeBlock()">
+          {{ customerToBlock.status === 'blocked' ? 'Sim, Desbloquear' : 'Sim, Bloquear' }}
+        </button>
       </div>
     </div>
   </div>

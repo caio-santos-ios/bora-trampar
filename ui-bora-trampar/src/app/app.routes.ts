@@ -11,6 +11,7 @@ import { Users } from './pages/users/users';
 import { Customers } from './pages/customers/customers';
 import { Professionals } from './pages/professionals/professionals';
 import { Settings } from './pages/settings/settings';
+import { Profile } from './pages/profile/profile';
 import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
 import { Confirmation } from './pages/confirmation/confirmation';
@@ -37,7 +38,8 @@ export const routes: Routes = [
       { path: 'customers', component: Customers },
       { path: 'professionals', component: Professionals },
       { path: 'users', component: Users },
-      { path: 'settings', component: Settings }
+      { path: 'settings', component: Settings },
+      { path: 'profile', component: Profile }
     ]
   },
   { path: '**', redirectTo: 'dashboard' }

@@ -31,4 +31,34 @@ export class GlobalService {
       minute: '2-digit'
     });
   }
+
+  normalizeStatus(status: string): string {
+    switch ((status || '').toLowerCase().trim()) {
+      case 'pending':
+      case 'pending_pix':
+        return 'Pendente';
+      case 'confirmed':
+      case 'accepted':
+        return 'Confirmado';
+      case 'in_progress':
+      case 'ongoing':
+        return 'Em Andamento';
+      case 'completed':
+      case 'finished':
+        return 'Concluído';
+      case 'cancelled':
+      case 'canceled':
+        return 'Cancelado';
+      case 'rejected':
+        return 'Recusado';
+      case 'disputed':
+        return 'Em Disputa';
+      case 'active':
+        return 'Ativo';
+      case 'blocked':
+        return 'Bloqueado';
+      default:
+        return status || 'Pendente';
+    }
+  }
 }

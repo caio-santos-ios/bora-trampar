@@ -108,11 +108,20 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                User entity = ObjectMapper.Map<UpdateUserRequest, User>(request);
+                User? existedUser = await repository.GetByIdAsync(request.Id);
+                if (existedUser is null) return new(null, 404, "Usuário não encontrado");
 
-                entity.UpdatedAt = DateTime.Now;
-                User? user = await repository.UpdateAsync(entity);
-                if (user is null) return new(null, 400, "Falha ao atualzar usuário");
+                if (!string.IsNullOrWhiteSpace(request.Name)) existedUser.Name = request.Name;
+                if (!string.IsNullOrWhiteSpace(request.Email)) existedUser.Email = request.Email;
+                if (request.WhatsApp != null) existedUser.WhatsApp = request.WhatsApp;
+                if (request.Photo != null) existedUser.Photo = request.Photo;
+                if (request.Blocked.HasValue) existedUser.Blocked = request.Blocked.Value;
+
+                existedUser.UpdatedAt = DateTime.Now;
+                existedUser.UpdatedBy = request.UpdatedBy;
+
+                User? user = await repository.UpdateAsync(existedUser);
+                if (user is null) return new(null, 400, "Falha ao atualizar usuário");
 
                 return new(user, 200, "Usuário atualizado com sucesso");
             }

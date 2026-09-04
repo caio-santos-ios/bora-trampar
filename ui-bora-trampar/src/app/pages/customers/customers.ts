@@ -147,24 +147,40 @@ export class Customers implements OnInit {
     return list;
   }
 
-  async toggleBlock(customer: CustomerAccount) {
-    const newStatus = customer.status === 'blocked' ? 'active' : 'blocked';
-    const actionLabel = newStatus === 'blocked' ? 'bloquear' : 'desbloquear';
+  customerToBlock: CustomerAccount | null = null;
+  isBlockModalOpen = false;
 
-    if (!confirm(`Deseja realmente ${actionLabel} o cliente ${customer.name}?`)) return;
+  openBlockModal(customer: CustomerAccount) {
+    this.customerToBlock = customer;
+    this.isBlockModalOpen = true;
+  }
+
+  closeBlockModal() {
+    this.customerToBlock = null;
+    this.isBlockModalOpen = false;
+  }
+
+  async executeBlock() {
+    if (!this.customerToBlock) return;
+    const customer = this.customerToBlock;
+    const isBlocking = customer.status !== 'blocked';
+    const newStatus = isBlocking ? 'blocked' : 'active';
+    const actionLabel = isBlocking ? 'bloquear' : 'desbloquear';
 
     try {
       await api.put('/api/users', {
         id: customer.id,
-        isBlocked: newStatus === 'blocked',
-        status: newStatus
+        name: customer.name,
+        email: customer.email,
+        blocked: isBlocking
       });
 
       customer.status = newStatus;
-      customer.statusLabel = newStatus === 'blocked' ? 'Bloqueado' : 'Ativo';
-      customer.riskScore = newStatus === 'blocked' ? 'high' : 'low';
+      customer.statusLabel = isBlocking ? 'Bloqueado' : 'Ativo';
+      customer.riskScore = isBlocking ? 'high' : 'low';
       this.calculateStats();
-      this.toastr.success(`Cliente ${customer.name} ${newStatus === 'blocked' ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
+      this.toastr.success(`Cliente ${customer.name} ${isBlocking ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
+      this.closeBlockModal();
     } catch {
       this.toastr.error(`Erro ao ${actionLabel} cliente`);
     }

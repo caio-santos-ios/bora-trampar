@@ -381,7 +381,7 @@ body {
 }
 
 .btn-secondary:hover {
-  background-color: #1e293b;
+  background-color: #f1f5f9;
 }
 
 button[disabled],
@@ -651,9 +651,9 @@ button[disabled],
   letter-spacing: 0.5px;
 }
 
-.form-control, .form-input {
+.form-control, .form-input, select, textarea, input {
   appearance: none;
-  background-color: #0b1120;
+  background-color: #ffffff;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 11px 14px;
@@ -663,12 +663,16 @@ button[disabled],
   color: var(--text-main);
   transition: all 0.2s ease;
   outline: none;
+}
+
+.form-control, .form-input {
   width: 100%;
 }
 
-.form-control:focus, .form-input:focus {
+.form-control:focus, .form-input:focus, select:focus, textarea:focus, input:focus {
   border-color: var(--accent-primary);
-  background-color: #131d31;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(220, 163, 17, 0.15);
 }
 
 .modal-footer {

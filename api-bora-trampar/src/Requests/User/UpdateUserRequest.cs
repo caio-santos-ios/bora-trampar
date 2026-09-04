@@ -17,5 +17,7 @@ namespace api_bora_trampar.src.Requests
         [Display(Order = 3)]
         public string Email { get; set; } = string.Empty;
         public string WhatsApp { get; set; } = string.Empty;
+        public string? Photo { get; set; }
+        public bool? Blocked { get; set; }
     }
 }

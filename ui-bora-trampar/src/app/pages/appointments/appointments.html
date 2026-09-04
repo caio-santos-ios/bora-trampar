@@ -13,29 +13,39 @@
         <input
           type="text"
           class="form-control"
-          placeholder="Buscar por ID, cliente, profissional ou serviço..."
+          placeholder="Buscar por cliente, profissional ou serviço..."
           [(ngModel)]="searchQuery"
         />
       </div>
 
       <div class="status-filter-group">
-        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
-          Todos ({{ appointments.length }})
+        <button class="status-tab tab-all" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+          <span>Todos</span>
+          <span class="tab-badge">{{ getStatusCount('all') }}</span>
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'">
-          Confirmados
+        <button class="status-tab tab-confirmed" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'">
+          <span>Confirmados</span>
+          <span class="tab-badge">{{ getStatusCount('confirmed') }}</span>
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'">
-          Em Execução
+        <button class="status-tab tab-in-progress" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'">
+          <span>Em Execução</span>
+          <span class="tab-badge">{{ getStatusCount('in_progress') }}</span>
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'">
-          Concluídos
+        <button class="status-tab tab-completed" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'">
+          <span>Concluídos</span>
+          <span class="tab-badge">{{ getStatusCount('completed') }}</span>
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'">
-          Pendente Pix
+        <button class="status-tab tab-pending-pix" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'">
+          <span>Pendente Pix</span>
+          <span class="tab-badge">{{ getStatusCount('pending_pix') }}</span>
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'">
-          Contestados
+        <button class="status-tab tab-disputed" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'">
+          <span>Contestados</span>
+          <span class="tab-badge">{{ getStatusCount('disputed') }}</span>
+        </button>
+        <button class="status-tab tab-cancelled" [class.active]="filterStatus === 'cancelled'" (click)="filterStatus = 'cancelled'">
+          <span>Cancelados</span>
+          <span class="tab-badge">{{ getStatusCount('cancelled') }}</span>
         </button>
       </div>
     </div>
@@ -61,14 +71,14 @@
           <tr *ngFor="let item of filteredList">
             <td>
               <div class="cell-main">{{ item.customerName }}</div>
-              <div class="cell-sub">{{ item.customerPhone }}</div>
+              <div class="cell-sub" *ngIf="item.customerPhone">{{ item.customerPhone }}</div>
             </td>
             <td>
               <div class="cell-main">{{ item.professionalName }}</div>
-              <div class="cell-sub">{{ item.professionalPhone }}</div>
+              <div class="cell-sub" *ngIf="item.professionalPhone">{{ item.professionalPhone }}</div>
             </td>
             <td><strong>{{ item.serviceName }}</strong></td>
-            <td>{{ item.date | date : 'dd/MM/yyyy' }} às {{ item.hour }}</td>
+            <td>{{ (item.date | date : 'dd/MM/yyyy') || item.date }} às {{ item.hour }}</td>
             <td><strong class="gold-text">{{ global.formatCurrency(item.total_price || item.totalPrice || item.value || 0) }}</strong></td>
             <td>
               <span class="status-badge" [ngClass]="item.status">
@@ -83,7 +93,7 @@
             </td>
           </tr>
           <tr *ngIf="filteredList.length === 0">
-            <td colspan="8" class="empty-state-cell">
+            <td colspan="7" class="empty-state-cell">
               <i class="fa-solid fa-folder-open empty-icon"></i>
               <p>Nenhum agendamento encontrado para estes filtros.</p>
             </td>
@@ -95,9 +105,8 @@
     <div class="mobile-cards-view">
       <div class="mobile-data-card" *ngFor="let item of filteredList">
         <div class="mobile-card-header">
-          <div>
-            <strong class="gold-text">{{ item.id }}</strong>
-            <div style="font-size: 14px; font-weight: 700; margin-top: 2px;">{{ item.serviceName }}</div>
+          <div class="mobile-card-title-wrap">
+            <div class="mobile-service-title">{{ item.serviceName }}</div>
           </div>
           <span class="status-badge" [ngClass]="item.status">{{ item.statusLabel }}</span>
         </div>
@@ -112,11 +121,11 @@
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Data e Hora</span>
-            <span class="mobile-card-field-value">{{ item.date }} {{ item.hour }}</span>
+            <span class="mobile-card-field-value">{{ (item.date | date : 'dd/MM/yyyy') || item.date }} às {{ item.hour }}</span>
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Valor</span>
-            <span class="mobile-card-field-value">{{ global.formatCurrency(item.value) }}</span>
+            <span class="mobile-card-field-value gold-text">{{ global.formatCurrency(item.value) }}</span>
           </div>
         </div>
         <div class="mobile-card-actions">
@@ -132,8 +141,8 @@
     <div class="modal-content modal-lg">
       <div class="modal-header">
         <div>
-          <h2>Detalhes do Agendamento {{ selectedItem.id }}</h2>
-          <span class="protocol-sub">Criado em {{ global.formatDateTime(selectedItem.createdAt) }}</span>
+          <h2>Detalhes do Agendamento</h2>
+          <span class="protocol-sub">Criado em {{ (selectedItem.createdAt | date : 'dd/MM/yyyy HH:mm') || selectedItem.createdAt }}</span>
         </div>
         <button class="btn-close" (click)="closeDetailsModal()">&times;</button>
       </div>
@@ -148,7 +157,7 @@
             </div>
             <div class="info-item">
               <label>Data & Horário</label>
-              <span>{{ selectedItem.date }} às {{ selectedItem.hour }}</span>
+              <span>{{ (selectedItem.date | date : 'dd/MM/yyyy') || selectedItem.date }} às {{ selectedItem.hour }}</span>
             </div>
             <div class="info-item">
               <label>Endereço de Atendimento</label>
@@ -166,11 +175,11 @@
           <div class="info-grid">
             <div class="info-item">
               <label>Cliente</label>
-              <span>{{ selectedItem.customerName }} ({{ selectedItem.customerPhone }})</span>
+              <span>{{ selectedItem.customerName }}<ng-container *ngIf="selectedItem.customerPhone"> ({{ selectedItem.customerPhone }})</ng-container></span>
             </div>
             <div class="info-item">
               <label>Profissional</label>
-              <span>{{ selectedItem.professionalName }} ({{ selectedItem.professionalPhone }})</span>
+              <span>{{ selectedItem.professionalName }}<ng-container *ngIf="selectedItem.professionalPhone"> ({{ selectedItem.professionalPhone }})</ng-container></span>
             </div>
           </div>
         </div>
