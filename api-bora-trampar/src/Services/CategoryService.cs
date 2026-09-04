@@ -19,9 +19,30 @@ namespace api_bora_trampar.src.Services
             {
                 Pagination<Category> pagination = new(request.QueryParams);
 
+                if (!pagination.PipelineFilter.Contains("deleted"))
+                {
+                    pagination.PipelineFilter.Add("deleted", new BsonDocument("$ne", true));
+                }
+
+                List<BsonDocument> countPipeline =
+                [
+                    new("$match", pagination.PipelineFilter)
+                ];
+
+                var sortDoc = pagination.PipelineSort;
+                if (sortDoc.Contains("createdAt"))
+                {
+                    var sortVal = sortDoc["createdAt"];
+                    sortDoc.Remove("createdAt");
+                    sortDoc.Add("created_at", sortVal);
+                }
+
                 List<BsonDocument> pipeline =
                 [
                     new("$match", pagination.PipelineFilter),
+                    new("$sort", sortDoc),
+                    new("$skip", pagination.Skip),
+                    new("$limit", pagination.Limit),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -29,14 +50,12 @@ namespace api_bora_trampar.src.Services
                         {"name", 1},
                         {"description", 1},
                         {"icon", 1},
-                        {"createdAt", 1}
-                    }),
-                    new("$limit", pagination.Limit),
-                    new("$sort", pagination.PipelineSort)
+                        {"createdAt", new BsonDocument("$ifNull", new BsonArray { "$created_at", "$createdAt" })}
+                    })
                 ];
 
+                long count = await repository.GetCountAsync(countPipeline);
                 List<dynamic> categories = await repository.GetAllAsync(pipeline);
-                long count = await repository.GetCountAsync(pipeline);
 
                 PaginationApi<List<dynamic>> data = new(categories, count, pagination.PageNumber, pagination.PageSize);
 

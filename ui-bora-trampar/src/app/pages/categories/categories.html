@@ -12,22 +12,30 @@
     </div>
   </div>
 
-  <!-- Search Card -->
   <div class="card search-card">
     <div class="search-box">
       <i class="fa-solid fa-magnifying-glass"></i>
       <input
         type="text"
         class="form-control"
-        placeholder="Filtrar categorias por nome ou descrição..."
+        placeholder="Filtrar categorias por nome..."
         [(ngModel)]="searchQuery"
+        (input)="onSearchInput()"
       />
+      <button
+        *ngIf="searchQuery"
+        type="button"
+        class="search-clear-btn"
+        (click)="clearSearch()"
+        title="Limpar pesquisa"
+      >
+        <i class="fa-solid fa-xmark"></i>
+      </button>
     </div>
   </div>
 
   <app-loading [isLoading]="isLoading"></app-loading>
 
-  <!-- Categories Table -->
   <div class="card" *ngIf="!isLoading">
     <div class="table-responsive desktop-table-view">
       <table class="table">
@@ -71,7 +79,6 @@
       </table>
     </div>
 
-    <!-- Mobile View -->
     <div class="mobile-cards-view">
       <div class="mobile-data-card" *ngFor="let item of filteredList">
         <div class="mobile-card-header">
@@ -94,9 +101,70 @@
         </div>
       </div>
     </div>
+
+    <div class="pagination-container" *ngIf="totalCount > 0">
+      <div class="pagination-info">
+        <span>Mostrando <strong>{{ startIndex }}</strong> - <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> categorias</span>
+        <div class="page-size-selector">
+          <label for="pageSizeSelect">Itens por página:</label>
+          <select id="pageSizeSelect" class="form-control select-page-size" [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+            <option *ngFor="let opt of pageSizeOptions" [value]="opt">{{ opt }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pagination-nav" *ngIf="totalPages > 1">
+        <button
+          type="button"
+          class="page-btn nav-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(1)"
+          title="Primeira página"
+        >
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+        <button
+          type="button"
+          class="page-btn nav-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+          title="Página anterior"
+        >
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+
+        <button
+          type="button"
+          *ngFor="let page of visiblePages"
+          class="page-btn number-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          class="page-btn nav-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+          title="Próxima página"
+        >
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+        <button
+          type="button"
+          class="page-btn nav-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(totalPages)"
+          title="Última página"
+        >
+          <i class="fa-solid fa-angles-right"></i>
+        </button>
+      </div>
+    </div>
   </div>
 
-  <!-- Create/Edit Modal -->
   <div class="modal-overlay" *ngIf="isModalOpen">
     <div class="modal-content">
       <div class="modal-header">
@@ -155,7 +223,6 @@
     </div>
   </div>
 
-  <!-- Delete Modal -->
   <div class="modal-overlay" *ngIf="isDeleteModalOpen && categoryToDelete">
     <div class="modal-content">
       <div class="modal-header">

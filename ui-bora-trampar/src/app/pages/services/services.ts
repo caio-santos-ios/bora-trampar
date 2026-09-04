@@ -77,13 +77,17 @@ export class Services implements OnInit {
 
     try {
       const [resCat, resServ] = await Promise.allSettled([
-        api.get('/api/categories'),
+        api.get('/api/categories?pageSize=100'),
         api.get('/api/services')
       ]);
 
       if (resCat.status === 'fulfilled' && resCat.value.data) {
         const catData = resCat.value.data?.result || resCat.value.data?.data || resCat.value.data;
-        const catList = Array.isArray(catData) ? catData : (Array.isArray(catData?.data) ? catData.data : []);
+        const catList = Array.isArray(catData)
+          ? catData
+          : (Array.isArray(catData?.data?.data)
+              ? catData.data.data
+              : (Array.isArray(catData?.data) ? catData.data : []));
         this.categoriesList = catList.map((c: any) => ({
           id: c.id || c._id,
           name: c.name
