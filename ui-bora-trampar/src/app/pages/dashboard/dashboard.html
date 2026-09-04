@@ -16,7 +16,7 @@
     </div>
   </div>
 
-  <app-loading [isLoading]="isLoading"></app-loading>
+  <app-loading *ngIf="isLoading" [isLoading]="isLoading"></app-loading>
 
   <div class="kpi-grid">
     <div class="kpi-card gold-border">

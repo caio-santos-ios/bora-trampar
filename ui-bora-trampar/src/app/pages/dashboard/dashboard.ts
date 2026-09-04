@@ -66,6 +66,13 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     this.isLoading = true;
     this.cdr.detectChanges();
 
+    const safetyTimer = setTimeout(() => {
+      if (this.isLoading) {
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
+    }, 3500);
+
     try {
       const response = await api.get('/api/dashboard');
       const data = response.data?.result?.data;
@@ -100,22 +107,28 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      try {
-        const resApprovals = await api.get('/api/approvals');
-        const apprList = resApprovals.data?.result || resApprovals.data?.data || resApprovals.data || [];
-        if (Array.isArray(apprList)) {
-          const pendingCount = apprList.filter((a: any) => {
-            const s = (a.status || '').toString().toLowerCase().trim();
-            return !a.approved && s !== 'approved' && s !== 'rejected';
-          }).length;
-          if (pendingCount > 0 || this.stats.pendingVerifications === 0) {
-            this.stats.pendingVerifications = pendingCount;
+      this.isLoading = false;
+      this.cdr.detectChanges();
+
+      api.get('/api/approvals')
+        .then(resApprovals => {
+          const apprList = resApprovals.data?.result || resApprovals.data?.data || resApprovals.data || [];
+          if (Array.isArray(apprList)) {
+            const pendingCount = apprList.filter((a: any) => {
+              const s = (a.status || '').toString().toLowerCase().trim();
+              return !a.approved && s !== 'approved' && s !== 'rejected';
+            }).length;
+            if (pendingCount > 0 || this.stats.pendingVerifications === 0) {
+              this.stats.pendingVerifications = pendingCount;
+              this.cdr.detectChanges();
+            }
           }
-        }
-      } catch {}
+        })
+        .catch(() => {});
     } catch (e) {
       console.warn('Fallback ao carregar dashboard:', e);
     } finally {
+      clearTimeout(safetyTimer);
       this.isLoading = false;
       this.cdr.detectChanges();
     }
