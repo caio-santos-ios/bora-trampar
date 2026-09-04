@@ -55,8 +55,18 @@ class AuthService {
         } else if (errorData['title'] != null) {
           errorMsg = errorData['title'].toString();
         }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Aguarde alguns instantes e tente novamente.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
       } else if (e.message != null && e.message!.isNotEmpty) {
-        errorMsg = e.message!;
+        if (e.message!.toLowerCase().contains('timeout')) {
+          errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Tente novamente.';
+        } else {
+          errorMsg = 'Erro de conexão com o servidor. Tente novamente.';
+        }
       }
 
       return {
@@ -66,7 +76,7 @@ class AuthService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Não foi possível conectar ao servidor: $e',
+        'message': 'Não foi possível conectar ao servidor. Tente novamente.',
       };
     }
   }
@@ -105,8 +115,18 @@ class AuthService {
         } else if (errorData['title'] != null) {
           errorMsg = errorData['title'].toString();
         }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Aguarde alguns instantes e tente novamente.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
       } else if (e.message != null && e.message!.isNotEmpty) {
-        errorMsg = e.message!;
+        if (e.message!.toLowerCase().contains('timeout')) {
+          errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Tente novamente.';
+        } else {
+          errorMsg = 'Erro de conexão com o servidor. Tente novamente.';
+        }
       }
 
       return {
@@ -116,7 +136,7 @@ class AuthService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Não foi possível conectar ao servidor: $e',
+        'message': 'Não foi possível conectar ao servidor. Tente novamente.',
       };
     }
   }
@@ -155,8 +175,18 @@ class AuthService {
         } else if (errorData['title'] != null) {
           errorMsg = errorData['title'].toString();
         }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Aguarde alguns instantes e tente novamente.';
+      } else if (e.type == DioExceptionType.connectionError) {
+        errorMsg = 'Não foi possível conectar ao servidor. Verifique sua conexão com a internet.';
       } else if (e.message != null && e.message!.isNotEmpty) {
-        errorMsg = e.message!;
+        if (e.message!.toLowerCase().contains('timeout')) {
+          errorMsg = 'Tempo limite esgotado. O servidor pode estar iniciando. Tente novamente.';
+        } else {
+          errorMsg = 'Erro de conexão com o servidor. Tente novamente.';
+        }
       }
 
       return {
@@ -166,7 +196,7 @@ class AuthService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Não foi possível conectar ao servidor: $e',
+        'message': 'Não foi possível conectar ao servidor. Tente novamente.',
       };
     }
   }
