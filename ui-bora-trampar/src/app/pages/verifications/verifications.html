@@ -15,6 +15,7 @@
           class="form-control"
           placeholder="Buscar por profissional, documento ou categoria..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
         />
       </div>
 
@@ -22,35 +23,35 @@
         <button
           class="filter-chip"
           [class.active]="filterStatus === 'all'"
-          (click)="filterStatus = 'all'"
+          (click)="filterStatus = 'all'; onFilterChange()"
         >
           Todos ({{ verifications.length }})
         </button>
         <button
           class="filter-chip"
           [class.active]="filterStatus === 'analysis'"
-          (click)="filterStatus = 'analysis'"
+          (click)="filterStatus = 'analysis'; onFilterChange()"
         >
           Em Análise
         </button>
         <button
           class="filter-chip"
           [class.active]="filterStatus === 'approved'"
-          (click)="filterStatus = 'approved'"
+          (click)="filterStatus = 'approved'; onFilterChange()"
         >
           Aprovados
         </button>
         <button
           class="filter-chip"
           [class.active]="filterStatus === 'correction'"
-          (click)="filterStatus = 'correction'"
+          (click)="filterStatus = 'correction'; onFilterChange()"
         >
           Correção
         </button>
         <button
           class="filter-chip"
           [class.active]="filterStatus === 'rejected'"
-          (click)="filterStatus = 'rejected'"
+          (click)="filterStatus = 'rejected'; onFilterChange()"
         >
           Reprovados
         </button>
@@ -74,7 +75,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredList">
+          <tr *ngFor="let item of paginatedList">
             <td>
               <div class="pro-cell">
                 <div class="avatar-circle">{{ item.professionalName[0] }}</div>
@@ -110,7 +111,7 @@
     </div>
 
     <div class="mobile-cards-view">
-      <div class="mobile-data-card" *ngFor="let item of filteredList">
+      <div class="mobile-data-card" *ngFor="let item of paginatedList">
         <div class="mobile-card-header">
           <div>
             <div class="pro-name">{{ item.professionalName }}</div>
@@ -141,6 +142,33 @@
             <span>Ver Documentos</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <div class="pagination-container" *ngIf="totalPages > 1 || totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ startIndex }}</strong> a <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+      <div class="pagination-nav">
+        <button class="page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Primeira página">
+          &laquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Página anterior">
+          &lsaquo;
+        </button>
+        <button
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Próxima página">
+          &rsaquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Última página">
+          &raquo;
+        </button>
       </div>
     </div>
   </div>

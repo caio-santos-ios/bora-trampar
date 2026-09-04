@@ -9,10 +9,11 @@ using api_bora_trampar.src.Requests.Auth;
 using MongoDB.Bson;
 using api_bora_trampar.src.Utils;
 using api_bora_trampar.src.Handlers;
+using api_bora_trampar.src.Interfaces;
 
 namespace api_bora_trampar.src.Services
 {
-    public class AuthService(IAuthRepository authRepository, MailHandler mailHandler) : IAuthService
+    public class AuthService(IAuthRepository authRepository, MailHandler mailHandler, IProfileProfessionalService profileProfessionalService) : IAuthService
     {
         public async Task<ResponseApi<dynamic>> LoginAsync(LoginRequest request)
         {
@@ -48,6 +49,14 @@ namespace api_bora_trampar.src.Services
                 string token = GenerateJwtToken(user);
                 string refreshToken = GenerateJwtToken(user, true);
 
+                bool isProfileCompleted = false;
+                String identityVerificationStatus = "Pending";
+                if(user.Role == Enums.RoleUserEnum.Professional)
+                {
+                    ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
+                    isPasswordValid = profile.Data is not null;
+                }
+
                 dynamic result = new
                 {
                     token,
@@ -60,7 +69,9 @@ namespace api_bora_trampar.src.Services
                         role = user.Role.ToString(),
                         photo = user.Photo,
                         whatsapp = user.WhatsApp,
-                        walletBalance = user.WalletBalance
+                        walletBalance = user.WalletBalance,
+                        isProfileCompleted,
+                        identityVerificationStatus
                     }
                 };
 

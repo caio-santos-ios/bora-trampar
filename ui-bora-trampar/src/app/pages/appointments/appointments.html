@@ -15,35 +15,36 @@
           class="form-control"
           placeholder="Buscar por cliente, profissional ou serviço..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
         />
       </div>
 
       <div class="status-filter-group">
-        <button class="status-tab tab-all" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+        <button class="status-tab tab-all" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'; onFilterChange()">
           <span>Todos</span>
           <span class="tab-badge">{{ getStatusCount('all') }}</span>
         </button>
-        <button class="status-tab tab-confirmed" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'">
+        <button class="status-tab tab-confirmed" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'; onFilterChange()">
           <span>Confirmados</span>
           <span class="tab-badge">{{ getStatusCount('confirmed') }}</span>
         </button>
-        <button class="status-tab tab-in-progress" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'">
+        <button class="status-tab tab-in-progress" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'; onFilterChange()">
           <span>Em Execução</span>
           <span class="tab-badge">{{ getStatusCount('in_progress') }}</span>
         </button>
-        <button class="status-tab tab-completed" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'">
+        <button class="status-tab tab-completed" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'; onFilterChange()">
           <span>Concluídos</span>
           <span class="tab-badge">{{ getStatusCount('completed') }}</span>
         </button>
-        <button class="status-tab tab-pending-pix" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'">
+        <button class="status-tab tab-pending-pix" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'; onFilterChange()">
           <span>Pendente Pix</span>
           <span class="tab-badge">{{ getStatusCount('pending_pix') }}</span>
         </button>
-        <button class="status-tab tab-disputed" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'">
+        <button class="status-tab tab-disputed" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'; onFilterChange()">
           <span>Contestados</span>
           <span class="tab-badge">{{ getStatusCount('disputed') }}</span>
         </button>
-        <button class="status-tab tab-cancelled" [class.active]="filterStatus === 'cancelled'" (click)="filterStatus = 'cancelled'">
+        <button class="status-tab tab-cancelled" [class.active]="filterStatus === 'cancelled'" (click)="filterStatus = 'cancelled'; onFilterChange()">
           <span>Cancelados</span>
           <span class="tab-badge">{{ getStatusCount('cancelled') }}</span>
         </button>
@@ -68,7 +69,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredList">
+          <tr *ngFor="let item of paginatedList">
             <td>
               <div class="cell-main">{{ item.customerName }}</div>
               <div class="cell-sub" *ngIf="item.customerPhone">{{ item.customerPhone }}</div>
@@ -103,7 +104,7 @@
     </div>
 
     <div class="mobile-cards-view">
-      <div class="mobile-data-card" *ngFor="let item of filteredList">
+      <div class="mobile-data-card" *ngFor="let item of paginatedList">
         <div class="mobile-card-header">
           <div class="mobile-card-title-wrap">
             <div class="mobile-service-title">{{ item.serviceName }}</div>
@@ -133,6 +134,33 @@
             <i class="fa-solid fa-eye"></i> Ver Pedido
           </button>
         </div>
+      </div>
+    </div>
+
+    <div class="pagination-container" *ngIf="totalPages > 1 || totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ startIndex }}</strong> a <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+      <div class="pagination-nav">
+        <button class="page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Primeira página">
+          &laquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Página anterior">
+          &lsaquo;
+        </button>
+        <button
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Próxima página">
+          &rsaquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Última página">
+          &raquo;
+        </button>
       </div>
     </div>
   </div>

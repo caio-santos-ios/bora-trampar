@@ -1,6 +1,7 @@
 import 'package:app_bora_trampar/bora_trampar_app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
@@ -16,6 +17,8 @@ void main() async {
   );
 
   await initializeDateFormatting('pt_BR', null);
+  await Hive.initFlutter();
+  await Hive.openBox('boratramprar');
 
   runApp(const BoraTrampaApp());
 }

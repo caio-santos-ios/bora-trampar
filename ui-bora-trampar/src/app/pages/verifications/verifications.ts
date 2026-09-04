@@ -133,6 +133,9 @@ export class Verifications implements OnInit {
     }
   }
 
+  currentPage = 1;
+  pageSize = 10;
+
   get filteredList(): VerificationItem[] {
     return this.verifications.filter(item => {
       const matchStatus = this.filterStatus === 'all' || item.status === this.filterStatus;
@@ -142,6 +145,53 @@ export class Verifications implements OnInit {
         item.category.toLowerCase().includes(this.searchQuery.toLowerCase());
       return matchStatus && matchQuery;
     });
+  }
+
+  get totalCount(): number {
+    return this.filteredList.length;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalCount / this.pageSize) || 1;
+  }
+
+  get startIndex(): number {
+    if (this.totalCount === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min(this.currentPage * this.pageSize, this.totalCount);
+  }
+
+  get paginatedList(): VerificationItem[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredList.slice(start, start + this.pageSize);
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) return;
+    this.currentPage = page;
+  }
+
+  onFilterChange() {
+    this.currentPage = 1;
   }
 
   openDetails(item: VerificationItem) {

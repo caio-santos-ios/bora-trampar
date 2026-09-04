@@ -67,23 +67,24 @@
           class="form-control"
           placeholder="Buscar por nome, profissão, e-mail ou cidade..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
         />
       </div>
 
       <div class="status-filter-group">
-        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'">
+        <button class="filter-chip" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'; onFilterChange()">
           Todos ({{ professionals.length }})
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'verified'" (click)="filterStatus = 'verified'">
+        <button class="filter-chip" [class.active]="filterStatus === 'verified'" (click)="filterStatus = 'verified'; onFilterChange()">
           Verificados ({{ stats.verifiedPros }})
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'unverified'" (click)="filterStatus = 'unverified'">
+        <button class="filter-chip" [class.active]="filterStatus === 'unverified'" (click)="filterStatus = 'unverified'; onFilterChange()">
           Não Verificados ({{ stats.unverifiedPros }})
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'pending'" (click)="filterStatus = 'pending'">
+        <button class="filter-chip" [class.active]="filterStatus === 'pending'" (click)="filterStatus = 'pending'; onFilterChange()">
           Em Análise ({{ stats.pendingPros }})
         </button>
-        <button class="filter-chip" [class.active]="filterStatus === 'blocked'" (click)="filterStatus = 'blocked'">
+        <button class="filter-chip" [class.active]="filterStatus === 'blocked'" (click)="filterStatus = 'blocked'; onFilterChange()">
           Bloqueados
         </button>
       </div>
@@ -109,7 +110,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let pro of filteredList">
+          <tr *ngFor="let pro of paginatedList">
             <td>
               <div class="user-cell">
                 <div class="pro-avatar" *ngIf="pro.avatarUrl">
@@ -200,7 +201,7 @@
     </div>
 
     <div class="mobile-card-list">
-      <div class="user-card-item" *ngFor="let pro of filteredList">
+      <div class="user-card-item" *ngFor="let pro of paginatedList">
         <div class="user-card-header">
           <div class="user-cell">
             <div class="pro-avatar" *ngIf="pro.avatarUrl">
@@ -252,6 +253,33 @@
             {{ pro.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
           </button>
         </div>
+      </div>
+    </div>
+
+    <div class="pagination-container" *ngIf="totalPages > 1 || totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ startIndex }}</strong> a <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+      <div class="pagination-nav">
+        <button class="page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Primeira página">
+          &laquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Página anterior">
+          &lsaquo;
+        </button>
+        <button
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Próxima página">
+          &rsaquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Última página">
+          &raquo;
+        </button>
       </div>
     </div>
   </div>

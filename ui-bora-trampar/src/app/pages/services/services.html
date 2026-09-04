@@ -22,11 +22,12 @@
           class="form-control"
           placeholder="Buscar serviço por nome..."
           [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
         />
       </div>
 
       <div class="category-select-wrap">
-        <select class="form-control" [(ngModel)]="selectedCategoryFilter">
+        <select class="form-control" [(ngModel)]="selectedCategoryFilter" (ngModelChange)="onFilterChange()">
           <option value="all">Todas as Categorias</option>
           <option *ngFor="let cat of categoriesList" [value]="cat.id">
             {{ cat.name }}
@@ -38,7 +39,6 @@
 
   <app-loading [isLoading]="isLoading"></app-loading>
 
-  <!-- Services Table -->
   <div class="card" *ngIf="!isLoading">
     <div class="table-responsive desktop-table-view">
       <table class="table">
@@ -52,7 +52,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredList">
+          <tr *ngFor="let item of paginatedList">
             <td>
               <div class="service-icon-badge">
                 <i class="fa-solid" [ngClass]="item.icon"></i>
@@ -85,9 +85,8 @@
       </table>
     </div>
 
-    <!-- Mobile View -->
     <div class="mobile-cards-view">
-      <div class="mobile-data-card" *ngFor="let item of filteredList">
+      <div class="mobile-data-card" *ngFor="let item of paginatedList">
         <div class="mobile-card-header">
           <div class="mobile-service-title">
             <div class="service-icon-badge sm">
@@ -114,6 +113,33 @@
             <i class="fa-solid fa-trash-can"></i> Excluir
           </button>
         </div>
+      </div>
+    </div>
+
+    <div class="pagination-container" *ngIf="totalPages > 1 || totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ startIndex }}</strong> a <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+      <div class="pagination-nav">
+        <button class="page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Primeira página">
+          &laquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Página anterior">
+          &lsaquo;
+        </button>
+        <button
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Próxima página">
+          &rsaquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Última página">
+          &raquo;
+        </button>
       </div>
     </div>
   </div>

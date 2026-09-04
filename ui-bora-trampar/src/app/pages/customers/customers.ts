@@ -125,6 +125,9 @@ export class Customers implements OnInit {
     this.stats.totalWalletBalance = this.customers.reduce((sum, c) => sum + c.walletBalance, 0);
   }
 
+  currentPage = 1;
+  pageSize = 10;
+
   get filteredList(): CustomerAccount[] {
     let list = this.customers;
 
@@ -145,6 +148,53 @@ export class Customers implements OnInit {
     }
 
     return list;
+  }
+
+  get totalCount(): number {
+    return this.filteredList.length;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.totalCount / this.pageSize) || 1;
+  }
+
+  get startIndex(): number {
+    if (this.totalCount === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get endIndex(): number {
+    return Math.min(this.currentPage * this.pageSize, this.totalCount);
+  }
+
+  get paginatedList(): CustomerAccount[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredList.slice(start, start + this.pageSize);
+  }
+
+  get visiblePages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(this.totalPages, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) return;
+    this.currentPage = page;
+  }
+
+  onFilterChange() {
+    this.currentPage = 1;
   }
 
   customerToBlock: CustomerAccount | null = null;

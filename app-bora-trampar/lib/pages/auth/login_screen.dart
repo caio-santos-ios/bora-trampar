@@ -1,32 +1,33 @@
+import 'package:app_bora_trampar/models/profile_professional_model.dart';
+import 'package:app_bora_trampar/pages/main/main_navigation_screen.dart';
+import 'package:app_bora_trampar/pages/onboarding/identity_verification_pending_screen.dart';
+import 'package:app_bora_trampar/pages/onboarding/professional_onboarding_screen.dart';
+import 'package:app_bora_trampar/repositories/auth/auth_repository.dart';
+import 'package:app_bora_trampar/repositories/profile/profile_professional_repository.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
-import '../../models/user_model.dart';
-import '../../models/profile_professional_model.dart';
-import '../../repositories/profile/profile_professional_repository.dart';
-import '../main/main_navigation_screen.dart';
-import '../onboarding/identity_verification_pending_screen.dart';
-import '../onboarding/professional_onboarding_screen.dart';
 import '../customer/customer_register_screen.dart';
 import 'forgot_password_screen.dart';
 import '../professional/professional_register_screen.dart';
+import 'package:hive/hive.dart';
 
 class LoginScreen extends StatefulWidget {
   final String initialRole;
 
-  const LoginScreen({
-    super.key,
-    this.initialRole = 'Profissional',
-  });
+  const LoginScreen({super.key, this.initialRole = 'Profissional'});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _authRepository = AuthRepository();
+  final _profileProfessionalRepository = ProfileProfessionalRepository();
+  final _boraTramparHive = Hive.box("smt");
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -42,76 +43,94 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    try {
+      if (!_formKey.currentState!.validate()) return;
+      setState(() => _isLoading = true);
 
-    setState(() => _isLoading = true);
+      final response = await _authRepository.login({
+        "email": _emailController.text,
+        "password": _passwordController.text,
+        "role": widget.initialRole,
+      });
 
-    final res = await AuthService().login(
-      email: _emailController.text,
-      password: _passwordController.text,
-      role: widget.initialRole,
-    );
-    
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+      setState(() {
+        String token = response.data["result"]["data"]["token"];
+        _boraTramparHive.put("token", token);
+      });
 
-    if (res['success'] == true) {
-      final user = (res['user'] as UserModel?) ?? await AuthService().getCurrentUser();
-      final userRole = (user?.role ?? widget.initialRole).toLowerCase();
-      final isProfessional = userRole.contains('prof') || userRole.contains('prestador') || widget.initialRole.toLowerCase().contains('prof');
+      if (widget.initialRole == "Customer") {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Login realizado com sucesso!',
+              style: GoogleFonts.inter(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
 
-      if (isProfessional) {
-        ProfileProfessionalModel? profile;
-        if (user != null && user.id.isNotEmpty) {
-          profile = await ProfileProfessionalRepository().getByUserId(user.id);
-        }
-        profile ??= await ProfileProfessionalRepository().getMe();
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+          (route) => false,
+        );
+      } else {
+        bool isProfileCompleted =
+            response.data["result"]["data"]["isProfileCompleted"];
 
-        if (!mounted) return;
-
-        if (profile == null || !profile.isProfileCompleted) {
+        if (!isProfileCompleted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const ProfessionalOnboardingScreen()),
+            MaterialPageRoute(
+              builder: (context) => const ProfessionalOnboardingScreen(),
+            ),
             (route) => false,
           );
           return;
         }
 
-        final status = profile.identityVerificationStatus.toLowerCase();
-        if (status != 'approved') {
+        String useridentityVerificationStatusId = response
+            .data["result"]["data"]["user"]["identityVerificationStatus"];
+
+        if (useridentityVerificationStatusId == "Approved") {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Login realizado com sucesso!',
+                style: GoogleFonts.inter(
+                  color: AppColors.textDark,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              backgroundColor: AppColors.success,
+            ),
+          );
+
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => IdentityVerificationPendingScreen(initialProfile: profile)),
+            MaterialPageRoute(
+              builder: (context) => const MainNavigationScreen(),
+            ),
             (route) => false,
           );
-          return;
+        } else {
+          String userId = response.data["result"]["data"]["user"]["id"];
+
+          ProfileProfessionalModel? profile =
+              await _profileProfessionalRepository.getByUserId(userId);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) =>
+                  IdentityVerificationPendingScreen(initialProfile: profile),
+            ),
+            (route) => false,
+          );
         }
       }
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res['message'] ?? 'Login realizado com sucesso!',
-            style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
-          ),
-          backgroundColor: AppColors.primaryGold,
-        ),
-      );
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-        (route) => false,
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            res['message'] ?? 'Falha ao realizar login.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
+    } on DioException catch (err) {
+      // deixe vazio, futuramente vou fazer o tratamento
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -125,7 +144,11 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -171,24 +194,41 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'seuemail@exemplo.com',
-                    hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                    prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20),
+                    hintStyle: GoogleFonts.inter(
+                      color: AppColors.textMuted,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.email_outlined,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
                     filled: true,
                     fillColor: AppColors.inputBackground,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGold,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   validator: (value) {
@@ -214,14 +254,26 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 15,
+                  ),
                   decoration: InputDecoration(
                     hintText: '••••••••',
-                    hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                    prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 20),
+                    hintStyle: GoogleFonts.inter(
+                      color: AppColors.textMuted,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline_rounded,
+                      color: AppColors.textMuted,
+                      size: 20,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AppColors.textMuted,
                         size: 20,
                       ),
@@ -233,15 +285,22 @@ class _LoginScreenState extends State<LoginScreen> {
                     fillColor: AppColors.inputBackground,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                      borderSide: const BorderSide(
+                        color: AppColors.inputBorder,
+                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                      borderSide: const BorderSide(
+                        color: AppColors.primaryGold,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   validator: (value) {
@@ -300,7 +359,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                     child: RichText(
                       text: TextSpan(
-                        style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
                         children: [
                           TextSpan(
                             text: isCustomer
