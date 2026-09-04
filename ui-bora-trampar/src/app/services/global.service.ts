@@ -1,9 +1,42 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GlobalService {
+  protected toastr = inject(ToastrService);
+  protected router = inject(Router);
+
+  errorNotification(err: any) {
+    if (!err) return;
+
+    const status = err.response?.status ?? err.status;
+    const message =
+      err.response?.data?.message ??
+      err.response?.data?.Message ??
+      err.message ??
+      'Ocorreu um erro inesperado. Por favor, tente novamente.';
+
+    if (status === 401) {
+      this.toastr.warning('Sessão finalizada', 'Atenção');
+      const theme = localStorage.getItem('theme');
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('role');
+      if (theme) localStorage.setItem('theme', theme);
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    if (status >= 400 && status < 500) {
+      this.toastr.warning(message, 'Atenção');
+    } else {
+      this.toastr.error(message, 'Erro');
+    }
+  }
   formatCurrency(value: number | string): string {
     const num = typeof value === 'string' ? parseFloat(value) : value;
     if (isNaN(num)) return 'R$ 0,00';
