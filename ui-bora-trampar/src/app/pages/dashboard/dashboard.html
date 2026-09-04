@@ -107,7 +107,6 @@
       <table class="table">
         <thead>
           <tr>
-            <th>ID Pedido</th>
             <th>Cliente</th>
             <th>Profissional</th>
             <th>Serviço</th>
@@ -118,16 +117,15 @@
         </thead>
         <tbody>
           <tr *ngFor="let item of recentAppointments">
-            <td><strong class="gold-text">{{ item.id }}</strong></td>
             <td>{{ item.customer }}</td>
             <td>{{ item.professional }}</td>
             <td>{{ item.service }}</td>
-            <td>{{ item.date }}</td>
+            <td>{{ (item.date | date: 'dd/MM/yyyy HH:mm') || item.date }}</td>
             <td><strong>{{ global.formatCurrency(item.value) }}</strong></td>
             <td>
               <span class="status-badge" [ngClass]="item.status">
                 <i class="fa-solid fa-circle" style="font-size: 6px;"></i>
-                {{ item.statusText }}
+                {{ global.normalizeStatus(item.statusText || item.status) }}
               </span>
             </td>
           </tr>
@@ -146,11 +144,8 @@
     <div class="mobile-cards-view" *ngIf="recentAppointments.length > 0">
       <div class="mobile-data-card" *ngFor="let item of recentAppointments">
         <div class="mobile-card-header">
-          <div>
-            <strong class="gold-text">{{ item.id }}</strong>
-            <div style="font-size: 14px; font-weight: 700; margin-top: 2px;">{{ item.service }}</div>
-          </div>
-          <span class="status-badge" [ngClass]="item.status">{{ item.statusText }}</span>
+          <div style="font-size: 14px; font-weight: 700;">{{ item.service }}</div>
+          <span class="status-badge" [ngClass]="item.status">{{ global.normalizeStatus(item.statusText || item.status) }}</span>
         </div>
         <div class="mobile-card-body">
           <div class="mobile-card-field">
@@ -163,11 +158,11 @@
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Data</span>
-            <span class="mobile-card-field-value">{{ item.date }}</span>
+            <span class="mobile-card-field-value">{{ (item.date | date: 'dd/MM/yyyy HH:mm') || item.date }}</span>
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Valor</span>
-            <span class="mobile-card-field-value">{{ global.formatCurrency(item.value) }}</span>
+            <span class="mobile-card-field-value gold-text">{{ global.formatCurrency(item.value) }}</span>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ export class GlobalService {
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
-  formatDate(dateStr: string | Date): string {
+  formatDate(dateStr?: string | Date | null): string {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleDateString('pt-BR', {
@@ -20,7 +20,7 @@ export class GlobalService {
     });
   }
 
-  formatDateTime(dateStr: string | Date): string {
+  formatDateTime(dateStr?: string | Date | null): string {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleDateString('pt-BR', {
@@ -33,32 +33,56 @@ export class GlobalService {
   }
 
   normalizeStatus(status: string): string {
-    switch ((status || '').toLowerCase().trim()) {
+    if (!status) return 'Pendente';
+    const s = status.toString().toLowerCase().replace(/[-_ ]/g, '').trim();
+
+    switch (s) {
+      case 'pendingacceptance':
+        return 'Aguardando Aceite';
+      case 'pendingpayment':
+        return 'Aguardando Pagamento';
       case 'pending':
-      case 'pending_pix':
-        return 'Pendente';
-      case 'confirmed':
+      case 'pendingpix':
+        return 'Pendente Pix';
       case 'accepted':
+        return 'Aceito';
+      case 'confirmed':
         return 'Confirmado';
-      case 'in_progress':
+      case 'inprogress':
       case 'ongoing':
+      case 'executing':
         return 'Em Andamento';
       case 'completed':
       case 'finished':
+      case 'done':
         return 'Concluído';
       case 'cancelled':
       case 'canceled':
         return 'Cancelado';
-      case 'rejected':
+      case 'declined':
         return 'Recusado';
+      case 'rejected':
+        return 'Reprovado';
       case 'disputed':
         return 'Em Disputa';
+      case 'underreview':
+      case 'analysis':
+        return 'Em Análise';
+      case 'approved':
+      case 'verified':
+        return 'Aprovado';
+      case 'correction':
+        return 'Correção Solicitada';
       case 'active':
         return 'Ativo';
       case 'blocked':
         return 'Bloqueado';
+      case 'paid':
+        return 'Pago';
+      case 'requested':
+        return 'Solicitado';
       default:
-        return status || 'Pendente';
+        return status;
     }
   }
 }

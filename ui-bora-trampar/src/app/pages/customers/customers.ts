@@ -86,7 +86,7 @@ export class Customers implements OnInit {
         .map((u: any) => {
           const cId = u.id || u._id || '';
           const orders = apptCountByCustomer[cId] || u.completedServicesCount || 0;
-          const isBlocked = u.isBlocked === true || u.status === 'blocked';
+          const isBlocked = u.blocked === true || u.isBlocked === true || u.deleted === true || u.status === 'blocked';
           const balance = typeof u.walletBalance === 'number' ? u.walletBalance : (typeof u.wallet_balance === 'number' ? u.wallet_balance : 0);
 
           let risk: 'low' | 'medium' | 'high' = 'low';
@@ -153,11 +153,13 @@ export class Customers implements OnInit {
   openBlockModal(customer: CustomerAccount) {
     this.customerToBlock = customer;
     this.isBlockModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeBlockModal() {
     this.customerToBlock = null;
     this.isBlockModalOpen = false;
+    this.cdr.detectChanges();
   }
 
   async executeBlock() {
@@ -180,9 +182,11 @@ export class Customers implements OnInit {
       customer.riskScore = isBlocking ? 'high' : 'low';
       this.calculateStats();
       this.toastr.success(`Cliente ${customer.name} ${isBlocking ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
-      this.closeBlockModal();
     } catch {
       this.toastr.error(`Erro ao ${actionLabel} cliente`);
+    } finally {
+      this.closeBlockModal();
+      this.cdr.detectChanges();
     }
   }
 

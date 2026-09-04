@@ -23,6 +23,7 @@ export interface VerificationItem {
   selfieUrl?: string;
   reviewNotes?: string;
   reviewedBy?: string;
+  reviewerName?: string;
   reviewedAt?: string;
 }
 
@@ -117,6 +118,7 @@ export class Verifications implements OnInit {
             selfieUrl: appr.selfieUrl || appr.selfie_url || user.photo || '',
             reviewNotes: appr.reviewNotes || appr.review_notes || '',
             reviewedBy: appr.reviewedBy || appr.reviewed_by || '',
+            reviewerName: (appr.reviewedBy || appr.reviewed_by) ? (userMap.get(appr.reviewedBy || appr.reviewed_by)?.name || 'Administrador') : 'Administrador',
             reviewedAt: appr.reviewedAt || appr.reviewed_at || ''
           };
         });

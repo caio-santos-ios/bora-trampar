@@ -195,7 +195,7 @@
 
         <div class="audit-box" *ngIf="selectedItem.reviewedBy">
           <h4><i class="fa-solid fa-clock-rotate-left"></i> Histórico de Auditoria</h4>
-          <p><strong>Revisado por:</strong> {{ selectedItem.reviewedBy }} em {{ selectedItem.reviewedAt }}</p>
+          <p><strong>Revisado por:</strong> {{ selectedItem.reviewerName || 'Administrador' }} em {{ (selectedItem.reviewedAt | date: 'dd/MM/yyyy HH:mm') || '-' }}</p>
           <p *ngIf="selectedItem.reviewNotes"><strong>Observação/Justificativa:</strong> {{ selectedItem.reviewNotes }}</p>
         </div>
       </div>

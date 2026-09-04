@@ -113,7 +113,7 @@ namespace api_bora_trampar.src.Services
 
                 if (!string.IsNullOrWhiteSpace(request.Name)) existedUser.Name = request.Name;
                 if (!string.IsNullOrWhiteSpace(request.Email)) existedUser.Email = request.Email;
-                if (request.WhatsApp != null) existedUser.WhatsApp = request.WhatsApp;
+                if (!string.IsNullOrWhiteSpace(request.WhatsApp)) existedUser.WhatsApp = request.WhatsApp;
                 if (request.Photo != null) existedUser.Photo = request.Photo;
                 if (request.Blocked.HasValue) existedUser.Blocked = request.Blocked.Value;
 

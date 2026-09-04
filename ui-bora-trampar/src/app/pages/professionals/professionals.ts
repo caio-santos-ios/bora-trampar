@@ -108,7 +108,7 @@ export class Professionals implements OnInit {
         .map((u: any) => {
           const uId = u.id || u._id || '';
           const prof = profileMap[uId] || {};
-          const isBlocked = u.isBlocked === true || u.status === 'blocked';
+          const isBlocked = u.blocked === true || u.isBlocked === true || u.deleted === true || u.status === 'blocked';
 
           let verStatus: 'approved' | 'pending' | 'rejected' | 'not_sent' = 'not_sent';
           let verLabel = 'Não Verificado';
@@ -217,11 +217,13 @@ export class Professionals implements OnInit {
   openBlockModal(pro: ProfessionalData) {
     this.proToBlock = pro;
     this.isBlockModalOpen = true;
+    this.cdr.detectChanges();
   }
 
   closeBlockModal() {
     this.proToBlock = null;
     this.isBlockModalOpen = false;
+    this.cdr.detectChanges();
   }
 
   async executeBlock() {
@@ -243,9 +245,11 @@ export class Professionals implements OnInit {
       pro.statusLabel = isBlocking ? 'Bloqueado' : 'Ativo';
       this.calculateStats();
       this.toastr.success(`Profissional ${pro.name} ${isBlocking ? 'bloqueado' : 'desbloqueado'} com sucesso!`);
-      this.closeBlockModal();
     } catch {
       this.toastr.error(`Erro ao ${actionLabel} profissional`);
+    } finally {
+      this.closeBlockModal();
+      this.cdr.detectChanges();
     }
   }
 
