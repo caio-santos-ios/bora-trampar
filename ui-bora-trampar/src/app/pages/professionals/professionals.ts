@@ -72,21 +72,33 @@ export class Professionals implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      const [usersRes, profilesRes, apptsRes] = await Promise.all([
+      const [usersRes, profilesRes, apptsRes, approvalsRes] = await Promise.all([
         api.get('/api/users'),
         api.get('/api/profile-professionals').catch(() => ({ data: { result: [] } })),
-        api.get('/api/appointments').catch(() => ({ data: { result: [] } }))
+        api.get('/api/appointments').catch(() => ({ data: { result: [] } })),
+        api.get('/api/approvals').catch(() => ({ data: { result: [] } }))
       ]);
 
       const rawUsers = usersRes.data.result?.data || usersRes.data.result || [];
       const rawProfiles = profilesRes.data.result?.data || profilesRes.data.result || [];
       const rawAppointments = apptsRes.data.result?.data || apptsRes.data.result || [];
+      const rawApprovals = approvalsRes.data?.result?.data || approvalsRes.data?.result || approvalsRes.data || [];
+
+      const approvalMap: { [key: string]: any } = {};
+      if (Array.isArray(rawApprovals)) {
+        for (const a of rawApprovals) {
+          const pId = (a.profissional_id || a.profissionalId || a.userId || '').toString();
+          if (pId) approvalMap[pId] = a;
+        }
+      }
 
       const profileMap: { [key: string]: any } = {};
       if (Array.isArray(rawProfiles)) {
         for (const p of rawProfiles) {
-          if (p.userId) profileMap[p.userId] = p;
-          if (p.id) profileMap[p.id] = p;
+          if (p.userId) profileMap[p.userId.toString()] = p;
+          if (p.user_id) profileMap[p.user_id.toString()] = p;
+          if (p.id) profileMap[p.id.toString()] = p;
+          if (p._id) profileMap[p._id.toString()] = p;
         }
       }
 
@@ -108,17 +120,40 @@ export class Professionals implements OnInit {
         .map((u: any) => {
           const uId = u.id || u._id || '';
           const prof = profileMap[uId] || {};
-          const isBlocked = u.blocked === true || u.isBlocked === true || u.deleted === true || u.status === 'blocked';
+          const approval = approvalMap[uId] || (prof.userId && approvalMap[prof.userId.toString()]) || {};
+          const approvalStatus = (approval.status || (approval.approved ? 'approved' : '')).toString().toLowerCase().trim();
+          const profStatus = (prof.identityVerificationStatus || prof.identity_verification_status || '').toString().toLowerCase().trim();
+          const isBlocked = u.blocked === true || u.blocked === 'true' || u.isBlocked === true || u.isBlocked === 'true' || u.deleted === true || u.status === 'blocked' || u.active === false;
 
           let verStatus: 'approved' | 'pending' | 'rejected' | 'not_sent' = 'not_sent';
           let verLabel = 'Não Verificado';
 
-          if (prof.isVerified === true || u.isVerified === true) {
+          if (
+            approval.approved === true ||
+            approvalStatus === 'approved' ||
+            approvalStatus === 'approve' ||
+            profStatus === 'approved' ||
+            prof.isVerified === true ||
+            u.isVerified === true
+          ) {
             verStatus = 'approved';
             verLabel = 'Verificado';
-          } else if (prof.identityFrontUrl || prof.identityBackUrl || prof.selfieUrl) {
+          } else if (
+            approvalStatus === 'analysis' ||
+            approvalStatus === 'pending' ||
+            profStatus === 'pending' ||
+            prof.identityDocumentFrontUrl ||
+            prof.identityFrontUrl ||
+            prof.identityBackUrl ||
+            prof.identityDocumentBackUrl ||
+            prof.identitySelfieUrl ||
+            prof.selfieUrl
+          ) {
             verStatus = 'pending';
             verLabel = 'Em Análise';
+          } else if (approvalStatus === 'rejected' || profStatus === 'rejected') {
+            verStatus = 'rejected';
+            verLabel = 'Reprovado';
           }
 
           const rawBasePrice = prof.dailyRate || prof.basePrice || u.dailyRate || u.basePrice || u.price || 0;

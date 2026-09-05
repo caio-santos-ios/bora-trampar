@@ -96,6 +96,39 @@ namespace api_bora_trampar.src.Services
             try
             {
                 var profiles = await repository.GetAllAsync();
+
+                var approvals = await appDbContext.Approvals
+                    .Find(a => !a.Deleted)
+                    .ToListAsync();
+
+                var approvalMap = approvals
+                    .GroupBy(a => a.ProfissionalId)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt).First());
+
+                foreach (var profile in profiles)
+                {
+                    if (approvalMap.TryGetValue(profile.UserId, out var approval))
+                    {
+                        var status = (approval.Status ?? "").ToLower().Trim();
+                        if (approval.Approved || status == "approved" || status == "approve")
+                        {
+                            profile.IdentityVerificationStatus = "Approved";
+                        }
+                        else if (status == "rejected" || status == "reject")
+                        {
+                            profile.IdentityVerificationStatus = "Rejected";
+                        }
+                        else if (status == "correction")
+                        {
+                            profile.IdentityVerificationStatus = "Correction";
+                        }
+                        if (!string.IsNullOrEmpty(approval.ReviewNotes))
+                        {
+                            profile.IdentityVerificationNotes = approval.ReviewNotes;
+                        }
+                    }
+                }
+
                 return new(profiles, 200, "Perfis profissionais listados com sucesso");
             }
             catch (Exception ex)

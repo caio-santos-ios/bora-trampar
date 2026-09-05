@@ -86,7 +86,7 @@ export class Customers implements OnInit {
         .map((u: any) => {
           const cId = u.id || u._id || '';
           const orders = apptCountByCustomer[cId] || u.completedServicesCount || 0;
-          const isBlocked = u.blocked === true || u.isBlocked === true || u.deleted === true || u.status === 'blocked';
+          const isBlocked = u.blocked === true || u.blocked === 'true' || u.isBlocked === true || u.isBlocked === 'true' || u.deleted === true || u.status === 'blocked' || u.active === false;
           const balance = typeof u.walletBalance === 'number' ? u.walletBalance : (typeof u.wallet_balance === 'number' ? u.wallet_balance : 0);
 
           let risk: 'low' | 'medium' | 'high' = 'low';

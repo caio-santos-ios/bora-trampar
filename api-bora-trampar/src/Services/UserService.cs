@@ -36,9 +36,12 @@ namespace api_bora_trampar.src.Services
                         {"name", 1},
                         {"email", 1},
                         {"whatsapp", 1},
+                        {"document", new BsonDocument("$ifNull", new BsonArray { "$document", "" })},
                         {"role", 1},
                         {"photo", new BsonDocument("$ifNull", new BsonArray { "$photo", "" })},
-                        {"active", new BsonDocument("$ifNull", new BsonArray { "$active", true })},
+                        {"blocked", new BsonDocument("$ifNull", new BsonArray { "$blocked", false })},
+                        {"isBlocked", new BsonDocument("$ifNull", new BsonArray { "$blocked", false })},
+                        {"active", new BsonDocument("$ne", new BsonArray { "$blocked", true })},
                         {"walletBalance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
                         {"wallet_balance", new BsonDocument("$ifNull", new BsonArray { "$wallet_balance", 0m })},
                         {"profession", new BsonDocument("$ifNull", new BsonArray

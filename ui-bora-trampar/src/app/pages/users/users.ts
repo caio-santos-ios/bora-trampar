@@ -58,8 +58,8 @@ export class Users implements OnInit {
         phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
         role: (u.role?.toString().toLowerCase() === 'admin' || u.role === 1 ? 'admin' : u.role?.toString().toLowerCase() === 'professional' || u.role === 2 ? 'professional' : 'customer') as any,
         roleLabel: u.role?.toString() === 'Admin' ? 'Administrador' : u.role?.toString() === 'Professional' || u.role === 2 ? 'Profissional' : 'Cliente',
-        status: (u.deleted ? 'blocked' : 'active') as any,
-        statusLabel: u.deleted ? 'Bloqueado' : 'Ativo',
+        status: (u.blocked || u.isBlocked || u.deleted || u.active === false ? 'blocked' : 'active') as any,
+        statusLabel: (u.blocked || u.isBlocked || u.deleted || u.active === false) ? 'Bloqueado' : 'Ativo',
         totalOrders: u.totalOrders || 0,
         riskScore: 'low',
         createdAt: u.createdAt || new Date().toISOString()
@@ -92,7 +92,7 @@ export class Users implements OnInit {
       try {
         await api.put('/api/users', {
           id: user.id,
-          deleted: willBlock
+          blocked: willBlock
         });
       } catch {}
 
