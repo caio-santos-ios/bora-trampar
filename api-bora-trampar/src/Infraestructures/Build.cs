@@ -52,6 +52,7 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<IProfileProfessionalRepository, ProfileProfessionalRepository>();
 
             builder.Services.AddTransient<ICloudinaryHandler, CloudinaryHandler>();
+            builder.Services.AddTransient<ISettingsService, SettingsService>();
             builder.Services.AddTransient<MailHandler>();
         }
     }

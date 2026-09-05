@@ -255,8 +255,13 @@
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
-.badge-ver.not_sent,
 .badge-ver.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-ver.not_sent {
   background: rgba(148, 163, 184, 0.15);
   color: #94a3b8;
   border: 1px solid rgba(148, 163, 184, 0.3);

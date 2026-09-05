@@ -54,6 +54,7 @@ export class Professionals implements OnInit {
     verifiedPros: 0,
     unverifiedPros: 0,
     pendingPros: 0,
+    rejectedPros: 0,
     avgRating: 0
   };
 
@@ -139,6 +140,20 @@ export class Professionals implements OnInit {
             verStatus = 'approved';
             verLabel = 'Verificado';
           } else if (
+            approvalStatus === 'rejected' ||
+            approvalStatus === 'reject' ||
+            profStatus === 'rejected' ||
+            profStatus === 'reproved'
+          ) {
+            verStatus = 'rejected';
+            verLabel = 'Reprovado';
+          } else if (
+            approvalStatus === 'correction' ||
+            profStatus === 'correction'
+          ) {
+            verStatus = 'rejected';
+            verLabel = 'Correção Solicitada';
+          } else if (
             approvalStatus === 'analysis' ||
             approvalStatus === 'pending' ||
             profStatus === 'pending' ||
@@ -151,9 +166,6 @@ export class Professionals implements OnInit {
           ) {
             verStatus = 'pending';
             verLabel = 'Em Análise';
-          } else if (approvalStatus === 'rejected' || profStatus === 'rejected') {
-            verStatus = 'rejected';
-            verLabel = 'Reprovado';
           }
 
           const rawBasePrice = prof.dailyRate || prof.basePrice || u.dailyRate || u.basePrice || u.price || 0;
@@ -163,7 +175,11 @@ export class Professionals implements OnInit {
           if (Array.isArray(prof.services)) {
             for (const s of prof.services) {
               const sName = s.serviceName || s.name || s.title;
-              if (sName) servicesList.push(sName);
+              if (sName) {
+                const sPrice = typeof s.price === 'number' ? s.price : (parseFloat(s.price) || 0);
+                const priceText = sPrice > 0 ? ` (${this.global.formatCurrency(sPrice)})` : '';
+                servicesList.push(`${sName}${priceText}`);
+              }
             }
           }
 
@@ -178,7 +194,7 @@ export class Professionals implements OnInit {
             email: u.email || 'Não informado',
             phone: u.whatsApp || u.whatsapp || u.phone || 'Não informado',
             profession: prof.profession || u.profession || 'Prestador de Serviços',
-            rating: prof.rating || u.rating || 5.0,
+            rating: (prof.reviewCount > 0 || u.reviewCount > 0) ? (prof.rating || u.rating || 0) : 0,
             reviewCount: prof.reviewCount || u.reviewCount || 0,
             basePrice: price,
             completedServicesCount: apptCountByPro[uId] || u.completedServicesCount || 0,
@@ -211,12 +227,13 @@ export class Professionals implements OnInit {
     this.stats.activePros = this.professionals.filter(p => p.status === 'active').length;
     this.stats.verifiedPros = this.professionals.filter(p => p.verificationStatus === 'approved').length;
     this.stats.pendingPros = this.professionals.filter(p => p.verificationStatus === 'pending').length;
-    this.stats.unverifiedPros = this.professionals.filter(p => p.verificationStatus !== 'approved').length;
+    this.stats.rejectedPros = this.professionals.filter(p => p.verificationStatus === 'rejected').length;
+    this.stats.unverifiedPros = this.professionals.filter(p => p.verificationStatus === 'not_sent').length;
 
-    const ratedPros = this.professionals.filter(p => p.rating > 0);
+    const ratedPros = this.professionals.filter(p => p.reviewCount > 0 && p.rating > 0);
     this.stats.avgRating = ratedPros.length > 0
       ? Number((ratedPros.reduce((sum, p) => sum + p.rating, 0) / ratedPros.length).toFixed(1))
-      : 5.0;
+      : 0;
   }
 
   currentPage = 1;
@@ -228,9 +245,11 @@ export class Professionals implements OnInit {
     if (this.filterStatus === 'verified') {
       list = list.filter(p => p.verificationStatus === 'approved');
     } else if (this.filterStatus === 'unverified') {
-      list = list.filter(p => p.verificationStatus !== 'approved');
+      list = list.filter(p => p.verificationStatus === 'not_sent');
     } else if (this.filterStatus === 'pending') {
       list = list.filter(p => p.verificationStatus === 'pending');
+    } else if (this.filterStatus === 'rejected') {
+      list = list.filter(p => p.verificationStatus === 'rejected');
     } else if (this.filterStatus === 'blocked') {
       list = list.filter(p => p.status === 'blocked');
     }

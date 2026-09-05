@@ -57,7 +57,7 @@ namespace api_bora_trampar.src.Services
                         {"rating", new BsonDocument("$ifNull", new BsonArray
                         {
                             new BsonDocument("$arrayElemAt", new BsonArray { "$profile_lookup.rating", 0 }),
-                            5.0
+                            0.0
                         })},
                         {"reviewCount", new BsonDocument("$ifNull", new BsonArray
                         {
