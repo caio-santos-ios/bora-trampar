@@ -131,6 +131,34 @@ export class Appointments implements OnInit {
     return this.appointments.filter(item => (item.status || '').toLowerCase().trim() === status.toLowerCase().trim()).length;
   }
 
+  normalizeStatus(raw: any, value: number = 0): { status: string; label: string } {
+    const s = (raw || '').toString().toLowerCase().replace(/[-_ ]/g, '').trim();
+
+    if (s === 'completed' || s === 'finished' || s === 'done') {
+      return { status: 'completed', label: 'Concluído' };
+    }
+    if (s === 'cancelled' || s === 'canceled' || s === 'cancelledbycustomer' || s === 'declined' || s === 'rejected') {
+      return { status: 'cancelled', label: 'Cancelado' };
+    }
+    if (s === 'inprogress' || s === 'ongoing' || s === 'executing' || s === 'inservice') {
+      return { status: 'in_progress', label: 'Em Execução' };
+    }
+    if (s === 'disputed' || s === 'underreview' || s === 'analysis') {
+      return { status: 'disputed', label: 'Contestado' };
+    }
+    if (s === 'pendingpayment' || s === 'pendingpix' || s === 'pending') {
+      if (value === 0) {
+        return { status: 'confirmed', label: 'Confirmado' };
+      }
+      return { status: 'pending_pix', label: 'Pendente Pix' };
+    }
+    if (s === 'pendingacceptance' || s === 'accepted' || s === 'confirmed' || s === 'approved' || s === 'paid') {
+      return { status: 'confirmed', label: 'Confirmado' };
+    }
+
+    return { status: 'confirmed', label: 'Confirmado' };
+  }
+
   async loadAppointments() {
     this.isLoading = true;
     this.cdr.detectChanges();
@@ -145,7 +173,7 @@ export class Appointments implements OnInit {
       this.appointments = rawList.map((item: any) => {
         const val = item.total_price ?? item.totalPrice ?? item.value ?? 0;
         const numVal = typeof val === 'number' ? val : (parseFloat(val) || 0);
-        const rawStatus = (item.status || 'confirmed').toString().toLowerCase().trim();
+        const { status, label } = this.normalizeStatus(item.status, numVal);
 
         return {
           id: item.id || (typeof item._id === 'string' ? item._id : (item._id?.$oid || '')),
@@ -160,18 +188,8 @@ export class Appointments implements OnInit {
           value: numVal,
           total_price: numVal,
           totalPrice: numVal,
-          status: rawStatus,
-          statusLabel: rawStatus === 'completed'
-            ? 'Concluído'
-            : rawStatus === 'cancelled'
-              ? 'Cancelado'
-              : rawStatus === 'in_progress'
-                ? 'Em Execução'
-                : rawStatus === 'pending_pix'
-                  ? 'Pendente Pix'
-                  : rawStatus === 'disputed'
-                    ? 'Contestado'
-                    : 'Confirmado',
+          status: status,
+          statusLabel: label,
           paymentMethod: item.paymentMethod || item.payment_method || 'PIX',
           pixTxId: item.pixTxId || item.pix_tx_id || item.asaasPaymentId || item.asaas_payment_id || '',
           createdAt: item.createdAt || item.created_at || ''
