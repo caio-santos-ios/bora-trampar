@@ -1,0 +1,222 @@
+﻿import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/services/storage_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/widgets/bora_trampa_logo.dart';
+import '../../models/profile_professional_model.dart';
+import '../../repositories/auth/auth_repository.dart';
+import '../../repositories/profile/profile_professional_repository.dart';
+import '../main/main_navigation_screen.dart';
+import '../onboarding/identity_verification_pending_screen.dart';
+import '../onboarding/professional_onboarding_screen.dart';
+import '../onboarding/welcome_screen.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  final _authRepository = AuthRepository();
+  final _profileProfessionalRepository = ProfileProfessionalRepository();
+
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeIn,
+    );
+    _animController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthAndNavigate();
+    });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _checkAuthAndNavigate() async {
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    if (!mounted) return;
+
+    try {
+      String refreshToken = StorageService.getRefreshToken();
+      if (refreshToken.isEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        refreshToken = prefs.getString('refresh_token') ?? '';
+      }
+
+      if (refreshToken.isEmpty) {
+        _goToWelcome();
+        return;
+      }
+
+      final response = await _authRepository.refreshToken({
+        "refreshToken": refreshToken,
+      });
+
+      if (response.statusCode == 200 && response.data != null) {
+        final result = response.data["result"];
+        final resultData = result is Map
+            ? (result["data"] ?? result)
+            : response.data;
+
+        final newToken =
+            (resultData is Map
+                    ? (resultData["token"] ?? resultData["data"]?["token"])
+                    : null)
+                ?.toString() ??
+            '';
+        final newRefreshToken =
+            (resultData is Map
+                    ? (resultData["refreshToken"] ??
+                          resultData["data"]?["refreshToken"])
+                    : null)
+                ?.toString() ??
+            '';
+        final rawUser = resultData is Map
+            ? (resultData["user"] ?? resultData["data"]?["user"])
+            : null;
+
+        if (newToken.isNotEmpty) {
+          await StorageService.setToken(newToken);
+          if (newRefreshToken.isNotEmpty) {
+            await StorageService.setRefreshToken(newRefreshToken);
+          }
+
+          Map<String, dynamic>? userMap;
+          if (rawUser is Map) {
+            userMap = Map<String, dynamic>.from(rawUser);
+            await StorageService.setUser(userMap);
+          }
+
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('auth_token', newToken);
+          if (newRefreshToken.isNotEmpty) {
+            await prefs.setString('refresh_token', newRefreshToken);
+          }
+          if (userMap != null) {
+            await prefs.setString('user_profile', jsonEncode(userMap));
+          }
+
+          final role = userMap?["role"]?.toString() ?? "Customer";
+          final identityVerificationStatus =
+              userMap?["identityVerificationStatus"]?.toString() ?? "";
+          final isProfileCompleted =
+              userMap?["isProfileCompleted"]?.toString() == "true";
+
+          if (!mounted) return;
+
+          if (role.toLowerCase() == "customer") {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const MainNavigationScreen(),
+              ),
+              (route) => false,
+            );
+          } else {
+            if (!mounted) return;
+
+            if (!isProfileCompleted) {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const ProfessionalOnboardingScreen(),
+                ),
+                (route) => false,
+              );
+            } else if (identityVerificationStatus.toLowerCase() != 'approved') {
+              String userId = userMap?["id"] ?? '';
+
+              ProfileProfessionalModel? profile =
+                  await _profileProfessionalRepository.getByUserId(userId);
+
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => IdentityVerificationPendingScreen(
+                    initialProfile: profile,
+                  ),
+                ),
+                (route) => false,
+              );
+            } else {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => const MainNavigationScreen(),
+                ),
+                (route) => false,
+              );
+            }
+          }
+          return;
+        }
+      }
+
+      await _clearSessionAndGoWelcome();
+    } catch (_) {
+      await _clearSessionAndGoWelcome();
+    }
+  }
+
+  Future<void> _clearSessionAndGoWelcome() async {
+    await StorageService.clear();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+    await prefs.remove('refresh_token');
+    await prefs.remove('user_profile');
+    _goToWelcome();
+  }
+
+  void _goToWelcome() {
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const BoraTrampaLogo(size: 86, isHorizontal: false),
+              const SizedBox(height: 48),
+              SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryGold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

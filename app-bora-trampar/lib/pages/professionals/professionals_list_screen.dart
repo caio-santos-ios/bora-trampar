@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
@@ -19,12 +20,14 @@ class ProfessionalsListScreen extends StatefulWidget {
   const ProfessionalsListScreen({super.key, required this.orderRequest});
 
   @override
-  State<ProfessionalsListScreen> createState() => _ProfessionalsListScreenState();
+  State<ProfessionalsListScreen> createState() =>
+      _ProfessionalsListScreenState();
 }
 
 class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   final UserRepository _userRepository = UserRepository();
-  final ProfileProfessionalRepository _profileRepository = ProfileProfessionalRepository();
+  final ProfileProfessionalRepository _profileRepository =
+      ProfileProfessionalRepository();
   final AppointmentRepository _appointmentRepository = AppointmentRepository();
 
   List<ProfessionalModel> _professionals = [];
@@ -46,13 +49,17 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   }
 
   Future<void> _loadProfessionals() async {
-    setState(() => _isLoading = true);
-    print(widget.orderRequest.customerLatitude);
-    print(widget.orderRequest.customerLongitude);
-    print(widget.orderRequest.customerCity);
-    print(widget.orderRequest.customerState);
-    print(widget.orderRequest.scheduledDate);
-    print(widget.orderRequest.scheduledTimeSlot);
+    try {
+      setState(() => _isLoading = true);
+
+      // await _appointmentRepository.createAppointment();
+      print(widget.orderRequest.customerLatitude);
+      print(widget.orderRequest.customerLongitude);
+      print(widget.orderRequest.customerCity);
+      print(widget.orderRequest.customerState);
+      print(widget.orderRequest.scheduledDate);
+      print(widget.orderRequest.scheduledTimeSlot);
+    } on DioException catch (err) {}
     // final rawPros = await _userRepository.getProfessionals();
     // final profiles = await _profileRepository.getAllProfiles();
     // final appointments = await _appointmentRepository.getAppointments();
@@ -192,7 +199,9 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     } else if (_selectedSort == 'Mais rápidos (chegada)') {
       list.sort((a, b) => a.arrivalTimeMinutes.compareTo(b.arrivalTimeMinutes));
     } else if (_selectedSort == 'Mais experientes') {
-      list.sort((a, b) => b.completedServicesCount.compareTo(a.completedServicesCount));
+      list.sort(
+        (a, b) => b.completedServicesCount.compareTo(a.completedServicesCount),
+      );
     } else {
       list.sort((a, b) => b.rating.compareTo(a.rating));
     }
@@ -202,9 +211,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   void _onSelectProfessional(ProfessionalModel professional) {
     final effectivePrice = professional.basePrice > 0
         ? professional.basePrice
-        : (widget.orderRequest.selectedServices.isNotEmpty && widget.orderRequest.selectedServices.first.basePrice > 0
-            ? widget.orderRequest.selectedServices.first.basePrice
-            : 150.0);
+        : (widget.orderRequest.selectedServices.isNotEmpty &&
+                  widget.orderRequest.selectedServices.first.basePrice > 0
+              ? widget.orderRequest.selectedServices.first.basePrice
+              : 150.0);
 
     final resolvedProf = ProfessionalModel(
       id: professional.id,
@@ -250,7 +260,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -268,7 +281,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                 SnackBar(
                   content: Text(
                     'Central de Ajuda Bora Trampar',
-                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      color: AppColors.textDark,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   backgroundColor: AppColors.primaryGold,
                 ),
@@ -301,10 +317,15 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryGold),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGold,
+                      ),
                     )
                   : ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       children: [
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,10 +343,15 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                         height: 1.2,
                                       ),
                                       children: const [
-                                        TextSpan(text: 'Encontre os melhores\nprofissionais para o\n'),
+                                        TextSpan(
+                                          text:
+                                              'Encontre os melhores\nprofissionais para o\n',
+                                        ),
                                         TextSpan(
                                           text: 'seu serviço',
-                                          style: TextStyle(color: AppColors.primaryGold),
+                                          style: TextStyle(
+                                            color: AppColors.primaryGold,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -343,7 +369,11 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
+                            const BoraTrampaLogo(
+                              size: 34,
+                              showSubtitle: false,
+                              isHorizontal: false,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -395,11 +425,16 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                               OutlinedButton(
                                 onPressed: () => Navigator.of(context).pop(),
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: AppColors.primaryGold),
+                                  side: const BorderSide(
+                                    color: AppColors.primaryGold,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
                                   minimumSize: Size.zero,
                                 ),
                                 child: Text(
@@ -416,7 +451,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                         ),
                         const SizedBox(height: 10),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.cardBackground,
                             borderRadius: BorderRadius.circular(12),
@@ -492,7 +530,11 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                 const SizedBox(height: 16),
                                 OutlinedButton.icon(
                                   onPressed: () => Navigator.of(context).pop(),
-                                  icon: const Icon(Icons.edit_calendar_outlined, size: 16, color: AppColors.primaryGold),
+                                  icon: const Icon(
+                                    Icons.edit_calendar_outlined,
+                                    size: 16,
+                                    color: AppColors.primaryGold,
+                                  ),
                                   label: Text(
                                     'Alterar data, horário ou local',
                                     style: GoogleFonts.inter(
@@ -502,11 +544,16 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                     ),
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: AppColors.primaryGold),
+                                    side: const BorderSide(
+                                      color: AppColors.primaryGold,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -527,11 +574,14 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                               ),
                               PopupMenuButton<String>(
                                 initialValue: _selectedSort,
-                                onSelected: (val) => setState(() => _selectedSort = val),
+                                onSelected: (val) =>
+                                    setState(() => _selectedSort = val),
                                 color: AppColors.cardBackground,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  side: const BorderSide(color: AppColors.cardBorder),
+                                  side: const BorderSide(
+                                    color: AppColors.cardBorder,
+                                  ),
                                 ),
                                 itemBuilder: (context) {
                                   return _sortOptions.map((opt) {
@@ -550,19 +600,30 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                   }).toList();
                                 },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.cardBackground,
                                     borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: AppColors.cardBorder),
+                                    border: Border.all(
+                                      color: AppColors.cardBorder,
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.sort_rounded, color: AppColors.primaryGold, size: 16),
+                                      const Icon(
+                                        Icons.sort_rounded,
+                                        color: AppColors.primaryGold,
+                                        size: 16,
+                                      ),
                                       const SizedBox(width: 6),
                                       ConstrainedBox(
-                                        constraints: const BoxConstraints(maxWidth: 130),
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 130,
+                                        ),
                                         child: Text(
                                           _selectedSort,
                                           style: GoogleFonts.inter(
@@ -608,7 +669,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                                 height: 38,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.primaryGold, width: 1.5),
+                                  border: Border.all(
+                                    color: AppColors.primaryGold,
+                                    width: 1.5,
+                                  ),
                                   color: const Color(0xFF1E1A10),
                                 ),
                                 child: const Icon(
@@ -672,10 +736,14 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: AppColors.cardElevated,
-                    backgroundImage: prof.avatarUrl.isNotEmpty ? NetworkImage(prof.avatarUrl) : null,
+                    backgroundImage: prof.avatarUrl.isNotEmpty
+                        ? NetworkImage(prof.avatarUrl)
+                        : null,
                     child: prof.avatarUrl.isEmpty
                         ? Text(
-                            prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                            prof.name.isNotEmpty
+                                ? prof.name[0].toUpperCase()
+                                : 'P',
                             style: GoogleFonts.inter(
                               color: AppColors.primaryGold,
                               fontSize: 22,
@@ -694,7 +762,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.success,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.cardBackground, width: 2),
+                          border: Border.all(
+                            color: AppColors.cardBackground,
+                            width: 2,
+                          ),
                         ),
                       ),
                     ),
@@ -719,7 +790,8 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (prof.isVerified && prof.highlightBadge.isNotEmpty) ...[
+                        if (prof.isVerified &&
+                            prof.highlightBadge.isNotEmpty) ...[
                           const SizedBox(width: 4),
                           const Icon(
                             Icons.verified_rounded,
@@ -784,7 +856,11 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.near_me_outlined, size: 12, color: AppColors.primaryGold),
+                                const Icon(
+                                  Icons.near_me_outlined,
+                                  size: 12,
+                                  color: AppColors.primaryGold,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '${dist.toStringAsFixed(1)} km de você',
@@ -802,7 +878,11 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.location_on_outlined, size: 12, color: AppColors.textSecondary),
+                                const Icon(
+                                  Icons.location_on_outlined,
+                                  size: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
@@ -824,7 +904,11 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.check_circle_outline, size: 12, color: AppColors.success),
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 12,
+                          color: AppColors.success,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'Horário disponível',
@@ -839,7 +923,10 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                     if (prof.highlightBadge.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E1A10),
                           borderRadius: BorderRadius.circular(8),

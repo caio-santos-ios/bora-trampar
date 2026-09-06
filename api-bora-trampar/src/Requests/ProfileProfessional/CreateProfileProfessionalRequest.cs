@@ -38,6 +38,12 @@ namespace api_bora_trampar.src.Requests
         [JsonPropertyName("identitySelfieUrl")]
         public string IdentitySelfieUrl { get; set; } = string.Empty;
 
+        [JsonPropertyName("identityVerificationStatus")]
+        public string? IdentityVerificationStatus { get; set; }
+
+        [JsonPropertyName("identityVerificationNotes")]
+        public string? IdentityVerificationNotes { get; set; }
+
         [JsonPropertyName("address")]
         public ProfessionalAddress Address { get; set; } = new();
 

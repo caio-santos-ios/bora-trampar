@@ -1,13 +1,23 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/storage_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/user_model.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
+import '../../repositories/upload/upload_repository.dart';
+import '../../repositories/user/user_repository.dart';
 import '../onboarding/welcome_screen.dart';
+import 'edit_professional_profile_screen.dart';
+import 'edit_working_hours_screen.dart';
+import 'documents_verification_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ProfileProfessionalModel? _proProfile;
   bool _isLoading = true;
   bool _isProfessional = false;
+  bool _isUploadingPhoto = false;
 
   @override
   void initState() {
@@ -93,6 +104,234 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _handleDeleteAccount() async {
+    if (_user == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: AppColors.errorRed, size: 24),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Excluir Conta',
+                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Tem certeza de que deseja excluir permanentemente sua conta? Todos os seus dados, histórico e perfil serão removidos e essa ação não pode ser desfeita.',
+            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Cancelar', style: GoogleFonts.inter(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorRed,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: Text('Excluir Definitivamente', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+
+      final success = await UserRepository().deleteAccount(_user!.id);
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // fecha loading
+      }
+
+      if (success) {
+        await AuthService().logout();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Sua conta foi excluída com sucesso.',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          (route) => false,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Não foi possível excluir a conta. Tente novamente mais tarde.',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadProfilePhoto() async {
+    if (_user == null || _isUploadingPhoto) return;
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Escolha a origem da foto',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  leading: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppColors.primaryGold,
+                  ),
+                  title: const Text(
+                    'Câmera',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  onTap: () => Navigator.of(context).pop(ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library_outlined,
+                    color: AppColors.primaryGold,
+                  ),
+                  title: const Text(
+                    'Galeria',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (source == null) return;
+
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: source, imageQuality: 85);
+      if (picked == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final uploadedUrl = await UploadRepository().uploadImage(
+        File(picked.path),
+        folder: 'avatars',
+      );
+
+      if (uploadedUrl == null || uploadedUrl.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Falha ao enviar a foto. Tente novamente.',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
+        return;
+      }
+
+      final success = await UserRepository().updatePhoto(_user!.id, uploadedUrl);
+      if (success) {
+        final updatedUser = _user!.copyWith(photo: uploadedUrl);
+
+        await StorageService.setUser(updatedUser.toJson());
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_profile', jsonEncode(updatedUser.toJson()));
+
+        if (mounted) {
+          setState(() {
+            _user = updatedUser;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Foto de perfil atualizada com sucesso!',
+                style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+              ),
+              backgroundColor: AppColors.primaryGold,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Não foi possível salvar a foto no perfil.',
+                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Ocorreu um erro ao atualizar a foto.',
+              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -137,36 +376,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
-        Center(
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primaryGold, width: 2.5),
-                  color: AppColors.cardElevated,
-                ),
-                child: ClipOval(
-                  child: _user?.photo != null && _user!.photo!.isNotEmpty
-                      ? Image.network(
-                          _user!.photo!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _buildAvatar(initial),
-                        )
-                      : _buildAvatar(initial),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: AppColors.primaryGold, shape: BoxShape.circle),
-                child: const Icon(Icons.camera_alt_rounded, color: AppColors.textDark, size: 16),
-              ),
-            ],
-          ),
-        ),
+        _buildAvatarStack(initial),
         const SizedBox(height: 14),
         Center(
           child: Text(
@@ -426,36 +636,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
-        Center(
-          child: Stack(
-            alignment: Alignment.bottomRight,
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primaryGold, width: 2.5),
-                  color: AppColors.cardElevated,
-                ),
-                child: ClipOval(
-                  child: _user?.photo != null && _user!.photo!.isNotEmpty
-                      ? Image.network(
-                          _user!.photo!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => _buildAvatar(initial),
-                        )
-                      : _buildAvatar(initial),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: AppColors.primaryGold, shape: BoxShape.circle),
-                child: const Icon(Icons.camera_alt_rounded, color: AppColors.textDark, size: 16),
-              ),
-            ],
-          ),
-        ),
+        _buildAvatarStack(initial),
         const SizedBox(height: 14),
         Center(
           child: Text(
@@ -587,18 +768,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildMenuSection({required bool isProfessional}) {
     final tiles = isProfessional
         ? [
-            (Icons.edit_outlined, 'Editar Perfil Profissional', 'Profissão, bio e serviços'),
-            (Icons.schedule_outlined, 'Horários de Disponibilidade', 'Dias e horários de atendimento'),
-            (Icons.verified_user_outlined, 'Documentos e Verificação', 'Status de aprovação de identidade'),
-            (Icons.photo_library_outlined, 'Portfólio de Fotos', 'Fotos dos trabalhos realizados'),
-            (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte'),
-            (Icons.lock_outline_rounded, 'Termos e Privacidade', 'Políticas de uso do Bora Trampar'),
+            (Icons.edit_outlined, 'Editar Perfil Profissional', 'Profissão, bio e serviços', false),
+            (Icons.schedule_outlined, 'Horários de Disponibilidade', 'Dias e horários de atendimento', false),
+            (Icons.verified_user_outlined, 'Documentos e Verificação', 'Status de aprovação de identidade', false),
+            (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte', false),
+            (Icons.lock_outline_rounded, 'Termos e Privacidade', 'Políticas de uso do Bora Trampar', false),
+            (Icons.delete_forever_outlined, 'Excluir Conta', 'Encerrar e apagar seus dados permanentemente', true),
           ]
         : [
-            (Icons.person_outline_rounded, 'Dados Pessoais', 'Nome, telefone e endereço'),
-            (Icons.payment_outlined, 'Formas de Pagamento', 'PIX e cartões cadastrados'),
-            (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte'),
-            (Icons.lock_outline_rounded, 'Termos e Privacidade', 'Políticas de uso do Bora Trampar'),
+            (Icons.person_outline_rounded, 'Dados Pessoais', 'Nome, telefone e endereço', false),
+            (Icons.payment_outlined, 'Formas de Pagamento', 'PIX e cartões cadastrados', false),
+            (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte', false),
+            (Icons.lock_outline_rounded, 'Termos e Privacidade', 'Políticas de uso do Bora Trampar', false),
+            (Icons.delete_forever_outlined, 'Excluir Conta', 'Encerrar e apagar seus dados permanentemente', true),
           ];
 
     return Material(
@@ -610,28 +792,109 @@ class _ProfileScreenState extends State<ProfileScreen> {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: List.generate(tiles.length, (index) {
-          final (icon, title, subtitle) = tiles[index];
+          final (icon, title, subtitle, isDestructive) = tiles[index];
           return Column(
             children: [
               ListTile(
-                onTap: () {},
+                onTap: () async {
+                  if (title == 'Excluir Conta') {
+                    _handleDeleteAccount();
+                  } else if (title == 'Editar Perfil Profissional' && _user != null) {
+                    final updated = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) => EditProfessionalProfileScreen(
+                          user: _user!,
+                          proProfile: _proProfile,
+                        ),
+                      ),
+                    );
+                    if (updated == true) {
+                      _loadData();
+                    }
+                  } else if (title == 'Horários de Disponibilidade' && _user != null) {
+                    final currentPro = _proProfile ??
+                        ProfileProfessionalModel(
+                          userId: _user!.id,
+                          profession: '',
+                          bio: '',
+                          address: ProfessionalAddressModel(
+                            location: ProfessionalAddressLocationModel.empty(),
+                          ),
+                        );
+                    final updated = await Navigator.of(context).push<dynamic>(
+                      MaterialPageRoute(
+                        builder: (_) => EditWorkingHoursScreen(
+                          proProfile: currentPro,
+                        ),
+                      ),
+                    );
+                    if (updated is ProfileProfessionalModel) {
+                      setState(() => _proProfile = updated);
+                    }
+                    if (updated != null) {
+                      await _loadData();
+                    }
+                  } else if (title == 'Documentos e Verificação' && _user != null) {
+                    final currentPro = _proProfile ??
+                        ProfileProfessionalModel(
+                          userId: _user!.id,
+                          profession: '',
+                          bio: '',
+                          address: ProfessionalAddressModel(
+                            location: ProfessionalAddressLocationModel.empty(),
+                          ),
+                        );
+                    final updated = await Navigator.of(context).push<dynamic>(
+                      MaterialPageRoute(
+                        builder: (_) => DocumentsVerificationScreen(
+                          proProfile: currentPro,
+                        ),
+                      ),
+                    );
+                    if (updated is ProfileProfessionalModel) {
+                      setState(() => _proProfile = updated);
+                    }
+                    if (updated != null) {
+                      await _loadData();
+                    }
+                  }
+                },
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1F1C12),
+                    color: isDestructive
+                        ? AppColors.errorRed.withValues(alpha: 0.12)
+                        : const Color(0xFF1F1C12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: AppColors.primaryGold, size: 20),
+                  child: Icon(
+                    icon,
+                    color: isDestructive ? AppColors.errorRed : AppColors.primaryGold,
+                    size: 20,
+                  ),
                 ),
                 title: Text(
                   title,
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDestructive ? AppColors.errorRed : AppColors.textPrimary,
+                  ),
                 ),
                 subtitle: Text(
                   subtitle,
-                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: isDestructive
+                        ? AppColors.errorRed.withValues(alpha: 0.8)
+                        : AppColors.textSecondary,
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 20),
+                trailing: Icon(
+                  Icons.chevron_right_rounded,
+                  color: isDestructive ? AppColors.errorRed.withValues(alpha: 0.5) : AppColors.textMuted,
+                  size: 20,
+                ),
               ),
               if (index < tiles.length - 1) const Divider(color: AppColors.cardBorder, height: 1),
             ],
@@ -665,6 +928,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Text(
         initial,
         style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 34, fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+
+  Widget _buildAvatarStack(String initial) {
+    return Center(
+      child: GestureDetector(
+        onTap: _isUploadingPhoto ? null : _pickAndUploadProfilePhoto,
+        child: Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primaryGold, width: 2.5),
+                color: AppColors.cardElevated,
+              ),
+              child: ClipOval(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _user?.photo != null && _user!.photo!.isNotEmpty
+                        ? Image.network(
+                            _user!.photo!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => _buildAvatar(initial),
+                          )
+                        : _buildAvatar(initial),
+                    if (_isUploadingPhoto)
+                      Container(
+                        color: Colors.black54,
+                        child: const Center(
+                          child: SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: AppColors.primaryGold,
+                shape: BoxShape.circle,
+              ),
+              child: _isUploadingPhoto
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.textDark,
+                      ),
+                    )
+                  : const Icon(
+                      Icons.camera_alt_rounded,
+                      color: AppColors.textDark,
+                      size: 16,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

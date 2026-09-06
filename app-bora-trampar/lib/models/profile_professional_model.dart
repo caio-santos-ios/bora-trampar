@@ -158,6 +158,56 @@ class ProfileProfessionalModel {
       'badges': badges,
     };
   }
+
+  ProfileProfessionalModel copyWith({
+    String? id,
+    String? userId,
+    String? profession,
+    String? bio,
+    int? experienceYears,
+    bool? isAvailableNow,
+    bool? isProfileCompleted,
+    String? identityDocumentType,
+    String? identityDocumentNumber,
+    String? identityDocumentFrontUrl,
+    String? identityDocumentBackUrl,
+    String? identitySelfieUrl,
+    String? identityVerificationStatus,
+    String? identityVerificationNotes,
+    ProfessionalAddressModel? address,
+    List<ProfessionalServiceItemModel>? services,
+    List<ProfessionalWorkingDayModel>? workingHours,
+    List<String>? portfolioPhotos,
+    double? rating,
+    int? reviewCount,
+    int? completedServicesCount,
+    List<String>? badges,
+  }) {
+    return ProfileProfessionalModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      profession: profession ?? this.profession,
+      bio: bio ?? this.bio,
+      experienceYears: experienceYears ?? this.experienceYears,
+      isAvailableNow: isAvailableNow ?? this.isAvailableNow,
+      isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
+      identityDocumentType: identityDocumentType ?? this.identityDocumentType,
+      identityDocumentNumber: identityDocumentNumber ?? this.identityDocumentNumber,
+      identityDocumentFrontUrl: identityDocumentFrontUrl ?? this.identityDocumentFrontUrl,
+      identityDocumentBackUrl: identityDocumentBackUrl ?? this.identityDocumentBackUrl,
+      identitySelfieUrl: identitySelfieUrl ?? this.identitySelfieUrl,
+      identityVerificationStatus: identityVerificationStatus ?? this.identityVerificationStatus,
+      identityVerificationNotes: identityVerificationNotes ?? this.identityVerificationNotes,
+      address: address ?? this.address,
+      services: services ?? this.services,
+      workingHours: workingHours ?? this.workingHours,
+      portfolioPhotos: portfolioPhotos ?? this.portfolioPhotos,
+      rating: rating ?? this.rating,
+      reviewCount: reviewCount ?? this.reviewCount,
+      completedServicesCount: completedServicesCount ?? this.completedServicesCount,
+      badges: badges ?? this.badges,
+    );
+  }
 }
 
 class ProfessionalAddressModel {
@@ -398,6 +448,26 @@ class ProfessionalWorkingDayModel {
           map['breakEnd']?.toString() ??
           map['break_end']?.toString() ??
           '13:00',
+    );
+  }
+
+  ProfessionalWorkingDayModel copyWith({
+    int? dayOfWeek,
+    String? dayName,
+    bool? isActive,
+    String? startHour,
+    String? endHour,
+    String? breakStart,
+    String? breakEnd,
+  }) {
+    return ProfessionalWorkingDayModel(
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      dayName: dayName ?? this.dayName,
+      isActive: isActive ?? this.isActive,
+      startHour: startHour ?? this.startHour,
+      endHour: endHour ?? this.endHour,
+      breakStart: breakStart ?? this.breakStart,
+      breakEnd: breakEnd ?? this.breakEnd,
     );
   }
 

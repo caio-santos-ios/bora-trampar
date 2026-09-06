@@ -187,14 +187,114 @@ namespace api_bora_trampar.src.Services
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$user_lookup._id")},
                         {"name", "$user_lookup.name"},
+                        {"role", "$user_lookup.role"},
+                        {"avatarUrl", new BsonDocument("$ifNull", new BsonArray { "$user_lookup.photo", "" })},
                         {"profession", 1},
-                        {"distanciaKm", 1}
+                        {"distanciaKm", 1},
+                        {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
                     }),
                     new("$sort", new BsonDocument { { "distanciaKm", 1 } } )
                 ];
 
+                List<BsonDocument> candidateDocs = await appDbContext.ProfileProfessionals
+                    .Aggregate<BsonDocument>(pipeline)
+                    .ToListAsync();
 
-                List<dynamic> users = await repository.GetAllAsync(pipeline);
+                if (candidateDocs.Count == 0)
+                {
+                    return new([], 200, "Profissionais listados com sucesso");
+                }
+
+                var availableCandidates = candidateDocs
+                    .Where(doc => IsProfessionalWorkingAt(doc, date, hour))
+                    .ToList();
+
+                if (availableCandidates.Count == 0)
+                {
+                    return new([], 200, "Nenhum profissional disponível para o horário informado");
+                }
+
+                var candidateIds = availableCandidates
+                    .Select(d => d.GetValue("id", "").AsString)
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .ToList();
+
+                var canceledStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    "cancelled", "canceled", "declined", "cancelado", "recusado"
+                };
+
+                var searchStart = date.Date.AddDays(-1);
+                var searchEnd = date.Date.AddDays(2);
+
+                var existingAppointments = await appDbContext.Appointments
+                    .Find(a => !a.Deleted
+                            && candidateIds.Contains(a.ProfissionalId)
+                            && a.Date >= searchStart
+                            && a.Date < searchEnd)
+                    .ToListAsync();
+
+                var busyProfessionalIds = new HashSet<string>();
+                foreach (var apt in existingAppointments)
+                {
+                    if (string.IsNullOrEmpty(apt.ProfissionalId)) continue;
+                    if (canceledStatuses.Contains(apt.Status ?? "")) continue;
+
+                    bool isSameDay = (apt.Date.Year == date.Year && apt.Date.Month == date.Month && apt.Date.Day == date.Day)
+                                  || (apt.Date.ToLocalTime().Year == date.Year && apt.Date.ToLocalTime().Month == date.Month && apt.Date.ToLocalTime().Day == date.Day);
+
+                    if (!isSameDay) continue;
+
+                    if (!string.IsNullOrWhiteSpace(hour))
+                    {
+                        if (string.Equals(apt.Hour?.Trim(), hour.Trim(), StringComparison.OrdinalIgnoreCase))
+                        {
+                            busyProfessionalIds.Add(apt.ProfissionalId);
+                        }
+                        else if (TryParseTime(apt.Hour, out var aptTime) && TryParseTime(hour, out var reqTime))
+                        {
+                            if (Math.Abs((aptTime - reqTime).TotalMinutes) < 60)
+                            {
+                                busyProfessionalIds.Add(apt.ProfissionalId);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        busyProfessionalIds.Add(apt.ProfissionalId);
+                    }
+                }
+
+                List<dynamic> users = [];
+                foreach (var doc in availableCandidates)
+                {
+                    string profId = doc.GetValue("id", "").AsString;
+                    if (busyProfessionalIds.Contains(profId))
+                        continue;
+
+                    double dist = 0.0;
+                    if (doc.Contains("distanciaKm"))
+                    {
+                        var distVal = doc["distanciaKm"];
+                        dist = distVal.IsDouble ? distVal.AsDouble : distVal.ToDouble();
+                    }
+
+                    users.Add(new
+                    {
+                        id = profId,
+                        name = doc.GetValue("name", "").AsString,
+                        profession = doc.GetValue("profession", "").AsString,
+                        avatarUrl = doc.GetValue("avatarUrl", "").AsString,
+                        role = doc.GetValue("role", "").AsString,
+                        distanciaKm = dist,
+                        isAvailable = true,
+                        isVerified = true,
+                        reviewCount = 0,
+                        completedServicesCount = 0,
+                        region = "",
+                        highlightBadge = "",
+                    });
+                }
 
                 return new(users, 200, "Profissionais listados com sucesso");
             }
@@ -202,6 +302,128 @@ namespace api_bora_trampar.src.Services
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
+        }
+
+        private static bool TryParseTime(string? timeStr, out TimeSpan time)
+        {
+            time = TimeSpan.Zero;
+            if (string.IsNullOrWhiteSpace(timeStr)) return false;
+
+            if (TimeSpan.TryParse(timeStr.Trim(), out time)) return true;
+
+            var parts = timeStr.Trim().Split(':');
+            if (parts.Length >= 2 && int.TryParse(parts[0], out var h) && int.TryParse(parts[1], out var m))
+            {
+                time = new TimeSpan(h, m, 0);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsProfessionalWorkingAt(BsonDocument doc, DateTime date, string hour)
+        {
+            BsonArray? workingHours = null;
+            if (doc.Contains("working_hours") && doc["working_hours"].IsBsonArray)
+                workingHours = doc["working_hours"].AsBsonArray;
+            else if (doc.Contains("workingHours") && doc["workingHours"].IsBsonArray)
+                workingHours = doc["workingHours"].AsBsonArray;
+
+            if (workingHours == null || workingHours.Count == 0)
+                return true;
+
+            // Segunda = 0, Terça = 1, ..., Domingo = 6
+            int targetDayOfWeek = date.DayOfWeek switch
+            {
+                DayOfWeek.Monday => 0,
+                DayOfWeek.Tuesday => 1,
+                DayOfWeek.Wednesday => 2,
+                DayOfWeek.Thursday => 3,
+                DayOfWeek.Friday => 4,
+                DayOfWeek.Saturday => 5,
+                DayOfWeek.Sunday => 6,
+                _ => 0
+            };
+
+            BsonDocument? matchingDay = null;
+            foreach (var item in workingHours)
+            {
+                if (!item.IsBsonDocument) continue;
+                var dayDoc = item.AsBsonDocument;
+
+                int dayIndex = -1;
+                if (dayDoc.Contains("day_of_week") && (dayDoc["day_of_week"].IsInt32 || dayDoc["day_of_week"].IsInt64))
+                    dayIndex = dayDoc["day_of_week"].ToInt32();
+                else if (dayDoc.Contains("dayOfWeek") && (dayDoc["dayOfWeek"].IsInt32 || dayDoc["dayOfWeek"].IsInt64))
+                    dayIndex = dayDoc["dayOfWeek"].ToInt32();
+
+                if (dayIndex == targetDayOfWeek)
+                {
+                    matchingDay = dayDoc;
+                    break;
+                }
+            }
+
+            if (matchingDay == null)
+            {
+                string[] prefixes = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
+                string targetPrefix = prefixes[targetDayOfWeek];
+
+                foreach (var item in workingHours)
+                {
+                    if (!item.IsBsonDocument) continue;
+                    var dayDoc = item.AsBsonDocument;
+                    string dayName = "";
+                    if (dayDoc.Contains("day_name") && dayDoc["day_name"].IsString)
+                        dayName = dayDoc["day_name"].AsString.ToLower();
+                    else if (dayDoc.Contains("dayName") && dayDoc["dayName"].IsString)
+                        dayName = dayDoc["dayName"].AsString.ToLower();
+
+                    if (dayName.Contains(targetPrefix))
+                    {
+                        matchingDay = dayDoc;
+                        break;
+                    }
+                }
+            }
+
+            if (matchingDay == null) return true;
+
+            bool isActive = true;
+            if (matchingDay.Contains("is_active"))
+                isActive = matchingDay["is_active"].ToBoolean();
+            else if (matchingDay.Contains("isActive"))
+                isActive = matchingDay["isActive"].ToBoolean();
+
+            if (!isActive) return false;
+
+            if (string.IsNullOrWhiteSpace(hour)) return true;
+
+            if (!TryParseTime(hour, out var requestedTime)) return true;
+
+            string startHourStr = matchingDay.Contains("start_hour") ? matchingDay["start_hour"].AsString :
+                                  (matchingDay.Contains("startHour") ? matchingDay["startHour"].AsString : "08:00");
+            string endHourStr = matchingDay.Contains("end_hour") ? matchingDay["end_hour"].AsString :
+                                (matchingDay.Contains("endHour") ? matchingDay["endHour"].AsString : "18:00");
+
+            if (TryParseTime(startHourStr, out var startTime) && requestedTime < startTime)
+                return false;
+
+            if (TryParseTime(endHourStr, out var endTime) && requestedTime >= endTime)
+                return false;
+
+            string breakStartStr = matchingDay.Contains("break_start") ? matchingDay["break_start"].AsString :
+                                   (matchingDay.Contains("breakStart") ? matchingDay["breakStart"].AsString : "");
+            string breakEndStr = matchingDay.Contains("break_end") ? matchingDay["break_end"].AsString :
+                                 (matchingDay.Contains("breakEnd") ? matchingDay["breakEnd"].AsString : "");
+
+            if (TryParseTime(breakStartStr, out var breakStart) && TryParseTime(breakEndStr, out var breakEnd))
+            {
+                if (requestedTime >= breakStart && requestedTime < breakEnd)
+                    return false;
+            }
+
+            return true;
         }
 
         public async Task<ResponseApi<ProfileProfessional?>> SaveAsync(CreateProfileProfessionalRequest request, string userId)
@@ -223,8 +445,20 @@ namespace api_bora_trampar.src.Services
                     if (!string.IsNullOrWhiteSpace(request.IdentityDocumentNumber)) existing.IdentityDocumentNumber = request.IdentityDocumentNumber;
                     if (!string.IsNullOrWhiteSpace(request.IdentityDocumentFrontUrl)) existing.IdentityDocumentFrontUrl = request.IdentityDocumentFrontUrl;
                     if (!string.IsNullOrWhiteSpace(request.IdentityDocumentBackUrl)) existing.IdentityDocumentBackUrl = request.IdentityDocumentBackUrl;
-                    if (!string.IsNullOrWhiteSpace(request.IdentitySelfieUrl)) existing.IdentitySelfieUrl = request.IdentitySelfieUrl;
-                    existing.IdentityVerificationStatus = "Pending";
+                    if (!string.IsNullOrWhiteSpace(request.IdentityVerificationStatus))
+                    {
+                        existing.IdentityVerificationStatus = request.IdentityVerificationStatus;
+                    }
+                    else if (string.IsNullOrWhiteSpace(existing.IdentityVerificationStatus))
+                    {
+                        existing.IdentityVerificationStatus = "Pending";
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(request.IdentityVerificationNotes))
+                    {
+                        existing.IdentityVerificationNotes = request.IdentityVerificationNotes;
+                    }
+
                     existing.Address = request.Address ?? existing.Address;
                     existing.Services = request.Services ?? existing.Services;
                     existing.WorkingHours = request.WorkingHours ?? existing.WorkingHours;
@@ -249,8 +483,10 @@ namespace api_bora_trampar.src.Services
                         IdentityDocumentFrontUrl = request.IdentityDocumentFrontUrl,
                         IdentityDocumentBackUrl = request.IdentityDocumentBackUrl,
                         IdentitySelfieUrl = request.IdentitySelfieUrl,
-                        IdentityVerificationStatus = "Pending",
-                        IdentityVerificationNotes = string.Empty,
+                        IdentityVerificationStatus = !string.IsNullOrWhiteSpace(request.IdentityVerificationStatus)
+                            ? request.IdentityVerificationStatus
+                            : "Pending",
+                        IdentityVerificationNotes = request.IdentityVerificationNotes ?? string.Empty,
                         Address = request.Address ?? new(),
                         Services = request.Services ?? [],
                         WorkingHours = request.WorkingHours ?? [],

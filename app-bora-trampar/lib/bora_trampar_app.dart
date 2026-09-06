@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
-import 'pages/onboarding/welcome_screen.dart';
+import 'pages/splash/splash_screen.dart';
 
 class BoraTrampaApp extends StatelessWidget {
   const BoraTrampaApp({super.key});
@@ -21,7 +21,7 @@ class BoraTrampaApp extends StatelessWidget {
       supportedLocales: const [
         Locale('pt', 'BR'),
       ],
-      home: const WelcomeScreen(),
+      home: const SplashScreen(),
     );
   }
 }

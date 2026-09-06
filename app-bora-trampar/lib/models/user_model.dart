@@ -42,4 +42,24 @@ class UserModel {
       'walletBalance': walletBalance,
     };
   }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? role,
+    String? photo,
+    String? whatsapp,
+    double? walletBalance,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      photo: photo ?? this.photo,
+      whatsapp: whatsapp ?? this.whatsapp,
+      walletBalance: walletBalance ?? this.walletBalance,
+    );
+  }
 }

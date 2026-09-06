@@ -33,17 +33,17 @@ class HttpClientApi {
             token = prefs.getString('auth_token') ?? '';
           }
 
-          if (token.isNotEmpty) {
-            if (options.path.contains('/auth/refresh-token')) {
-              String refreshToken = StorageService.getRefreshToken();
-              if (refreshToken.isEmpty) {
-                final prefs = await SharedPreferences.getInstance();
-                refreshToken = prefs.getString('refresh_token') ?? '';
-              }
-              options.headers['Authorization'] = 'Bearer $refreshToken';
-            } else {
-              options.headers['Authorization'] = 'Bearer $token';
+          if (options.path.contains('/auth/refresh-token')) {
+            String refreshToken = StorageService.getRefreshToken();
+            if (refreshToken.isEmpty) {
+              final prefs = await SharedPreferences.getInstance();
+              refreshToken = prefs.getString('refresh_token') ?? '';
             }
+            if (refreshToken.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $refreshToken';
+            }
+          } else if (token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
           }
 
           if (options.data is! FormData) {

@@ -41,7 +41,7 @@ namespace api_bora_trampar.src.Services
 
                     await authRepository.UpdateAsync(user);
                     return new(null, 400, "Sua conta não foi confirmada, foi enviado um link para confirmar o e-mail.");
-                } 
+                }
 
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if (!isPasswordValid) return new(null, 400, "E-mail ou senha inválidos.");
@@ -51,7 +51,7 @@ namespace api_bora_trampar.src.Services
 
                 bool isProfileCompleted = false;
                 String identityVerificationStatus = "Pending";
-                if(user.Role == Enums.RoleUserEnum.Professional)
+                if (user.Role == Enums.RoleUserEnum.Professional)
                 {
                     ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
                     isPasswordValid = profile.Data is not null;
@@ -82,6 +82,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+
         public async Task<ResponseApi<dynamic>> LoginAppAsync(LoginRequest request)
         {
             try
@@ -108,7 +109,7 @@ namespace api_bora_trampar.src.Services
 
                     await authRepository.UpdateAsync(user);
                     return new(null, 400, "Sua conta não foi confirmada, foi enviado um link para confirmar o e-mail.");
-                } 
+                }
 
                 bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
                 if (!isPasswordValid) return new(null, 400, "E-mail ou senha inválidos.");
@@ -118,12 +119,12 @@ namespace api_bora_trampar.src.Services
 
                 bool isProfileCompleted = false;
                 string identityVerificationStatus = "Pending";
-                if(user.Role == Enums.RoleUserEnum.Professional)
+                if (user.Role == Enums.RoleUserEnum.Professional)
                 {
                     ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
 
                     isProfileCompleted = profile.Data is not null;
-                    if(isProfileCompleted && profile.Data is not null)
+                    if (isProfileCompleted && profile.Data is not null)
                     {
                         identityVerificationStatus = profile.Data.IdentityVerificationStatus;
                     }
@@ -254,6 +255,19 @@ namespace api_bora_trampar.src.Services
                 string newToken = GenerateJwtToken(user);
                 string newRefreshToken = GenerateJwtToken(user, true);
 
+                bool isProfileCompleted = false;
+                string identityVerificationStatus = "Pending";
+                if (user.Role == Enums.RoleUserEnum.Professional)
+                {
+                    ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
+
+                    isProfileCompleted = profile.Data is not null;
+                    if (isProfileCompleted && profile.Data is not null)
+                    {
+                        identityVerificationStatus = profile.Data.IdentityVerificationStatus;
+                    }
+                }
+
                 var result = new
                 {
                     token = newToken,
@@ -265,7 +279,10 @@ namespace api_bora_trampar.src.Services
                         email = user.Email,
                         role = user.Role.ToString(),
                         photo = user.Photo,
-                        whatsapp = user.WhatsApp
+                        whatsapp = user.WhatsApp,
+                        walletBalance = user.WalletBalance,
+                        isProfileCompleted,
+                        identityVerificationStatus
                     }
                 };
 

@@ -114,4 +114,50 @@ class UserRepository {
       return false;
     }
   }
+
+  Future<bool> updatePhoto(String userId, String photoUrl) async {
+    try {
+      final response = await _api.client.put(
+        '/api/users',
+        data: {
+          'id': userId,
+          'photo': photoUrl,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateUser({
+    required String id,
+    String? name,
+    String? email,
+    String? whatsapp,
+  }) async {
+    try {
+      final response = await _api.client.put(
+        '/api/users',
+        data: {
+          'id': id,
+          if (name != null) 'name': name,
+          if (email != null) 'email': email,
+          if (whatsapp != null) 'whatsApp': whatsapp,
+        },
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount(String id) async {
+    try {
+      final response = await _api.client.delete('/api/users/$id');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (_) {
+      return false;
+    }
+  }
 }

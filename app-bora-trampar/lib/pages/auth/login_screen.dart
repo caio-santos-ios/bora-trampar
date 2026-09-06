@@ -55,10 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       final result = response.data["result"];
-      final resultData = result is Map ? (result["data"] ?? result) : response.data;
-      final token = (resultData is Map ? (resultData["token"] ?? resultData["data"]?["token"]) : null)?.toString() ?? '';
-      final refreshToken = (resultData is Map ? (resultData["refreshToken"] ?? resultData["data"]?["refreshToken"]) : null)?.toString();
-      final rawUser = resultData is Map ? (resultData["user"] ?? resultData["data"]?["user"]) : null;
+      final resultData = result is Map
+          ? (result["data"] ?? result)
+          : response.data;
+      final token =
+          (resultData is Map
+                  ? (resultData["token"] ?? resultData["data"]?["token"])
+                  : null)
+              ?.toString() ??
+          '';
+      final refreshToken = resultData["data"]?["refreshToken"].toString() ?? "";
+      final rawUser = resultData is Map
+          ? (resultData["user"] ?? resultData["data"]?["user"])
+          : null;
 
       Map<String, dynamic>? userMap;
       if (rawUser is Map) {
@@ -70,18 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (token.isNotEmpty) {
         await StorageService.setToken(token);
-        if (refreshToken != null && refreshToken.isNotEmpty) {
-          await StorageService.setRefreshToken(refreshToken);
-        }
+        await StorageService.setRefreshToken(refreshToken);
         if (userMap != null) {
           await StorageService.setUser(userMap);
         }
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('auth_token', token);
-        if (refreshToken != null && refreshToken.isNotEmpty) {
-          await prefs.setString('refresh_token', refreshToken);
-        }
+        await prefs.setString('refresh_token', refreshToken);
         if (userMap != null) {
           await prefs.setString('user_profile', jsonEncode(userMap));
         }
@@ -106,7 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else {
-        bool isProfileCompleted = resultData["user"]["isProfileCompleted"].toString() == "true";
+        bool isProfileCompleted =
+            resultData["user"]["isProfileCompleted"].toString() == "true";
         if (!isProfileCompleted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -117,8 +123,13 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
-        final userObj = resultData is Map ? (resultData["user"] ?? resultData["data"]?["user"]) : null;
-        String useridentityVerificationStatusId = (userObj is Map ? userObj["identityVerificationStatus"] : null)?.toString() ?? '';
+        final userObj = resultData is Map
+            ? (resultData["user"] ?? resultData["data"]?["user"])
+            : null;
+        String useridentityVerificationStatusId =
+            (userObj is Map ? userObj["identityVerificationStatus"] : null)
+                ?.toString() ??
+            '';
 
         if (useridentityVerificationStatusId == "Approved") {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -141,7 +152,8 @@ class _LoginScreenState extends State<LoginScreen> {
             (route) => false,
           );
         } else {
-          String userId = (userObj is Map ? userObj["id"] : null)?.toString() ?? '';
+          String userId =
+              (userObj is Map ? userObj["id"] : null)?.toString() ?? '';
 
           ProfileProfessionalModel? profile =
               await _profileProfessionalRepository.getByUserId(userId);
@@ -160,13 +172,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (err.response != null) {
         final data = err.response?.data;
         if (data is Map) {
-          errorMessage = data['result']?['message']
-              ?? data['message']
-              ?? errorMessage;
+          errorMessage =
+              data['result']?['message'] ?? data['message'] ?? errorMessage;
         }
       } else if (err.type == DioExceptionType.connectionTimeout ||
-                 err.type == DioExceptionType.receiveTimeout ||
-                 err.type == DioExceptionType.sendTimeout) {
+          err.type == DioExceptionType.receiveTimeout ||
+          err.type == DioExceptionType.sendTimeout) {
         errorMessage = 'Tempo de conexão esgotado. Verifique sua internet.';
       } else if (err.type == DioExceptionType.connectionError) {
         errorMessage = 'Sem conexão com o servidor. Verifique sua internet.';

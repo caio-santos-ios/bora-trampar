@@ -29,7 +29,6 @@ class CategoryRepository {
   Future<List<CategoryModel>> getCategories() async {
     try {
       final response = await _api.client.get('/api/categories/select');
-      print(response.data);
       if (response.statusCode == 200 && response.data != null) {
         dynamic res = response.data['result'];
         if (res is Map && res['data'] != null) {

@@ -165,8 +165,8 @@ class _ProfessionalOnboardingScreenState
 
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
+
         if (data['type'] != 'service_error') {
-          print(data["neighborhood"]);
           setState(() {
             _streetController.text = data['street'];
             _neighborhoodController.text = data['neighborhood'];
@@ -180,6 +180,14 @@ class _ProfessionalOnboardingScreenState
             _typeLocationController.text =
                 data['location']['type']?.toString() ?? '';
           });
+        } else {
+          _streetController.text = "";
+          _neighborhoodController.text = "";
+          _cityController.text = "";
+          _stateController.text = "";
+          _latController.text = "0";
+          _longController.text = "0";
+          _typeLocationController.text = "";
         }
       }
     } catch (_) {
@@ -390,7 +398,10 @@ class _ProfessionalOnboardingScreenState
       serviceRadiusKm: _serviceRadiusKm.round(),
       location: ProfessionalAddressLocationModel(
         type: _typeLocationController.text,
-        coordinates: [double.parse(_longController.text), double.parse(_latController.text)]
+        coordinates: [
+          double.parse(_longController.text),
+          double.parse(_latController.text),
+        ],
       ),
     );
 
