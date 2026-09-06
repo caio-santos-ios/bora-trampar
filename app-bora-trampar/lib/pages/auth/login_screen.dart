@@ -8,7 +8,6 @@ import 'package:app_bora_trampar/repositories/profile/profile_professional_repos
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
@@ -85,14 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await StorageService.setUser(userMap);
         }
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
-        await prefs.setString('refresh_token', refreshToken);
-        if (userMap != null) {
-          await prefs.setString('user_profile', jsonEncode(userMap));
-        }
-
-        // Sincroniza FCM Token com o backend
         NotificationService().syncFcmToken();
       }
 

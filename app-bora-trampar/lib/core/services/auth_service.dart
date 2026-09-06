@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_model.dart';
 import '../../repositories/auth/auth_repository.dart';
 import 'storage_service.dart';
@@ -141,15 +140,6 @@ class AuthService {
     if (user != null) {
       await StorageService.setUser(user);
     }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
-    if (refreshToken != null) {
-      await prefs.setString('refresh_token', refreshToken);
-    }
-    if (user != null) {
-      await prefs.setString('user_profile', jsonEncode(user));
-    }
     NotificationService().syncFcmToken();
   }
 
@@ -171,23 +161,10 @@ class AuthService {
         }
       } catch (_) {}
     }
-
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('user_profile');
-    if (raw != null) {
-      try {
-        final json = jsonDecode(raw) as Map<String, dynamic>;
-        return UserModel.fromJson(json);
-      } catch (_) {}
-    }
     return null;
   }
 
   Future<void> logout() async {
     await StorageService.clear();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('refresh_token');
-    await prefs.remove('user_profile');
   }
 }

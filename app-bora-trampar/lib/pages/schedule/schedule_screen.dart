@@ -506,21 +506,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           )
         else
           ...dayAppointments.map((apt) => _buildProAppointmentCard(apt)),
-        const SizedBox(height: 24),
-        if (_appointments.isNotEmpty) ...[
-          Text(
-            'Todos os Agendamentos',
-            style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: 14),
-          ..._appointments.map((apt) => _buildProAppointmentCard(apt, showAll: true)),
-        ],
         const SizedBox(height: 20),
       ],
     );
   }
 
-  Widget _buildProAppointmentCard(AppointmentModel apt, {bool showAll = false}) {
+  Widget _buildProAppointmentCard(AppointmentModel apt) {
     final st = apt.status.toLowerCase();
     String statusDisplay;
     Color statusColor;

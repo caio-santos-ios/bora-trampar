@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
@@ -59,10 +58,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     try {
       String refreshToken = StorageService.getRefreshToken();
-      if (refreshToken.isEmpty) {
-        final prefs = await SharedPreferences.getInstance();
-        refreshToken = prefs.getString('refresh_token') ?? '';
-      }
 
       if (refreshToken.isEmpty) {
         _goToWelcome();
@@ -106,15 +101,6 @@ class _SplashScreenState extends State<SplashScreen>
           if (rawUser is Map) {
             userMap = Map<String, dynamic>.from(rawUser);
             await StorageService.setUser(userMap);
-          }
-
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('auth_token', newToken);
-          if (newRefreshToken.isNotEmpty) {
-            await prefs.setString('refresh_token', newRefreshToken);
-          }
-          if (userMap != null) {
-            await prefs.setString('user_profile', jsonEncode(userMap));
           }
 
           // Sincroniza FCM Token
@@ -180,10 +166,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _clearSessionAndGoWelcome() async {
     await StorageService.clear();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('refresh_token');
-    await prefs.remove('user_profile');
     _goToWelcome();
   }
 

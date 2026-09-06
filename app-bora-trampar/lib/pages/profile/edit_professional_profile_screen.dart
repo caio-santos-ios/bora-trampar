@@ -3,7 +3,6 @@ import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/primary_button.dart';
@@ -266,8 +265,6 @@ class _EditProfessionalProfileScreenState
       );
 
       await StorageService.setUser(updatedUser.toJson());
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_profile', jsonEncode(updatedUser.toJson()));
 
       if (mounted) {
         _hasSavedSuccessfully = true;

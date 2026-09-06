@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/auth_service.dart';
@@ -352,8 +351,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     whatsapp: updatedWhatsapp,
                                   );
                                   await StorageService.setUser(updatedUser.toJson());
-                                  final prefs = await SharedPreferences.getInstance();
-                                  await prefs.setString('user_profile', jsonEncode(updatedUser.toJson()));
 
                                   setState(() => _user = updatedUser);
                                   Navigator.of(context).pop();
@@ -408,8 +405,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _showPaymentMethodsModal() async {
-    final balance = _user?.walletBalance ?? 0.0;
-
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -439,60 +434,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardElevated,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryGold, size: 22),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Saldo em Carteira', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 2),
-                            Text('R\$ ${balance.toStringAsFixed(2).replaceAll('.', ',')}', style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.w800)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text('Métodos Aceitos na Plataforma', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
-                const SizedBox(height: 10),
                 _buildPaymentTile(
                   icon: Icons.pix_rounded,
-                  title: 'PIX Instantâneo',
-                  subtitle: 'Aprovação imediata via QR Code ou Copia e Cola',
-                  badge: 'Mais rápido',
+                  title: 'PIX',
+                  subtitle: 'Pagamentos instantâneos via QR Code ou Copia e Cola',
+                  badge: 'Disponível',
                 ),
-                const SizedBox(height: 10),
-                _buildPaymentTile(
-                  icon: Icons.credit_card_rounded,
-                  title: 'Cartão de Crédito',
-                  subtitle: 'Visa, Mastercard, Elo em até 12x',
-                  badge: 'Parcelado',
-                ),
-                const SizedBox(height: 10),
-                _buildPaymentTile(
-                  icon: Icons.shield_outlined,
-                  title: 'Pagamento Seguro Asaas',
-                  subtitle: 'Seus dados financeiros são 100% criptografados',
-                ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
                   height: 46,
@@ -892,8 +840,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final updatedUser = _user!.copyWith(photo: uploadedUrl);
 
         await StorageService.setUser(updatedUser.toJson());
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_profile', jsonEncode(updatedUser.toJson()));
 
         if (mounted) {
           setState(() {
@@ -1386,7 +1332,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ]
         : [
             (Icons.person_outline_rounded, 'Dados Pessoais', 'Nome, telefone e endereço', false),
-            (Icons.payment_outlined, 'Formas de Pagamento', 'PIX e cartões cadastrados', false),
+            (Icons.payment_outlined, 'Formas de Pagamento', 'Pagamentos via PIX', false),
             (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte', false),
             (Icons.lock_outline_rounded, 'Termos e Privacidade', 'Políticas de uso do Bora Trampar', false),
             (Icons.delete_forever_outlined, 'Excluir Conta', 'Encerrar e apagar seus dados permanentemente', true),

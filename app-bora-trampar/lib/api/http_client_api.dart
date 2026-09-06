@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app_bora_trampar/core/services/storage_service.dart';
 
@@ -28,17 +27,9 @@ class HttpClientApi {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           String token = StorageService.getToken();
-          if (token.isEmpty) {
-            final prefs = await SharedPreferences.getInstance();
-            token = prefs.getString('auth_token') ?? '';
-          }
 
           if (options.path.contains('/auth/refresh-token')) {
             String refreshToken = StorageService.getRefreshToken();
-            if (refreshToken.isEmpty) {
-              final prefs = await SharedPreferences.getInstance();
-              refreshToken = prefs.getString('refresh_token') ?? '';
-            }
             if (refreshToken.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $refreshToken';
             }
