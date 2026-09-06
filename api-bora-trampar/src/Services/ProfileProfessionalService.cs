@@ -141,9 +141,19 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                List<BsonDocument> pipeline =
-                [
-                    new("$geoNear", new BsonDocument
+                // Normaliza coordenadas se vierem invertidas (lat no lugar de long)
+                if (Math.Abs(latitude) > Math.Abs(longitude) && longitude > -30 && latitude < -30)
+                {
+                    (latitude, longitude) = (longitude, latitude);
+                }
+
+                bool hasValidLocation = Math.Abs(latitude) > 0.001 || Math.Abs(longitude) > 0.001;
+
+                List<BsonDocument> pipeline = [];
+
+                if (hasValidLocation)
+                {
+                    pipeline.Add(new("$geoNear", new BsonDocument
                     {
                         { "near", new BsonDocument
                             {
@@ -154,47 +164,52 @@ namespace api_bora_trampar.src.Services
                         { "distanceField", "distanciaMetros" },
                         { "spherical", true },
                         { "key", "address.location" }
-                    }),
-                    new("$addFields", new BsonDocument("distanciaKm",
-                        new BsonDocument("$divide", new BsonArray { "$distanciaMetros", 1000 })) ),
-                    new("$match", new BsonDocument
+                    }));
+                    pipeline.Add(new("$addFields", new BsonDocument("distanciaKm",
+                        new BsonDocument("$divide", new BsonArray { "$distanciaMetros", 1000 }))));
+                    pipeline.Add(new("$match", new BsonDocument
                     {
-                        { "$expr", new BsonDocument("$lte", new BsonArray { "$distanciaKm", "$address.service_radius_km" }) }
-                    }),
-                    new("$lookup", new BsonDocument
-                    {
-                        {"from", "users"},
-                        {"let", new BsonDocument("userId", "$user_id")},
-                        {"pipeline", new BsonArray
-                            {
-                                new BsonDocument("$match", new BsonDocument("$expr",
-                                    new BsonDocument("$eq", new BsonArray { new BsonDocument("$toString", "$_id"), "$$userId" })
-                                ))
-                            }
-                        },
-                        {"as", "user_lookup"}
-                    }),
-                    new("$unwind", "$user_lookup"),
-                    new("$match", new BsonDocument
-                    {
-                        {"user_lookup.deleted", false},
-                        {"user_lookup.confirm_account", true},
-                        {"is_available_now", true},
-                        {"user_lookup.role", "Professional"}
-                    }),
-                    new("$project", new BsonDocument
-                    {
-                        {"_id", 0},
-                        {"id", new BsonDocument("$toString", "$user_lookup._id")},
-                        {"name", "$user_lookup.name"},
-                        {"role", "$user_lookup.role"},
-                        {"avatarUrl", new BsonDocument("$ifNull", new BsonArray { "$user_lookup.photo", "" })},
-                        {"profession", 1},
-                        {"distanciaKm", 1},
-                        {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
-                    }),
-                    new("$sort", new BsonDocument { { "distanciaKm", 1 } } )
-                ];
+                        { "$expr", new BsonDocument("$lte", new BsonArray { "$distanciaKm", new BsonDocument("$ifNull", new BsonArray { "$address.service_radius_km", 25 }) }) }
+                    }));
+                }
+                else
+                {
+                    pipeline.Add(new("$addFields", new BsonDocument("distanciaKm", 0.0)));
+                }
+
+                pipeline.Add(new("$lookup", new BsonDocument
+                {
+                    {"from", "users"},
+                    {"let", new BsonDocument("userId", "$user_id")},
+                    {"pipeline", new BsonArray
+                        {
+                            new BsonDocument("$match", new BsonDocument("$expr",
+                                new BsonDocument("$eq", new BsonArray { new BsonDocument("$toString", "$_id"), "$$userId" })
+                            ))
+                        }
+                    },
+                    {"as", "user_lookup"}
+                }));
+                pipeline.Add(new("$unwind", "$user_lookup"));
+                pipeline.Add(new("$match", new BsonDocument
+                {
+                    {"user_lookup.deleted", false},
+                    {"user_lookup.confirm_account", true},
+                    {"is_available_now", true},
+                    {"user_lookup.role", new BsonDocument("$in", new BsonArray { "Professional", "Profissional" })}
+                }));
+                pipeline.Add(new("$project", new BsonDocument
+                {
+                    {"_id", 0},
+                    {"id", new BsonDocument("$toString", "$user_lookup._id")},
+                    {"name", "$user_lookup.name"},
+                    {"role", "$user_lookup.role"},
+                    {"avatarUrl", new BsonDocument("$ifNull", new BsonArray { "$user_lookup.photo", "" })},
+                    {"profession", 1},
+                    {"distanciaKm", 1},
+                    {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
+                }));
+                pipeline.Add(new("$sort", new BsonDocument { { "distanciaKm", 1 } } ));
 
                 List<BsonDocument> candidateDocs = await appDbContext.ProfileProfessionals
                     .Aggregate<BsonDocument>(pipeline)
@@ -430,6 +445,16 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                if (request.Address?.Location?.Coordinates != null && request.Address.Location.Coordinates.Length == 2)
+                {
+                    var c0 = request.Address.Location.Coordinates[0];
+                    var c1 = request.Address.Location.Coordinates[1];
+                    if (c0 > c1 && c1 < -30)
+                    {
+                        request.Address.Location.Coordinates = [c1, c0];
+                    }
+                }
+
                 var effectiveUserId = string.IsNullOrWhiteSpace(request.UserId) ? userId : request.UserId;
                 var existing = await repository.GetByUserIdAsync(effectiveUserId);
                 ProfileProfessional? resultProfile = null;
