@@ -47,130 +47,136 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
 
   Future<void> _loadProfessionals() async {
     setState(() => _isLoading = true);
-    final rawPros = await _userRepository.getProfessionals();
-    final profiles = await _profileRepository.getAllProfiles();
-    final appointments = await _appointmentRepository.getAppointments();
+    print(widget.orderRequest.customerLatitude);
+    print(widget.orderRequest.customerLongitude);
+    print(widget.orderRequest.customerCity);
+    print(widget.orderRequest.customerState);
+    print(widget.orderRequest.scheduledDate);
+    print(widget.orderRequest.scheduledTimeSlot);
+    // final rawPros = await _userRepository.getProfessionals();
+    // final profiles = await _profileRepository.getAllProfiles();
+    // final appointments = await _appointmentRepository.getAppointments();
 
-    final Map<String, ProfileProfessionalModel> profileMap = {};
-    for (final p in profiles) {
-      if (p.userId.isNotEmpty) {
-        profileMap[p.userId.trim()] = p;
-        profileMap[p.userId.trim().toLowerCase()] = p;
-      }
-      if (p.id != null && p.id!.isNotEmpty) {
-        profileMap[p.id!.trim()] = p;
-        profileMap[p.id!.trim().toLowerCase()] = p;
-      }
-    }
+    // final Map<String, ProfileProfessionalModel> profileMap = {};
+    // for (final p in profiles) {
+    //   if (p.userId.isNotEmpty) {
+    //     profileMap[p.userId.trim()] = p;
+    //     profileMap[p.userId.trim().toLowerCase()] = p;
+    //   }
+    //   if (p.id != null && p.id!.isNotEmpty) {
+    //     profileMap[p.id!.trim()] = p;
+    //     profileMap[p.id!.trim().toLowerCase()] = p;
+    //   }
+    // }
 
-    final customerLat = widget.orderRequest.customerLatitude;
-    final customerLon = widget.orderRequest.customerLongitude;
-    final customerCity = widget.orderRequest.customerCity;
-    final scheduledDate = widget.orderRequest.scheduledDate ?? DateTime.now();
-    final scheduledTimeSlot = widget.orderRequest.scheduledTimeSlot;
+    // final customerLat = widget.orderRequest.customerLatitude;
+    // final customerLon = widget.orderRequest.customerLongitude;
+    // final customerCity = widget.orderRequest.customerCity;
+    // final scheduledDate = widget.orderRequest.scheduledDate ?? DateTime.now();
+    // final scheduledTimeSlot = widget.orderRequest.scheduledTimeSlot;
 
-    final Map<String, double> distances = {};
-    final List<ProfessionalModel> matchingPros = [];
+    // final Map<String, double> distances = {};
+    // final List<ProfessionalModel> matchingPros = [];
 
-    for (final pro in rawPros) {
-      ProfileProfessionalModel? profile = profileMap[pro.id.trim()] ?? profileMap[pro.id.trim().toLowerCase()];
-      if (profile == null && pro.id.isNotEmpty) {
-        profile = await _profileRepository.getByUserId(pro.id.trim());
-      }
+    // for (final pro in rawPros) {
+    //   ProfileProfessionalModel? profile = profileMap[pro.id.trim()] ?? profileMap[pro.id.trim().toLowerCase()];
+    //   if (profile == null && pro.id.isNotEmpty) {
+    //     profile = await _profileRepository.getByUserId(pro.id.trim());
+    //   }
 
-      double proLat = profile?.address.latitude ?? 0.0;
-      double proLon = profile?.address.longitude ?? 0.0;
-      final proCity = profile?.address.city ?? pro.region;
-      final radius = profile?.address.serviceRadiusKm ?? 25;
+    //   double proLat = profile?.address.latitude ?? 0.0;
+    //   double proLon = profile?.address.longitude ?? 0.0;
+    //   final proCity = profile?.address.city ?? pro.region;
+    //   final radius = profile?.address.serviceRadiusKm ?? 25;
 
-      bool withinRadius = LocationHelper.isWithinRadius(
-        customerLat: customerLat,
-        customerLon: customerLon,
-        customerCity: customerCity,
-        proLat: proLat,
-        proLon: proLon,
-        proCity: proCity,
-        radiusKm: radius,
-      );
+    //   bool withinRadius = LocationHelper.isWithinRadius(
+    //     customerLat: customerLat,
+    //     customerLon: customerLon,
+    //     customerCity: customerCity,
+    //     proLat: proLat,
+    //     proLon: proLon,
+    //     proCity: proCity,
+    //     radiusKm: radius,
+    //   );
 
-      if (customerLat != 0.0 && customerLon != 0.0 && proLat != 0.0 && proLon != 0.0) {
-        final dist = LocationHelper.calculateDistanceKm(customerLat, customerLon, proLat, proLon);
-        distances[pro.id] = dist;
-      }
+    //   if (customerLat != 0.0 && customerLon != 0.0 && proLat != 0.0 && proLon != 0.0) {
+    //     final dist = LocationHelper.calculateDistanceKm(customerLat, customerLon, proLat, proLon);
+    //     distances[pro.id] = dist;
+    //   }
 
-      bool available = AvailabilityHelper.isProfessionalAvailable(
-        profile: profile,
-        date: scheduledDate,
-        timeSlot: scheduledTimeSlot,
-        appointments: appointments,
-        proUserId: pro.id,
-      );
+    //   bool available = AvailabilityHelper.isProfessionalAvailable(
+    //     profile: profile,
+    //     date: scheduledDate,
+    //     timeSlot: scheduledTimeSlot,
+    //     appointments: appointments,
+    //     proUserId: pro.id,
+    //   );
 
-      if (withinRadius && available) {
-        double dailyRate = 0.0;
-        if (profile != null && profile.services.isNotEmpty) {
-          final profData = profile;
-          final matchingService = profData.services.firstWhere(
-            (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
-            orElse: () => profData.services.firstWhere((s) => s.price > 0, orElse: () => profData.services.first),
-          );
-          if (matchingService.price > 0) {
-            dailyRate = matchingService.price;
-          } else {
-            for (final s in profData.services) {
-              if (s.price > 0) {
-                dailyRate = s.price;
-                break;
-              }
-            }
-          }
-        }
+    //   if (withinRadius && available) {
+    //     double dailyRate = 0.0;
+    //     if (profile != null && profile.services.isNotEmpty) {
+    //       final profData = profile;
+    //       final matchingService = profData.services.firstWhere(
+    //         (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
+    //         orElse: () => profData.services.firstWhere((s) => s.price > 0, orElse: () => profData.services.first),
+    //       );
+    //       if (matchingService.price > 0) {
+    //         dailyRate = matchingService.price;
+    //       } else {
+    //         for (final s in profData.services) {
+    //           if (s.price > 0) {
+    //             dailyRate = s.price;
+    //             break;
+    //           }
+    //         }
+    //       }
+    //     }
 
-        if (dailyRate <= 0 && pro.basePrice > 0) {
-          dailyRate = pro.basePrice;
-        }
+    //     if (dailyRate <= 0 && pro.basePrice > 0) {
+    //       dailyRate = pro.basePrice;
+    //     }
 
-        if (dailyRate <= 0 && widget.orderRequest.selectedServices.isNotEmpty) {
-          for (final sel in widget.orderRequest.selectedServices) {
-            if (sel.basePrice > 0) {
-              dailyRate = sel.basePrice;
-              break;
-            }
-          }
-        }
+    //     if (dailyRate <= 0 && widget.orderRequest.selectedServices.isNotEmpty) {
+    //       for (final sel in widget.orderRequest.selectedServices) {
+    //         if (sel.basePrice > 0) {
+    //           dailyRate = sel.basePrice;
+    //           break;
+    //         }
+    //       }
+    //     }
 
-        if (dailyRate <= 0) {
-          dailyRate = 150.0;
-        }
+    //     if (dailyRate <= 0) {
+    //       dailyRate = 150.0;
+    //     }
 
-        final updatedPro = ProfessionalModel(
-          id: pro.id,
-          name: pro.name,
-          role: (profile?.profession.isNotEmpty == true) ? profile!.profession : pro.role,
-          rating: (profile?.rating ?? 0) > 0 ? profile!.rating : pro.rating,
-          reviewCount: (profile?.reviewCount ?? 0) > 0 ? profile!.reviewCount : pro.reviewCount,
-          completedServicesCount: pro.completedServicesCount,
-          arrivalTimeMinutes: pro.arrivalTimeMinutes,
-          basePrice: dailyRate,
-          highlightBadge: pro.highlightBadge,
-          avatarUrl: (profile?.identitySelfieUrl.isNotEmpty == true) ? profile!.identitySelfieUrl : pro.avatarUrl,
-          bio: (profile?.bio.isNotEmpty == true) ? profile!.bio : pro.bio,
-          offeredServices: profile?.services.map((s) => s.serviceName).toList() ?? pro.offeredServices,
-          reviews: pro.reviews,
-          region: pro.region,
-        );
+    //     final updatedPro = ProfessionalModel(
+    //       id: pro.id,
+    //       name: pro.name,
+    //       role: (profile?.profession.isNotEmpty == true) ? profile!.profession : pro.role,
+    //       rating: (profile?.rating ?? 0) > 0 ? profile!.rating : pro.rating,
+    //       reviewCount: (profile?.reviewCount ?? 0) > 0 ? profile!.reviewCount : pro.reviewCount,
+    //       completedServicesCount: pro.completedServicesCount,
+    //       arrivalTimeMinutes: pro.arrivalTimeMinutes,
+    //       basePrice: dailyRate,
+    //       highlightBadge: pro.highlightBadge,
+    //       avatarUrl: (profile?.identitySelfieUrl.isNotEmpty == true) ? profile!.identitySelfieUrl : pro.avatarUrl,
+    //       bio: (profile?.bio.isNotEmpty == true) ? profile!.bio : pro.bio,
+    //       offeredServices: profile?.services.map((s) => s.serviceName).toList() ?? pro.offeredServices,
+    //       reviews: pro.reviews,
+    //       region: pro.region,
+    //     );
 
-        matchingPros.add(updatedPro);
-      }
-    }
+    //     matchingPros.add(updatedPro);
+    //   }
+    // }
 
-    if (mounted) {
-      setState(() {
-        _proDistances = distances;
-        _professionals = matchingPros;
-        _isLoading = false;
-      });
-    }
+    // if (mounted) {
+    //   setState(() {
+    //     _proDistances = distances;
+    //     _professionals = matchingPros;
+    //     _isLoading = false;
+    //   });
+    // }
   }
 
   List<ProfessionalModel> get _sortedProfessionals {

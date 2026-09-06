@@ -22,11 +22,14 @@ class ProfessionalOnboardingScreen extends StatefulWidget {
   const ProfessionalOnboardingScreen({super.key});
 
   @override
-  State<ProfessionalOnboardingScreen> createState() => _ProfessionalOnboardingScreenState();
+  State<ProfessionalOnboardingScreen> createState() =>
+      _ProfessionalOnboardingScreenState();
 }
 
-class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScreen> {
-  final ProfileProfessionalRepository _profileRepo = ProfileProfessionalRepository();
+class _ProfessionalOnboardingScreenState
+    extends State<ProfessionalOnboardingScreen> {
+  final ProfileProfessionalRepository _profileRepo =
+      ProfileProfessionalRepository();
   final CategoryRepository _categoryRepo = CategoryRepository();
   final ServicesRepository _serviceRepo = ServicesRepository();
   final UploadRepository _uploadRepo = UploadRepository();
@@ -52,8 +55,15 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
   final TextEditingController _numberController = TextEditingController();
   final TextEditingController _complementController = TextEditingController();
   final TextEditingController _neighborhoodController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController(text: 'São Paulo');
-  final TextEditingController _stateController = TextEditingController(text: 'SP');
+  final TextEditingController _cityController = TextEditingController(
+    text: 'São Paulo',
+  );
+  final TextEditingController _stateController = TextEditingController(
+    text: 'SP',
+  );
+  final TextEditingController _latController = TextEditingController();
+  final TextEditingController _longController = TextEditingController();
+  final TextEditingController _typeLocationController = TextEditingController();
   double _serviceRadiusKm = 25.0;
 
   List<CategoryModel> _availableCategories = [];
@@ -61,15 +71,41 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
   final List<ProfessionalServiceItemModel> _selectedServices = [];
   CategoryModel? _selectedCategoryForAdd;
   ServiceItemModel? _selectedServiceForAdd;
-  final TextEditingController _servicePriceController = TextEditingController(text: '200');
+  final TextEditingController _servicePriceController = TextEditingController(
+    text: '200',
+  );
   String _servicePriceType = 'Diária';
 
-  final List<String> _daysOfWeek = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-  final Map<int, bool> _activeDays = {0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: false};
-  final TextEditingController _startHourController = TextEditingController(text: '08:00');
-  final TextEditingController _endHourController = TextEditingController(text: '18:00');
-  final TextEditingController _breakStartController = TextEditingController(text: '12:00');
-  final TextEditingController _breakEndController = TextEditingController(text: '13:00');
+  final List<String> _daysOfWeek = [
+    'Segunda',
+    'Terça',
+    'Quarta',
+    'Quinta',
+    'Sexta',
+    'Sábado',
+    'Domingo',
+  ];
+  final Map<int, bool> _activeDays = {
+    0: true,
+    1: true,
+    2: true,
+    3: true,
+    4: true,
+    5: true,
+    6: false,
+  };
+  final TextEditingController _startHourController = TextEditingController(
+    text: '08:00',
+  );
+  final TextEditingController _endHourController = TextEditingController(
+    text: '18:00',
+  );
+  final TextEditingController _breakStartController = TextEditingController(
+    text: '12:00',
+  );
+  final TextEditingController _breakEndController = TextEditingController(
+    text: '13:00',
+  );
   bool _isStepLoading = false;
 
   @override
@@ -122,15 +158,27 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
 
     try {
       final dio = Dio();
-      final response = await dio.get('https://viacep.com.br/ws/$cleanCep/json/');
+      // final response = await dio.get('https://viacep.com.br/ws/$cleanCep/json/');
+      final response = await dio.get(
+        'https://brasilapi.com.br/api/cep/v2/$cleanCep',
+      );
+
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
-        if (data['erro'] != true && data['erro'] != 'true') {
+        if (data['type'] != 'service_error') {
+          print(data["neighborhood"]);
           setState(() {
-            _streetController.text = data['logradouro']?.toString() ?? '';
-            _neighborhoodController.text = data['bairro']?.toString() ?? '';
-            _cityController.text = data['localidade']?.toString() ?? 'São Paulo';
-            _stateController.text = data['uf']?.toString() ?? 'SP';
+            _streetController.text = data['street'];
+            _neighborhoodController.text = data['neighborhood'];
+
+            _cityController.text = data['city'];
+            _stateController.text = data['state'];
+            _latController.text =
+                data['location']['coordinates']['latitude']?.toString() ?? '0';
+            _longController.text =
+                data['location']['coordinates']['longitude']?.toString() ?? '0';
+            _typeLocationController.text =
+                data['location']['type']?.toString() ?? '';
           });
         }
       }
@@ -164,13 +212,25 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 ),
                 const SizedBox(height: 16),
                 ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryGold),
-                  title: const Text('Câmera', style: TextStyle(color: AppColors.textPrimary)),
+                  leading: const Icon(
+                    Icons.camera_alt_outlined,
+                    color: AppColors.primaryGold,
+                  ),
+                  title: const Text(
+                    'Câmera',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
                   onTap: () => Navigator.of(context).pop(ImageSource.camera),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library_outlined, color: AppColors.primaryGold),
-                  title: const Text('Galeria', style: TextStyle(color: AppColors.textPrimary)),
+                  leading: const Icon(
+                    Icons.photo_library_outlined,
+                    color: AppColors.primaryGold,
+                  ),
+                  title: const Text(
+                    'Galeria',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
                   onTap: () => Navigator.of(context).pop(ImageSource.gallery),
                 ),
               ],
@@ -198,7 +258,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         SnackBar(
           content: Text(
             'Selecione um serviço para adicionar.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -206,13 +269,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       return;
     }
 
-    final isAlreadyAdded = _selectedServices.any((s) => s.serviceId == _selectedServiceForAdd!.id);
+    final isAlreadyAdded = _selectedServices.any(
+      (s) => s.serviceId == _selectedServiceForAdd!.id,
+    );
     if (isAlreadyAdded) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'Este serviço já foi adicionado na sua lista.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -220,7 +288,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       return;
     }
 
-    final price = double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ?? 200.0;
+    final price =
+        double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ??
+        200.0;
     final item = ProfessionalServiceItemModel(
       categoryId: _selectedCategoryForAdd?.id ?? '',
       categoryName: _selectedCategoryForAdd?.title ?? 'Serviço',
@@ -240,7 +310,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       SnackBar(
         content: Text(
           'Serviço adicionado com sucesso!',
-          style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         backgroundColor: AppColors.primaryGold,
       ),
@@ -258,13 +331,28 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
     String selfieUrl = '';
 
     if (_docFrontPhoto != null) {
-      frontUrl = await _uploadRepo.uploadImage(File(_docFrontPhoto!.path), folder: 'kyc') ?? '';
+      frontUrl =
+          await _uploadRepo.uploadImage(
+            File(_docFrontPhoto!.path),
+            folder: 'kyc',
+          ) ??
+          '';
     }
     if (_docBackPhoto != null) {
-      backUrl = await _uploadRepo.uploadImage(File(_docBackPhoto!.path), folder: 'kyc') ?? '';
+      backUrl =
+          await _uploadRepo.uploadImage(
+            File(_docBackPhoto!.path),
+            folder: 'kyc',
+          ) ??
+          '';
     }
     if (_docSelfiePhoto != null) {
-      selfieUrl = await _uploadRepo.uploadImage(File(_docSelfiePhoto!.path), folder: 'kyc') ?? '';
+      selfieUrl =
+          await _uploadRepo.uploadImage(
+            File(_docSelfiePhoto!.path),
+            folder: 'kyc',
+          ) ??
+          '';
     }
 
     final workingHoursList = List.generate(7, (i) {
@@ -272,10 +360,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         dayOfWeek: i,
         dayName: _daysOfWeek[i],
         isActive: _activeDays[i] ?? false,
-        startHour: _startHourController.text.trim().isNotEmpty ? _startHourController.text.trim() : '08:00',
-        endHour: _endHourController.text.trim().isNotEmpty ? _endHourController.text.trim() : '18:00',
-        breakStart: _breakStartController.text.trim().isNotEmpty ? _breakStartController.text.trim() : '12:00',
-        breakEnd: _breakEndController.text.trim().isNotEmpty ? _breakEndController.text.trim() : '13:00',
+        startHour: _startHourController.text.trim().isNotEmpty
+            ? _startHourController.text.trim()
+            : '08:00',
+        endHour: _endHourController.text.trim().isNotEmpty
+            ? _endHourController.text.trim()
+            : '18:00',
+        breakStart: _breakStartController.text.trim().isNotEmpty
+            ? _breakStartController.text.trim()
+            : '12:00',
+        breakEnd: _breakEndController.text.trim().isNotEmpty
+            ? _breakEndController.text.trim()
+            : '13:00',
       );
     });
 
@@ -285,9 +381,17 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       number: _numberController.text.trim(),
       complement: _complementController.text.trim(),
       neighborhood: _neighborhoodController.text.trim(),
-      city: _cityController.text.trim().isNotEmpty ? _cityController.text.trim() : 'São Paulo',
-      state: _stateController.text.trim().isNotEmpty ? _stateController.text.trim() : 'SP',
+      city: _cityController.text.trim().isNotEmpty
+          ? _cityController.text.trim()
+          : '',
+      state: _stateController.text.trim().isNotEmpty
+          ? _stateController.text.trim()
+          : '',
       serviceRadiusKm: _serviceRadiusKm.round(),
+      location: ProfessionalAddressLocationModel(
+        type: _typeLocationController.text,
+        coordinates: [double.parse(_longController.text), double.parse(_latController.text)]
+      ),
     );
 
     final profile = ProfileProfessionalModel(
@@ -312,13 +416,33 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           ? _selectedServices
           : [
               ProfessionalServiceItemModel(
-                categoryId: _selectedCategoryForAdd?.id ?? (_availableCategories.isNotEmpty ? _availableCategories.first.id : 'cat_geral'),
-                categoryName: _selectedCategoryForAdd?.title ?? (_availableCategories.isNotEmpty ? _availableCategories.first.title : 'Geral'),
-                serviceId: _selectedServiceForAdd?.id ?? (_availableServices.isNotEmpty ? _availableServices.first.id : 'serv_diaria'),
-                serviceName: _selectedServiceForAdd?.name ?? (_professionController.text.trim().isNotEmpty ? _professionController.text.trim() : 'Diária de Serviço'),
-                price: double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ?? 200.0,
+                categoryId:
+                    _selectedCategoryForAdd?.id ??
+                    (_availableCategories.isNotEmpty
+                        ? _availableCategories.first.id
+                        : 'cat_geral'),
+                categoryName:
+                    _selectedCategoryForAdd?.title ??
+                    (_availableCategories.isNotEmpty
+                        ? _availableCategories.first.title
+                        : 'Geral'),
+                serviceId:
+                    _selectedServiceForAdd?.id ??
+                    (_availableServices.isNotEmpty
+                        ? _availableServices.first.id
+                        : 'serv_diaria'),
+                serviceName:
+                    _selectedServiceForAdd?.name ??
+                    (_professionController.text.trim().isNotEmpty
+                        ? _professionController.text.trim()
+                        : 'Diária de Serviço'),
+                price:
+                    double.tryParse(
+                      _servicePriceController.text.replaceAll(',', '.'),
+                    ) ??
+                    200.0,
                 priceType: _servicePriceType,
-              )
+              ),
             ],
       workingHours: workingHoursList,
       badges: const ['Cadastro Completo'],
@@ -334,14 +458,20 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           SnackBar(
             content: Text(
               'Perfil e Documentos enviados com sucesso! Seus dados estão em análise.',
-              style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+              style: GoogleFonts.inter(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             backgroundColor: AppColors.primaryGold,
           ),
         );
 
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => IdentityVerificationPendingScreen(initialProfile: saved)),
+          MaterialPageRoute(
+            builder: (context) =>
+                IdentityVerificationPendingScreen(initialProfile: saved),
+          ),
           (route) => false,
         );
       } else {
@@ -349,7 +479,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           SnackBar(
             content: Text(
               'Não foi possível salvar o perfil. Tente novamente.',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             backgroundColor: AppColors.errorRed,
           ),
@@ -364,7 +497,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
     if (_currentStep == 1) {
       if (_docNumberController.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Por favor, informe o número do documento.')),
+          const SnackBar(
+            content: Text('Por favor, informe o número do documento.'),
+          ),
         );
         return;
       }
@@ -396,7 +531,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
       appBar: AppBar(
         leading: _currentStep > 1
             ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: AppColors.textPrimary,
+                ),
                 onPressed: _previousStep,
               )
             : null,
@@ -411,7 +549,11 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
-            child: BoraTrampaLogo(size: 28, showSubtitle: false, isHorizontal: false),
+            child: BoraTrampaLogo(
+              size: 28,
+              showSubtitle: false,
+              isHorizontal: false,
+            ),
           ),
         ],
       ),
@@ -456,9 +598,16 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
             ),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGold,
+                      ),
+                    )
                   : ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       children: [
                         if (_currentStep == 1) _buildStep1Identity(),
                         if (_currentStep == 2) _buildStep2ProfessionalInfo(),
@@ -475,7 +624,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 border: Border(top: BorderSide(color: AppColors.cardBorder)),
               ),
               child: PrimaryButton(
-                text: _currentStep == _totalSteps ? 'Finalizar Cadastro' : 'Continuar',
+                text: _currentStep == _totalSteps
+                    ? 'Finalizar Cadastro'
+                    : 'Continuar',
                 isLoading: _currentStep < _totalSteps && _isStepLoading,
                 onPressed: (_isLoading || _isStepLoading) ? null : _nextStep,
               ),
@@ -518,7 +669,11 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 6),
         Text(
           'Para garantir a segurança dos clientes e profissionais, precisamos validar seu documento oficial.',
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+            height: 1.35,
+          ),
         ),
         const SizedBox(height: 20),
         Row(
@@ -529,7 +684,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 selected: _docType == 'RG',
                 selectedColor: AppColors.primaryGold,
                 labelStyle: GoogleFonts.inter(
-                  color: _docType == 'RG' ? AppColors.textDark : AppColors.textSecondary,
+                  color: _docType == 'RG'
+                      ? AppColors.textDark
+                      : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -546,7 +703,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 selected: _docType == 'Passaporte',
                 selectedColor: AppColors.primaryGold,
                 labelStyle: GoogleFonts.inter(
-                  color: _docType == 'Passaporte' ? AppColors.textDark : AppColors.textSecondary,
+                  color: _docType == 'Passaporte'
+                      ? AppColors.textDark
+                      : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -563,7 +722,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 selected: _docType == 'CNH',
                 selectedColor: AppColors.primaryGold,
                 labelStyle: GoogleFonts.inter(
-                  color: _docType == 'CNH' ? AppColors.textDark : AppColors.textSecondary,
+                  color: _docType == 'CNH'
+                      ? AppColors.textDark
+                      : AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -578,20 +739,19 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 16),
         TextField(
           controller: _docNumberController,
-          keyboardType: _docType == 'CNH' ? TextInputType.number : TextInputType.text,
+          keyboardType: _docType == 'CNH'
+              ? TextInputType.number
+              : TextInputType.text,
           inputFormatters: _docType == 'CNH'
-              ? [
-                  FilteringTextInputFormatter.digitsOnly,
-                  CpfInputFormatter(),
-                ]
+              ? [FilteringTextInputFormatter.digitsOnly, CpfInputFormatter()]
               : null,
           style: GoogleFonts.inter(color: AppColors.textPrimary),
           decoration: InputDecoration(
             labelText: _docType == 'CNH'
                 ? 'CPF do Titular (CNH)'
                 : _docType == 'Passaporte'
-                    ? 'Número do Passaporte'
-                    : 'Número do RG',
+                ? 'Número do Passaporte'
+                : 'Número do RG',
             labelStyle: GoogleFonts.inter(color: AppColors.textSecondary),
             filled: true,
             fillColor: AppColors.cardBackground,
@@ -601,20 +761,40 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 20),
         Text(
           'Fotos do Documento',
-          style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: _buildPhotoUploadSlot('Frente do Documento', _docFrontPhoto, () => _pickImage(1))),
+            Expanded(
+              child: _buildPhotoUploadSlot(
+                'Frente do Documento',
+                _docFrontPhoto,
+                () => _pickImage(1),
+              ),
+            ),
             const SizedBox(width: 12),
-            Expanded(child: _buildPhotoUploadSlot('Verso do Documento', _docBackPhoto, () => _pickImage(2))),
+            Expanded(
+              child: _buildPhotoUploadSlot(
+                'Verso do Documento',
+                _docBackPhoto,
+                () => _pickImage(2),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
         Text(
           'Selfie com o Documento',
-          style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 6),
         Text(
@@ -624,13 +804,23 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,
-          child: _buildPhotoUploadSlot('Selfie segurando o documento', _docSelfiePhoto, () => _pickImage(3), height: 140),
+          child: _buildPhotoUploadSlot(
+            'Selfie segurando o documento',
+            _docSelfiePhoto,
+            () => _pickImage(3),
+            height: 140,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildPhotoUploadSlot(String label, XFile? file, VoidCallback onTap, {double height = 90}) {
+  Widget _buildPhotoUploadSlot(
+    String label,
+    XFile? file,
+    VoidCallback onTap, {
+    double height = 90,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -660,11 +850,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    const Icon(Icons.add_a_photo_outlined, color: AppColors.primaryGold, size: 28),
+                    const Icon(
+                      Icons.add_a_photo_outlined,
+                      color: AppColors.primaryGold,
+                      size: 28,
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       label,
-                      style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                      style: GoogleFonts.inter(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -689,7 +886,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 6),
         Text(
           'Como você gostaria que os clientes te encontrassem no app?',
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 20),
         TextField(
@@ -706,7 +906,11 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 20),
         Text(
           'Tempo de Experiência: $_experienceYears anos',
-          style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         Slider(
           value: _experienceYears.toDouble(),
@@ -723,7 +927,8 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           style: GoogleFonts.inter(color: AppColors.textPrimary),
           decoration: InputDecoration(
             labelText: 'Sobre você e seus serviços',
-            hintText: 'Conte um pouco sobre sua experiência, cuidados e pontualidade...',
+            hintText:
+                'Conte um pouco sobre sua experiência, cuidados e pontualidade...',
             filled: true,
             fillColor: AppColors.cardBackground,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
@@ -748,7 +953,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 6),
         Text(
           'Defina seu ponto de partida e até qual distância você aceita receber chamados.',
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 20),
         Row(
@@ -776,13 +984,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                           child: SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGold),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryGold,
+                            ),
                           ),
                         )
                       : null,
                   filled: true,
                   fillColor: AppColors.cardBackground,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -796,7 +1009,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   labelText: 'Bairro',
                   filled: true,
                   fillColor: AppColors.cardBackground,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -825,7 +1040,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   labelText: 'Número',
                   filled: true,
                   fillColor: AppColors.cardBackground,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -839,7 +1056,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   labelText: 'Cidade',
                   filled: true,
                   fillColor: AppColors.cardBackground,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -851,7 +1070,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
           decoration: BoxDecoration(
             color: AppColors.cardBackground,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6)),
+            border: Border.all(
+              color: AppColors.primaryGold.withValues(alpha: 0.6),
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -861,11 +1082,18 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 children: [
                   Text(
                     'Raio de Atendimento',
-                    style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   Text(
                     'Até ${_serviceRadiusKm.round()} km',
-                    style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w800, fontSize: 16),
+                    style: GoogleFonts.inter(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -879,7 +1107,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               ),
               Text(
                 'Você receberá solicitações de clientes localizados a até ${_serviceRadiusKm.round()} km do seu endereço.',
-                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 11),
+                style: GoogleFonts.inter(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),
@@ -903,7 +1134,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 6),
         Text(
           'Adicione os serviços que você realiza e defina seus valores padrão.',
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 18),
         Container(
@@ -918,7 +1152,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
             children: [
               Text(
                 'Adicionar Novo Serviço',
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 12),
               if (_availableCategories.isNotEmpty)
@@ -929,7 +1166,8 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   items: _availableCategories.map((c) {
                     return DropdownMenuItem(value: c, child: Text(c.title));
                   }).toList(),
-                  onChanged: (val) => setState(() => _selectedCategoryForAdd = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedCategoryForAdd = val),
                 ),
               const SizedBox(height: 10),
               if (_availableServices.isNotEmpty)
@@ -940,7 +1178,8 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                   items: _availableServices.map((s) {
                     return DropdownMenuItem(value: s, child: Text(s.name));
                   }).toList(),
-                  onChanged: (val) => setState(() => _selectedServiceForAdd = val),
+                  onChanged: (val) =>
+                      setState(() => _selectedServiceForAdd = val),
                 ),
               const SizedBox(height: 10),
               Row(
@@ -950,7 +1189,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                       controller: _servicePriceController,
                       keyboardType: TextInputType.number,
                       style: GoogleFonts.inter(color: AppColors.textPrimary),
-                      decoration: const InputDecoration(labelText: 'Valor (R\$)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Valor (R\$)',
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -960,11 +1201,21 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                       dropdownColor: AppColors.cardBackground,
                       decoration: const InputDecoration(labelText: 'Cobrança'),
                       items: const [
-                        DropdownMenuItem(value: 'Diária', child: Text('Diária')),
-                        DropdownMenuItem(value: 'Por Hora', child: Text('Por Hora')),
-                        DropdownMenuItem(value: 'Fixo', child: Text('Valor Fixo')),
+                        DropdownMenuItem(
+                          value: 'Diária',
+                          child: Text('Diária'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Por Hora',
+                          child: Text('Por Hora'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Fixo',
+                          child: Text('Valor Fixo'),
+                        ),
                       ],
-                      onChanged: (val) => setState(() => _servicePriceType = val ?? 'Diária'),
+                      onChanged: (val) =>
+                          setState(() => _servicePriceType = val ?? 'Diária'),
                     ),
                   ),
                 ],
@@ -975,8 +1226,14 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                 height: 42,
                 child: ElevatedButton.icon(
                   onPressed: _addService,
-                  icon: const Icon(Icons.add_rounded, color: AppColors.textDark),
-                  label: Text('Adicionar à Minha Lista', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  icon: const Icon(
+                    Icons.add_rounded,
+                    color: AppColors.textDark,
+                  ),
+                  label: Text(
+                    'Adicionar à Minha Lista',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
                     foregroundColor: AppColors.textDark,
@@ -989,7 +1246,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 20),
         Text(
           'Seus Serviços Cadastrados (${_selectedServices.length})',
-          style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700),
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         const SizedBox(height: 10),
         if (_selectedServices.isEmpty)
@@ -1011,7 +1271,10 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
             children: _selectedServices.map((s) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(10),
@@ -1024,15 +1287,38 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s.serviceName, style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
-                          Text('${s.categoryName} • ${s.priceType}', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 11)),
+                          Text(
+                            s.serviceName,
+                            style: GoogleFonts.inter(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            '${s.categoryName} • ${s.priceType}',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Text('R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')}', style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700)),
+                    Text(
+                      'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: GoogleFonts.inter(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: AppColors.errorRed, size: 18),
-                      onPressed: () => setState(() => _selectedServices.remove(s)),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.errorRed,
+                        size: 18,
+                      ),
+                      onPressed: () =>
+                          setState(() => _selectedServices.remove(s)),
                     ),
                   ],
                 ),
@@ -1058,10 +1344,19 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
         const SizedBox(height: 6),
         Text(
           'Selecione os dias e horários em que você está disponível para realizar serviços.',
-          style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 20),
-        Text('Dias da Semana Disponíveis', style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+        Text(
+          'Dias da Semana Disponíveis',
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
         const SizedBox(height: 10),
         Wrap(
           spacing: 8,
@@ -1073,7 +1368,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
               selected: isSelected,
               selectedColor: AppColors.primaryGold,
               labelStyle: GoogleFonts.inter(
-                color: isSelected ? AppColors.textDark : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.textDark
+                    : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
               onSelected: (val) => setState(() => _activeDays[i] = val),
@@ -1106,7 +1403,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                         hintText: '08:00',
                         filled: true,
                         fillColor: AppColors.cardBackground,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1125,7 +1424,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                         hintText: '18:00',
                         filled: true,
                         fillColor: AppColors.cardBackground,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1148,7 +1449,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                         hintText: '12:00',
                         filled: true,
                         fillColor: AppColors.cardBackground,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -1167,7 +1470,9 @@ class _ProfessionalOnboardingScreenState extends State<ProfessionalOnboardingScr
                         hintText: '13:00',
                         filled: true,
                         fillColor: AppColors.cardBackground,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),

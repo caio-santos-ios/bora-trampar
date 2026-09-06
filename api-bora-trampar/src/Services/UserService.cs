@@ -3,7 +3,6 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests.Base;
 using api_bora_trampar.src.Requests;
-using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
@@ -88,7 +87,6 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-
         public async Task<ResponseApi<User?>> GetByIdAsync(string id)
         {
             try

@@ -130,6 +130,9 @@ namespace api_bora_trampar.src.Models
         [JsonPropertyName("longitude")]
         public double Longitude { get; set; } = 0.0;
 
+        [BsonElement("location")]
+        public Location Location { get; set; } = new();
+
         [BsonElement("service_radius_km")]
         [JsonPropertyName("serviceRadiusKm")]
         public int ServiceRadiusKm { get; set; } = 25;
@@ -202,5 +205,14 @@ namespace api_bora_trampar.src.Models
         [BsonElement("break_end")]
         [JsonPropertyName("breakEnd")]
         public string BreakEnd { get; set; } = "13:00";
+    }
+
+    public class Location
+    {
+        [BsonElement("type")]
+        public string Type { get; set; } = "Point";
+
+        [BsonElement("coordinates")]
+        public double[] Coordinates { get; set; } = [];
     }
 }

@@ -44,6 +44,13 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
+        [HttpGet("professional-availability")]
+        public async Task<IActionResult> GetProfessionalAvailability([FromQuery] DateTime date, [FromQuery] string hour, [FromQuery] double latitude, [FromQuery] double longitude)
+        {
+            ResponseApi<List<dynamic>> response = await service.GetProfessionalAvailabilityAsync(date, hour, latitude, longitude);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] CreateProfileProfessionalRequest request)
         {

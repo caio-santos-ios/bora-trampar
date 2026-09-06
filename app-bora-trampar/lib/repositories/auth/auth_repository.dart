@@ -4,8 +4,8 @@ import '../../api/http_client_api.dart';
 class AuthRepository {
   final HttpClientApi _apiClient = HttpClientApi();
 
-  Future<Response> login(Map<String, dynamic> body) async {
-    return await _apiClient.client.post('/api/auth/login', data: body);
+  Future<Response> loginApp(Map<String, dynamic> body) async {
+    return await _apiClient.client.post('/api/auth/login/app', data: body);
   }
 
   Future<Response> register(Map<String, dynamic> body) async {

@@ -18,6 +18,15 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
 
+        [HttpPost("login/app")]
+        public async Task<IActionResult> LoginApp([FromBody] LoginRequest request)
+        {
+            if (request == null) return BadRequest("Dados inválidos.");
+
+            ResponseApi<dynamic> response = await service.LoginAppAsync(request);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+
         [HttpPost("registers")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {

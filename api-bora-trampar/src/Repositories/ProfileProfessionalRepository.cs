@@ -1,6 +1,8 @@
 using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Repositories
@@ -33,11 +35,17 @@ namespace api_bora_trampar.src.Repositories
             return entity;
         }
 
-        public async Task<List<ProfileProfessional>> GetAllAsync()
+        public async Task<List<ProfileProfessional>> GetProfileAllAsync()
         {
             return await appDbContext.ProfileProfessionals
                 .Find(x => !x.Deleted)
                 .ToListAsync();
+        }
+
+        public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
+        {
+            List<BsonDocument> list = await appDbContext.ProfileProfessionals.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return list.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
         }
 
         public async Task<bool> UpdateAvailabilityAsync(string userId, bool isAvailable)

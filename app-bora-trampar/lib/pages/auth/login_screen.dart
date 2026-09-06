@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!_formKey.currentState!.validate()) return;
       setState(() => _isLoading = true);
 
-      final response = await _authRepository.login({
+      final response = await _authRepository.loginApp({
         "email": _emailController.text,
         "password": _passwordController.text,
         "role": widget.initialRole,
@@ -106,8 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else {
-        bool isProfileCompleted = (resultData is Map ? (resultData["isProfileCompleted"] ?? resultData["data"]?["isProfileCompleted"]) : null) ?? false;
-
+        bool isProfileCompleted = resultData["user"]["isProfileCompleted"].toString() == "true";
         if (!isProfileCompleted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
@@ -155,7 +154,38 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-    } on DioException {
+    } on DioException catch (err) {
+      String errorMessage = 'Ocorreu um erro. Tente novamente.';
+
+      if (err.response != null) {
+        final data = err.response?.data;
+        if (data is Map) {
+          errorMessage = data['result']?['message']
+              ?? data['message']
+              ?? errorMessage;
+        }
+      } else if (err.type == DioExceptionType.connectionTimeout ||
+                 err.type == DioExceptionType.receiveTimeout ||
+                 err.type == DioExceptionType.sendTimeout) {
+        errorMessage = 'Tempo de conexão esgotado. Verifique sua internet.';
+      } else if (err.type == DioExceptionType.connectionError) {
+        errorMessage = 'Sem conexão com o servidor. Verifique sua internet.';
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              errorMessage,
+              style: GoogleFonts.inter(
+                color: AppColors.textDark,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }

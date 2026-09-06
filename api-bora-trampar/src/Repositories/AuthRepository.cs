@@ -1,4 +1,5 @@
 using api_bora_trampar.src.Configuration;
+using api_bora_trampar.src.Enums;
 using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Models;
 using MongoDB.Driver;
@@ -16,6 +17,10 @@ namespace api_bora_trampar.src.Repositories
         public async Task<User?> GetByEmailAsync(string email)
         {
             return await appDbContext.Users.Find(x => !x.Deleted && x.Email.Equals(email)).FirstOrDefaultAsync();
+        }
+        public async Task<User?> GetByEmailRoleAsync(string email, RoleUserEnum role)
+        {
+            return await appDbContext.Users.Find(x => !x.Deleted && x.Email.Equals(email) && x.Role == role).FirstOrDefaultAsync();
         }
         public async Task<User?> GetByWhatsAppAsync(string whatsapp)
         {

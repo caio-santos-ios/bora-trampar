@@ -156,9 +156,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     }
   }
 
-
-
-
   Future<void> _fetchCurrentLocation() async {
     setState(() {
       _useCurrentLocation = true;

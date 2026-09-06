@@ -30,7 +30,7 @@ namespace api_bora_trampar.src.Services
                     DateTime today = DateTime.Now;
 
                     string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
-                    string link = $"{uriUi}/confirmation/{code}/app";
+                    string link = $"{uriUi}/confirmation/{code}";
                     string html = EmailTemplates.AccountConfirmation(user.Name, code, link, true);
 
                     await mailHandler.SendMailAsync(user.Email, "Novo Link Confirmação de conta", html);
@@ -55,6 +55,78 @@ namespace api_bora_trampar.src.Services
                 {
                     ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
                     isPasswordValid = profile.Data is not null;
+                }
+
+                dynamic result = new
+                {
+                    token,
+                    refreshToken,
+                    user = new
+                    {
+                        id = user.Id,
+                        name = user.Name,
+                        email = user.Email,
+                        role = user.Role.ToString(),
+                        photo = user.Photo,
+                        whatsapp = user.WhatsApp,
+                        walletBalance = user.WalletBalance,
+                        isProfileCompleted,
+                        identityVerificationStatus
+                    }
+                };
+
+                return new(result, 200, "Login realizado com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<dynamic>> LoginAppAsync(LoginRequest request)
+        {
+            try
+            {
+                User? user = await authRepository.GetByEmailRoleAsync(request.Email, request.Role);
+                if (user is null) return new(null, 400, "E-mail ou senha inválidos.");
+
+                if (user.Blocked) return new(null, 400, "Seu usuário está bloqueado, entre em contato com o suporte.");
+
+                if (!user.ConfirmAccount)
+                {
+                    string code = GenerateCode.GenerateCodeNumber();
+                    DateTime today = DateTime.Now;
+
+                    string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                    string link = $"{uriUi}/confirmation/{code}/app";
+                    string html = EmailTemplates.AccountConfirmation(user.Name, code, link, true);
+
+                    await mailHandler.SendMailAsync(user.Email, "Novo Link Confirmação de conta", html);
+
+                    user.ConfirmAccount = false;
+                    user.ConfirmAccountCode = code;
+                    user.ConfirmAccountDate = today.AddSeconds(30);
+
+                    await authRepository.UpdateAsync(user);
+                    return new(null, 400, "Sua conta não foi confirmada, foi enviado um link para confirmar o e-mail.");
+                } 
+
+                bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.Password);
+                if (!isPasswordValid) return new(null, 400, "E-mail ou senha inválidos.");
+
+                string token = GenerateJwtToken(user);
+                string refreshToken = GenerateJwtToken(user, true);
+
+                bool isProfileCompleted = false;
+                string identityVerificationStatus = "Pending";
+                if(user.Role == Enums.RoleUserEnum.Professional)
+                {
+                    ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.GetByUserIdAsync(user.Id);
+
+                    isProfileCompleted = profile.Data is not null;
+                    if(isProfileCompleted && profile.Data is not null)
+                    {
+                        identityVerificationStatus = profile.Data.IdentityVerificationStatus;
+                    }
                 }
 
                 dynamic result = new

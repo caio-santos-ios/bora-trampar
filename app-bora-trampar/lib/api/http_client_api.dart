@@ -5,7 +5,8 @@ import 'package:app_bora_trampar/core/services/storage_service.dart';
 
 class HttpClientApi {
   static const String _prodUrl = 'https://bora-trampar.onrender.com';
-  static const String _devUrl = 'http://192.168.18.72:5067';
+  // static const String _devUrl = 'http://192.168.18.72:5067';
+  static const String _devUrl = 'http://192.168.1.110:5067';
 
   static String get baseUrl {
     const customUrl = String.fromEnvironment('BASE_URL');

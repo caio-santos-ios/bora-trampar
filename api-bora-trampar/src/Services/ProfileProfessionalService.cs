@@ -3,6 +3,7 @@ using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Services
@@ -95,7 +96,7 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                var profiles = await repository.GetAllAsync();
+                var profiles = await repository.GetProfileAllAsync();
 
                 var approvals = await appDbContext.Approvals
                     .Find(a => !a.Deleted)
@@ -134,6 +135,72 @@ namespace api_bora_trampar.src.Services
             catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetProfessionalAvailabilityAsync(DateTime date, string hour, double latitude, double longitude)
+        {
+            try
+            {
+                List<BsonDocument> pipeline =
+                [
+                    new("$geoNear", new BsonDocument
+                    {
+                        { "near", new BsonDocument
+                            {
+                                { "type", "Point" },
+                                { "coordinates", new BsonArray { longitude, latitude } }
+                            }
+                        },
+                        { "distanceField", "distanciaMetros" },
+                        { "spherical", true },
+                        { "key", "address.location" }
+                    }),
+                    new("$addFields", new BsonDocument("distanciaKm",
+                        new BsonDocument("$divide", new BsonArray { "$distanciaMetros", 1000 })) ),
+                    new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$lte", new BsonArray { "$distanciaKm", "$address.service_radius_km" }) }
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"let", new BsonDocument("userId", "$user_id")},
+                        {"pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match", new BsonDocument("$expr",
+                                    new BsonDocument("$eq", new BsonArray { new BsonDocument("$toString", "$_id"), "$$userId" })
+                                ))
+                            }
+                        },
+                        {"as", "user_lookup"}
+                    }),
+                    new("$unwind", "$user_lookup"),
+                    new("$match", new BsonDocument
+                    {
+                        {"user_lookup.deleted", false},
+                        {"user_lookup.confirm_account", true},
+                        {"is_available_now", true},
+                        {"user_lookup.role", "Professional"}
+                    }),
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$user_lookup._id")},
+                        {"name", "$user_lookup.name"},
+                        {"profession", 1},
+                        {"distanciaKm", 1}
+                    }),
+                    new("$sort", new BsonDocument { { "distanciaKm", 1 } } )
+                ];
+
+
+                List<dynamic> users = await repository.GetAllAsync(pipeline);
+
+                return new(users, 200, "Profissionais listados com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
 
@@ -191,7 +258,8 @@ namespace api_bora_trampar.src.Services
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = userId,
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = userId
+                        UpdatedBy = userId,
+
                     };
 
                     resultProfile = await repository.CreateAsync(entity);
@@ -210,6 +278,7 @@ namespace api_bora_trampar.src.Services
             }
             catch (Exception ex)
             {
+                System.Console.WriteLine(ex.Message);
                 return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }

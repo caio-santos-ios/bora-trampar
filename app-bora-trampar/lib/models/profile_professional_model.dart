@@ -54,36 +54,78 @@ class ProfileProfessionalModel {
       userId: map['userId']?.toString() ?? map['user_id']?.toString() ?? '',
       profession: map['profession']?.toString() ?? '',
       bio: map['bio']?.toString() ?? '',
-      experienceYears: (map['experienceYears'] ?? map['experience_years'] as num?)?.toInt() ?? 0,
+      experienceYears:
+          (map['experienceYears'] ?? map['experience_years'] as num?)
+              ?.toInt() ??
+          0,
       isAvailableNow: map['isAvailableNow'] ?? map['is_available_now'] ?? true,
-      isProfileCompleted: map['isProfileCompleted'] ?? map['is_profile_completed'] ?? false,
-      identityDocumentType: map['identityDocumentType']?.toString() ?? map['identity_document_type']?.toString() ?? 'CNH',
-      identityDocumentNumber: map['identityDocumentNumber']?.toString() ?? map['identity_document_number']?.toString() ?? '',
-      identityDocumentFrontUrl: map['identityDocumentFrontUrl']?.toString() ?? map['identity_document_front_url']?.toString() ?? '',
-      identityDocumentBackUrl: map['identityDocumentBackUrl']?.toString() ?? map['identity_document_back_url']?.toString() ?? '',
-      identitySelfieUrl: map['identitySelfieUrl']?.toString() ?? map['identity_selfie_url']?.toString() ?? '',
-      identityVerificationStatus: map['identityVerificationStatus']?.toString() ?? map['identity_verification_status']?.toString() ?? 'Pending',
-      identityVerificationNotes: map['identityVerificationNotes']?.toString() ?? map['identity_verification_notes']?.toString() ?? map['reviewNotes']?.toString() ?? '',
+      isProfileCompleted:
+          map['isProfileCompleted'] ?? map['is_profile_completed'] ?? false,
+      identityDocumentType:
+          map['identityDocumentType']?.toString() ??
+          map['identity_document_type']?.toString() ??
+          'CNH',
+      identityDocumentNumber:
+          map['identityDocumentNumber']?.toString() ??
+          map['identity_document_number']?.toString() ??
+          '',
+      identityDocumentFrontUrl:
+          map['identityDocumentFrontUrl']?.toString() ??
+          map['identity_document_front_url']?.toString() ??
+          '',
+      identityDocumentBackUrl:
+          map['identityDocumentBackUrl']?.toString() ??
+          map['identity_document_back_url']?.toString() ??
+          '',
+      identitySelfieUrl:
+          map['identitySelfieUrl']?.toString() ??
+          map['identity_selfie_url']?.toString() ??
+          '',
+      identityVerificationStatus:
+          map['identityVerificationStatus']?.toString() ??
+          map['identity_verification_status']?.toString() ??
+          'Pending',
+      identityVerificationNotes:
+          map['identityVerificationNotes']?.toString() ??
+          map['identity_verification_notes']?.toString() ??
+          map['reviewNotes']?.toString() ??
+          '',
       address: map['address'] is Map
           ? ProfessionalAddressModel.fromJson(map['address'] as Map)
-          : ProfessionalAddressModel(),
-      services: ((map['services'] ?? map['Services']) as List?)
-              ?.map<ProfessionalServiceItemModel>((item) => ProfessionalServiceItemModel.fromJson(item is Map ? item : {}))
+          : ProfessionalAddressModel(location: ProfessionalAddressLocationModel.empty()),
+      services:
+          ((map['services'] ?? map['Services']) as List?)
+              ?.map<ProfessionalServiceItemModel>(
+                (item) => ProfessionalServiceItemModel.fromJson(
+                  item is Map ? item : {},
+                ),
+              )
               .toList() ??
           <ProfessionalServiceItemModel>[],
-      workingHours: ((map['workingHours'] ?? map['working_hours']) as List?)
-              ?.map<ProfessionalWorkingDayModel>((item) => ProfessionalWorkingDayModel.fromJson(item is Map ? item : {}))
+      workingHours:
+          ((map['workingHours'] ?? map['working_hours']) as List?)
+              ?.map<ProfessionalWorkingDayModel>(
+                (item) => ProfessionalWorkingDayModel.fromJson(
+                  item is Map ? item : {},
+                ),
+              )
               .toList() ??
           <ProfessionalWorkingDayModel>[],
-      portfolioPhotos: ((map['portfolioPhotos'] ?? map['portfolio_photos']) as List?)
+      portfolioPhotos:
+          ((map['portfolioPhotos'] ?? map['portfolio_photos']) as List?)
               ?.map<String>((item) => item.toString())
               .toList() ??
           <String>[],
       rating: (map['rating'] as num?)?.toDouble() ?? 0.0,
-      reviewCount: (map['reviewCount'] ?? map['review_count'] as num?)?.toInt() ?? 0,
+      reviewCount:
+          (map['reviewCount'] ?? map['review_count'] as num?)?.toInt() ?? 0,
       completedServicesCount:
-          (map['completedServicesCount'] ?? map['completed_services_count'] as num?)?.toInt() ?? 0,
-      badges: (map['badges'] as List?)
+          (map['completedServicesCount'] ??
+                  map['completed_services_count'] as num?)
+              ?.toInt() ??
+          0,
+      badges:
+          (map['badges'] as List?)
               ?.map<String>((item) => item.toString())
               .toList() ??
           <String>[],
@@ -126,8 +168,7 @@ class ProfessionalAddressModel {
   final String neighborhood;
   final String city;
   final String state;
-  final double latitude;
-  final double longitude;
+  final ProfessionalAddressLocationModel location;
   final int serviceRadiusKm;
 
   ProfessionalAddressModel({
@@ -138,13 +179,13 @@ class ProfessionalAddressModel {
     this.neighborhood = '',
     this.city = '',
     this.state = 'SP',
-    this.latitude = 0.0,
-    this.longitude = 0.0,
+    required this.location,
     this.serviceRadiusKm = 25,
   });
 
   factory ProfessionalAddressModel.fromJson(Map json) {
     final map = Map<String, dynamic>.from(json);
+
     return ProfessionalAddressModel(
       zipCode: map['zipCode']?.toString() ?? map['zip_code']?.toString() ?? '',
       street: map['street']?.toString() ?? '',
@@ -152,10 +193,16 @@ class ProfessionalAddressModel {
       complement: map['complement']?.toString() ?? '',
       neighborhood: map['neighborhood']?.toString() ?? '',
       city: map['city']?.toString() ?? '',
-      state: map['state']?.toString() ?? 'SP',
-      latitude: (map['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (map['longitude'] as num?)?.toDouble() ?? 0.0,
-      serviceRadiusKm: (map['serviceRadiusKm'] ?? map['service_radius_km'] as num?)?.toInt() ?? 25,
+      state: map['state']?.toString() ?? '',
+      location: map['location'] is Map
+          ? ProfessionalAddressLocationModel.fromJson(
+              Map<String, dynamic>.from(map['location'] as Map),
+            )
+          : ProfessionalAddressLocationModel.empty(),
+      serviceRadiusKm:
+          (map['serviceRadiusKm'] ?? map['service_radius_km'] as num?)
+              ?.toInt() ??
+          25,
     );
   }
 
@@ -168,10 +215,70 @@ class ProfessionalAddressModel {
       'neighborhood': neighborhood,
       'city': city,
       'state': state,
-      'latitude': latitude,
-      'longitude': longitude,
+      // 'latitude': latitude,
+      // 'longitude': longitude,
+      'location': location.toJson(),
       'serviceRadiusKm': serviceRadiusKm,
     };
+  }
+}
+
+class ProfessionalAddressLocationModel {
+  final String type;
+  final List<double> coordinates;
+
+  ProfessionalAddressLocationModel({
+    required this.type,
+    required this.coordinates,
+  });
+
+  factory ProfessionalAddressLocationModel.empty() {
+    return ProfessionalAddressLocationModel(
+      type: 'Point',
+      coordinates: [],
+    );
+  }
+
+  factory ProfessionalAddressLocationModel.fromJson(Map<String, dynamic> json) {
+    final rawCoords = json['coordinates'];
+    List<double> coords = [];
+    if (rawCoords is List && rawCoords.isNotEmpty) {
+      coords = rawCoords.map<double>((e) {
+        if (e is num) return e.toDouble();
+        return double.tryParse(e.toString()) ?? 0.0;
+      }).toList();
+    }
+    return ProfessionalAddressLocationModel(
+      type: json['type']?.toString() ?? 'Point',
+      coordinates: coords,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'type': type, 'coordinates': coordinates};
+  }
+}
+
+class ProfessionalAddressLocationCoordinatesModel {
+  final double longitude;
+  final double latitude;
+
+  ProfessionalAddressLocationCoordinatesModel({
+    required this.longitude,
+    required this.latitude,
+  });
+
+  factory ProfessionalAddressLocationCoordinatesModel.fronJson(
+    Map<String, dynamic> json,
+  ) {
+    return ProfessionalAddressLocationCoordinatesModel(
+      latitude: json["latitude"],
+      longitude: json["longitude"],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'longitude': longitude, 'latitude': latitude};
   }
 }
 
@@ -199,12 +306,25 @@ class ProfessionalServiceItemModel {
   factory ProfessionalServiceItemModel.fromJson(Map json) {
     final map = Map<String, dynamic>.from(json);
     return ProfessionalServiceItemModel(
-      categoryId: map['categoryId']?.toString() ?? map['category_id']?.toString() ?? '',
-      categoryName: map['categoryName']?.toString() ?? map['category_name']?.toString() ?? '',
-      serviceId: map['serviceId']?.toString() ?? map['service_id']?.toString() ?? '',
-      serviceName: map['serviceName']?.toString() ?? map['service_name']?.toString() ?? '',
+      categoryId:
+          map['categoryId']?.toString() ?? map['category_id']?.toString() ?? '',
+      categoryName:
+          map['categoryName']?.toString() ??
+          map['category_name']?.toString() ??
+          '',
+      serviceId:
+          map['serviceId']?.toString() ?? map['service_id']?.toString() ?? '',
+      serviceName:
+          map['serviceName']?.toString() ??
+          map['service_name']?.toString() ??
+          '',
       price: () {
-        final raw = map['price'] ?? map['Price'] ?? map['basePrice'] ?? map['base_price'] ?? map['valor'];
+        final raw =
+            map['price'] ??
+            map['Price'] ??
+            map['basePrice'] ??
+            map['base_price'] ??
+            map['valor'];
         if (raw is num) return raw.toDouble();
         if (raw != null) {
           final s = raw.toString().replaceAll(',', '.');
@@ -213,8 +333,14 @@ class ProfessionalServiceItemModel {
         }
         return 0.0;
       }(),
-      priceType: map['priceType']?.toString() ?? map['price_type']?.toString() ?? 'Diária',
-      estimatedMinutes: (map['estimatedMinutes'] ?? map['estimated_minutes'] as num?)?.toInt() ?? 480,
+      priceType:
+          map['priceType']?.toString() ??
+          map['price_type']?.toString() ??
+          'Diária',
+      estimatedMinutes:
+          (map['estimatedMinutes'] ?? map['estimated_minutes'] as num?)
+              ?.toInt() ??
+          480,
       description: map['description']?.toString() ?? '',
     );
   }
@@ -258,10 +384,20 @@ class ProfessionalWorkingDayModel {
       dayOfWeek: (map['dayOfWeek'] ?? map['day_of_week'] as num?)?.toInt() ?? 0,
       dayName: map['dayName']?.toString() ?? map['day_name']?.toString() ?? '',
       isActive: map['isActive'] ?? map['is_active'] ?? true,
-      startHour: map['startHour']?.toString() ?? map['start_hour']?.toString() ?? '08:00',
-      endHour: map['endHour']?.toString() ?? map['end_hour']?.toString() ?? '18:00',
-      breakStart: map['breakStart']?.toString() ?? map['break_start']?.toString() ?? '12:00',
-      breakEnd: map['breakEnd']?.toString() ?? map['break_end']?.toString() ?? '13:00',
+      startHour:
+          map['startHour']?.toString() ??
+          map['start_hour']?.toString() ??
+          '08:00',
+      endHour:
+          map['endHour']?.toString() ?? map['end_hour']?.toString() ?? '18:00',
+      breakStart:
+          map['breakStart']?.toString() ??
+          map['break_start']?.toString() ??
+          '12:00',
+      breakEnd:
+          map['breakEnd']?.toString() ??
+          map['break_end']?.toString() ??
+          '13:00',
     );
   }
 

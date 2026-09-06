@@ -76,7 +76,6 @@ class ProfileProfessionalRepository {
         '/api/profile-professionals',
         data: profile.toJson(),
       );
-
       if (response.statusCode == 200 || response.statusCode == 201) {
         dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
@@ -87,9 +86,11 @@ class ProfileProfessionalRepository {
         }
       }
       return null;
-    } on DioException {
+    } on DioException catch (err) {
+      print(err);
       return null;
-    } catch (_) {
+    } catch (e) {
+      print(e);
       return null;
     }
   }

@@ -1,3 +1,4 @@
+using api_bora_trampar.src.Enums;
 using api_bora_trampar.src.Models;
 
 namespace api_bora_trampar.src.Interfaces.Auth
@@ -6,6 +7,7 @@ namespace api_bora_trampar.src.Interfaces.Auth
     {
         Task<User?> RegisterAsync(User entity);
         Task<User?> GetByEmailAsync(string email);
+        Task<User?> GetByEmailRoleAsync(string email, RoleUserEnum role);
         Task<User?> GetByWhatsAppAsync(string whatsapp);
         Task<User?> GetByDocumentAsync(string document);
         Task<User?> GetByIdAsync(string id);
