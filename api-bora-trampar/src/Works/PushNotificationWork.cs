@@ -57,7 +57,6 @@ namespace api_bora_trampar.src.Works
 
                     if (string.IsNullOrWhiteSpace(token))
                     {
-                        // Marca como enviada mesmo sem token para não ficar em loop infinito
                         await MarkAsSentAsync(context, notification.Id);
                         continue;
                     }
@@ -100,7 +99,6 @@ namespace api_bora_trampar.src.Works
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Falha ao enviar notificação {Id} para o usuário {UserId}", notification.Id, notification.UserId);
-                    // Marca como enviada para não travar a fila
                     await MarkAsSentAsync(context, notification.Id);
                 }
             }
