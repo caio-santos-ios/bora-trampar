@@ -63,5 +63,20 @@ namespace api_bora_trampar.src.Controllers
             ResponseApi<User?> response = await service.DeleteAsync(new () { Id = id, DeletedBy = userId });
             return StatusCode(response.StatusCode, new { response.Message });
         }
+
+        [HttpPost("fcm-token")]
+        public async Task<IActionResult> UpdateFcmToken([FromBody] FcmTokenRequest request)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            ResponseApi<User?> response = await service.UpdateTokenFcmAsync(userId, request.Token);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+    }
+
+    public class FcmTokenRequest
+    {
+        public string Token { get; set; } = string.Empty;
     }
 }

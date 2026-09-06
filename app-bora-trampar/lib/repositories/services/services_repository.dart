@@ -7,7 +7,15 @@ class ServicesRepository {
 
   Future<List<ServiceItemModel>> getServices({String? categoryId}) async {
     try {
-      final response = await _api.client.get('/api/services');
+      final Map<String, dynamic> queryParams = {};
+      if (categoryId != null && categoryId.isNotEmpty) {
+        queryParams['categoryId'] = categoryId;
+      }
+
+      final response = await _api.client.get(
+        '/api/services',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
 
       if (response.statusCode == 200 && response.data != null) {
         dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
@@ -18,16 +26,19 @@ class ServicesRepository {
           final allServices = res.map((item) {
             final json = item as Map<String, dynamic>;
             return ServiceItemModel(
-              id: json['id'] ?? json['_id'] ?? '',
-              categoryId: json['categoryId'] ?? json['category_id'] ?? '',
-              name: json['name'] ?? json['title'] ?? 'Serviço',
+              id: (json['id'] ?? json['_id'] ?? '').toString(),
+              categoryId: (json['categoryId'] ?? json['category_id'] ?? '').toString(),
+              name: (json['name'] ?? json['title'] ?? 'Serviço').toString(),
               basePrice: (json['basePrice'] ?? json['price'] ?? 150.0).toDouble(),
             );
           }).toList();
 
           if (categoryId != null && categoryId.isNotEmpty) {
-            final filtered = allServices.where((s) => s.categoryId == categoryId).toList();
-            return filtered.isNotEmpty ? filtered : allServices;
+            return allServices
+                .where((s) =>
+                    s.categoryId.trim().toLowerCase() ==
+                    categoryId.trim().toLowerCase())
+                .toList();
           }
           return allServices;
         }

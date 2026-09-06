@@ -30,13 +30,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   bool _useCurrentLocation = true;
   LocationResult? _detectedLocation;
   bool _isLocating = false;
-  DateTime _selectedDate = DateTime.now();
+  DateTime? _selectedDate;
   final TextEditingController _timeController = TextEditingController();
   final List<String> _photos = [];
 
   @override
   void initState() {
     super.initState();
+    _selectedDate = widget.orderRequest.scheduledDate;
+    if (widget.orderRequest.scheduledTimeSlot.isNotEmpty) {
+      _timeController.text = widget.orderRequest.scheduledTimeSlot;
+    }
     if (widget.orderRequest.description.isNotEmpty) {
       _descController.text = widget.orderRequest.description;
     }
@@ -129,11 +133,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      initialDate: _selectedDate != null && !_selectedDate!.isBefore(today)
+          ? _selectedDate!
+          : today,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 90)),
       locale: const Locale('pt', 'BR'),
       builder: (context, child) {
         return Theme(
@@ -152,6 +160,46 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final now = TimeOfDay.now();
+    TimeOfDay initial = now;
+    final rawTime = _timeController.text.trim();
+    if (rawTime.isNotEmpty && rawTime.contains(':')) {
+      final parts = rawTime.split(':');
+      final h = int.tryParse(parts[0]);
+      final m = parts.length > 1 ? int.tryParse(parts[1]) : null;
+      if (h != null && m != null && h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+        initial = TimeOfDay(hour: h, minute: m);
+      }
+    }
+
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryGold,
+              onPrimary: AppColors.textDark,
+              surface: AppColors.cardBackground,
+              onSurface: AppColors.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final hh = picked.hour.toString().padLeft(2, '0');
+      final mm = picked.minute.toString().padLeft(2, '0');
+      setState(() {
+        _timeController.text = '$hh:$mm';
       });
     }
   }
@@ -213,25 +261,67 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       return;
     }
 
-    final rawTime = _timeController.text.trim();
-    if (rawTime.isNotEmpty) {
-      final timeParts = rawTime.split(':');
-      final hour = timeParts.isNotEmpty ? int.tryParse(timeParts[0]) : null;
-      final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) : null;
-      final isValidTime = rawTime.length == 5 &&
-          timeParts.length == 2 &&
-          hour != null &&
-          hour >= 0 &&
-          hour <= 23 &&
-          minute != null &&
-          minute >= 0 &&
-          minute <= 59;
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'A data do agendamento é obrigatória. Selecione uma data.',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
 
-      if (!isValidTime) {
+    final rawTime = _timeController.text.trim();
+    if (rawTime.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'O horário do agendamento é obrigatório. Informe um horário (Ex: 09:00).',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final timeParts = rawTime.split(':');
+    final hour = timeParts.isNotEmpty ? int.tryParse(timeParts[0]) : null;
+    final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) : null;
+    final isValidTime = rawTime.length == 5 &&
+        timeParts.length == 2 &&
+        hour != null &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute != null &&
+        minute >= 0 &&
+        minute <= 59;
+
+    if (!isValidTime) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Por favor, informe um horário válido no formato HH:mm (Ex: 09:00).',
+            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    if (_selectedDate!.year == now.year &&
+        _selectedDate!.month == now.month &&
+        _selectedDate!.day == now.day) {
+      if (hour < now.hour || (hour == now.hour && minute <= now.minute)) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Por favor, informe um horário válido (Ex: 09:00).',
+              'O horário selecionado já passou para a data de hoje. Escolha um horário futuro.',
               style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
             ),
             backgroundColor: AppColors.errorRed,
@@ -273,9 +363,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     widget.orderRequest.notes = _notesController.text.trim();
     widget.orderRequest.useCurrentLocation = _useCurrentLocation;
     widget.orderRequest.scheduledDate = _selectedDate;
-    widget.orderRequest.scheduledTimeSlot = _timeController.text.trim().isNotEmpty
-        ? _timeController.text.trim()
-        : 'A combinar';
+    widget.orderRequest.scheduledTimeSlot = _timeController.text.trim();
     widget.orderRequest.photoPaths = _photos;
 
     Navigator.of(context).push(
@@ -288,7 +376,9 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final serviceName = widget.orderRequest.serviceNamesDisplay;
-    final formattedDate = DateFormat("dd 'de' MMMM", 'pt_BR').format(_selectedDate);
+    final formattedDate = _selectedDate != null
+        ? DateFormat("dd 'de' MMMM", 'pt_BR').format(_selectedDate!)
+        : 'Selecionar data';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -831,12 +921,26 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Quando você precisa?',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Quando precisa? ',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: '*',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.errorRed,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -848,7 +952,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                 decoration: BoxDecoration(
                                   color: AppColors.cardBackground,
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppColors.cardBorder),
+                                  border: Border.all(
+                                    color: _selectedDate != null
+                                        ? AppColors.primaryGold.withValues(alpha: 0.6)
+                                        : AppColors.cardBorder,
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
@@ -862,9 +970,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       child: Text(
                                         formattedDate,
                                         style: GoogleFonts.inter(
-                                          color: AppColors.textPrimary,
+                                          color: _selectedDate != null
+                                              ? AppColors.textPrimary
+                                              : AppColors.textMuted,
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w500,
+                                          fontWeight: _selectedDate != null
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -887,12 +999,26 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Horário',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: 'Horário ',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: '*',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.errorRed,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -907,7 +1033,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               decoration: InputDecoration(
                                 hintText: '09:00',
                                 hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
-                                prefixIcon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
+                                prefixIcon: IconButton(
+                                  icon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
+                                  onPressed: _pickTime,
+                                  tooltip: 'Selecionar horário',
+                                ),
                                 filled: true,
                                 fillColor: AppColors.cardBackground,
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

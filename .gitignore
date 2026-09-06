@@ -20,6 +20,7 @@ obj/
 *.sln.docstates
 .vs/
 **/.vs/
+firebase-service-account.json
 
 # Flutter / Dart
 .dart_tool/

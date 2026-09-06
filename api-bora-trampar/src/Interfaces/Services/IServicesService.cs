@@ -7,7 +7,7 @@ namespace api_bora_trampar.src.Interfaces
 {
     public interface IServicesService
     {
-        Task<ResponseApi<List<dynamic>>> GetAllAsync();
+        Task<ResponseApi<List<dynamic>>> GetAllAsync(string? categoryId = null);
         Task<ResponseApi<ServiceModel?>> GetByIdAsync(string id);
         Task<ResponseApi<ServiceModel?>> CreateAsync(CreateServicesRequest request);
         Task<ResponseApi<ServiceModel?>> UpdateAsync(UpdateServicesRequest request);

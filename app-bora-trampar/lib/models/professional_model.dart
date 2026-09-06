@@ -42,4 +42,49 @@ class ProfessionalModel {
     required this.reviews,
     this.region = '',
   });
+
+  factory ProfessionalModel.fromJson(Map<String, dynamic> json) {
+    final rawBasePrice = json['basePrice'] ?? json['base_price'] ?? json['price'] ?? json['Price'];
+    final basePrice = rawBasePrice is num
+        ? rawBasePrice.toDouble()
+        : (rawBasePrice != null ? double.tryParse(rawBasePrice.toString().replaceAll(',', '.')) ?? 0.0 : 0.0);
+
+    final rawServices = json['offeredServices'] ?? json['services'];
+    List<String> serviceNames = [];
+    if (rawServices is List) {
+      for (final s in rawServices) {
+        if (s is String) {
+          serviceNames.add(s);
+        } else if (s is Map) {
+          final sName = s['serviceName'] ?? s['service_name'] ?? s['name'];
+          if (sName != null) serviceNames.add(sName.toString());
+        }
+      }
+    }
+    if (serviceNames.isEmpty && json['profession'] != null && json['profession'].toString().isNotEmpty) {
+      serviceNames.add(json['profession'].toString());
+    }
+
+    return ProfessionalModel(
+      id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Profissional',
+      role: json['profession']?.toString() ?? json['role']?.toString() ?? 'Profissional',
+      avatarUrl: json['avatarUrl']?.toString() ?? json['photo']?.toString() ?? '',
+      isVerified: json['isVerified'] == true,
+      isAvailable: json['isAvailable'] == null ? true : json['isAvailable'] == true,
+      rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
+      reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
+      completedServicesCount: (json['completedServicesCount'] as num?)?.toInt() ?? 0,
+      highlightBadge: json['highlightBadge']?.toString() ?? json['badge']?.toString() ?? '',
+      basePrice: basePrice > 0 ? basePrice : 150.0,
+      arrivalTimeMinutes: (json['arrivalTimeMinutes'] as num?)?.toInt() ?? 30,
+      sinceYear: (json['sinceYear'] as num?)?.toInt() ?? DateTime.now().year,
+      responseTime: json['responseTime']?.toString() ?? 'Em até 1 hora',
+      completionRate: json['completionRate']?.toString() ?? '100%',
+      bio: json['bio']?.toString() ?? '',
+      offeredServices: serviceNames,
+      reviews: const [],
+      region: json['region']?.toString() ?? '',
+    );
+  }
 }

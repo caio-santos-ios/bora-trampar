@@ -14,9 +14,9 @@ namespace api_bora_trampar.src.Controllers
     public class ServicesController(IServicesService service) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? categoryId = null)
         {
-            ResponseApi<List<dynamic>> response = await service.GetAllAsync();
+            ResponseApi<List<dynamic>> response = await service.GetAllAsync(categoryId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

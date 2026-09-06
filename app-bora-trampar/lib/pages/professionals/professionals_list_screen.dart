@@ -1,17 +1,11 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/availability_helper.dart';
-import '../../core/utils/location_helper.dart';
 import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../models/order_request_model.dart';
 import '../../models/professional_model.dart';
-import '../../models/profile_professional_model.dart';
-import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
-import '../../repositories/user/user_repository.dart';
 import 'professional_profile_screen.dart';
 
 class ProfessionalsListScreen extends StatefulWidget {
@@ -25,10 +19,7 @@ class ProfessionalsListScreen extends StatefulWidget {
 }
 
 class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
-  final UserRepository _userRepository = UserRepository();
-  final ProfileProfessionalRepository _profileRepository =
-      ProfileProfessionalRepository();
-  final AppointmentRepository _appointmentRepository = AppointmentRepository();
+  final _profileRepository = ProfileProfessionalRepository();
 
   List<ProfessionalModel> _professionals = [];
   Map<String, double> _proDistances = {};
@@ -52,142 +43,52 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     try {
       setState(() => _isLoading = true);
 
-      // await _appointmentRepository.createAppointment();
-      print(widget.orderRequest.customerLatitude);
-      print(widget.orderRequest.customerLongitude);
-      print(widget.orderRequest.customerCity);
-      print(widget.orderRequest.customerState);
-      print(widget.orderRequest.scheduledDate);
-      print(widget.orderRequest.scheduledTimeSlot);
-    } on DioException catch (err) {}
-    // final rawPros = await _userRepository.getProfessionals();
-    // final profiles = await _profileRepository.getAllProfiles();
-    // final appointments = await _appointmentRepository.getAppointments();
+      String timeStr = widget.orderRequest.scheduledTimeSlot.trim();
+      final match = RegExp(r'\d{1,2}:\d{2}').firstMatch(timeStr);
+      if (match != null) {
+        timeStr = match.group(0)!;
+      }
 
-    // final Map<String, ProfileProfessionalModel> profileMap = {};
-    // for (final p in profiles) {
-    //   if (p.userId.isNotEmpty) {
-    //     profileMap[p.userId.trim()] = p;
-    //     profileMap[p.userId.trim().toLowerCase()] = p;
-    //   }
-    //   if (p.id != null && p.id!.isNotEmpty) {
-    //     profileMap[p.id!.trim()] = p;
-    //     profileMap[p.id!.trim().toLowerCase()] = p;
-    //   }
-    // }
+      final rawList = await _profileRepository.getProfessionalsAvailabilityRaw(
+        widget.orderRequest.scheduledDate ?? DateTime.now(),
+        timeStr,
+        widget.orderRequest.customerLatitude,
+        widget.orderRequest.customerLongitude,
+      );
 
-    // final customerLat = widget.orderRequest.customerLatitude;
-    // final customerLon = widget.orderRequest.customerLongitude;
-    // final customerCity = widget.orderRequest.customerCity;
-    // final scheduledDate = widget.orderRequest.scheduledDate ?? DateTime.now();
-    // final scheduledTimeSlot = widget.orderRequest.scheduledTimeSlot;
+      final List<ProfessionalModel> loadedPros = [];
+      final Map<String, double> distances = {};
 
-    // final Map<String, double> distances = {};
-    // final List<ProfessionalModel> matchingPros = [];
+      for (final item in rawList) {
+        final prof = ProfessionalModel.fromJson(item);
+        loadedPros.add(prof);
+        final dist = (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
+        distances[prof.id] = dist;
+      }
 
-    // for (final pro in rawPros) {
-    //   ProfileProfessionalModel? profile = profileMap[pro.id.trim()] ?? profileMap[pro.id.trim().toLowerCase()];
-    //   if (profile == null && pro.id.isNotEmpty) {
-    //     profile = await _profileRepository.getByUserId(pro.id.trim());
-    //   }
-
-    //   double proLat = profile?.address.latitude ?? 0.0;
-    //   double proLon = profile?.address.longitude ?? 0.0;
-    //   final proCity = profile?.address.city ?? pro.region;
-    //   final radius = profile?.address.serviceRadiusKm ?? 25;
-
-    //   bool withinRadius = LocationHelper.isWithinRadius(
-    //     customerLat: customerLat,
-    //     customerLon: customerLon,
-    //     customerCity: customerCity,
-    //     proLat: proLat,
-    //     proLon: proLon,
-    //     proCity: proCity,
-    //     radiusKm: radius,
-    //   );
-
-    //   if (customerLat != 0.0 && customerLon != 0.0 && proLat != 0.0 && proLon != 0.0) {
-    //     final dist = LocationHelper.calculateDistanceKm(customerLat, customerLon, proLat, proLon);
-    //     distances[pro.id] = dist;
-    //   }
-
-    //   bool available = AvailabilityHelper.isProfessionalAvailable(
-    //     profile: profile,
-    //     date: scheduledDate,
-    //     timeSlot: scheduledTimeSlot,
-    //     appointments: appointments,
-    //     proUserId: pro.id,
-    //   );
-
-    //   if (withinRadius && available) {
-    //     double dailyRate = 0.0;
-    //     if (profile != null && profile.services.isNotEmpty) {
-    //       final profData = profile;
-    //       final matchingService = profData.services.firstWhere(
-    //         (s) => widget.orderRequest.selectedServices.any((sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase()),
-    //         orElse: () => profData.services.firstWhere((s) => s.price > 0, orElse: () => profData.services.first),
-    //       );
-    //       if (matchingService.price > 0) {
-    //         dailyRate = matchingService.price;
-    //       } else {
-    //         for (final s in profData.services) {
-    //           if (s.price > 0) {
-    //             dailyRate = s.price;
-    //             break;
-    //           }
-    //         }
-    //       }
-    //     }
-
-    //     if (dailyRate <= 0 && pro.basePrice > 0) {
-    //       dailyRate = pro.basePrice;
-    //     }
-
-    //     if (dailyRate <= 0 && widget.orderRequest.selectedServices.isNotEmpty) {
-    //       for (final sel in widget.orderRequest.selectedServices) {
-    //         if (sel.basePrice > 0) {
-    //           dailyRate = sel.basePrice;
-    //           break;
-    //         }
-    //       }
-    //     }
-
-    //     if (dailyRate <= 0) {
-    //       dailyRate = 150.0;
-    //     }
-
-    //     final updatedPro = ProfessionalModel(
-    //       id: pro.id,
-    //       name: pro.name,
-    //       role: (profile?.profession.isNotEmpty == true) ? profile!.profession : pro.role,
-    //       rating: (profile?.rating ?? 0) > 0 ? profile!.rating : pro.rating,
-    //       reviewCount: (profile?.reviewCount ?? 0) > 0 ? profile!.reviewCount : pro.reviewCount,
-    //       completedServicesCount: pro.completedServicesCount,
-    //       arrivalTimeMinutes: pro.arrivalTimeMinutes,
-    //       basePrice: dailyRate,
-    //       highlightBadge: pro.highlightBadge,
-    //       avatarUrl: (profile?.identitySelfieUrl.isNotEmpty == true) ? profile!.identitySelfieUrl : pro.avatarUrl,
-    //       bio: (profile?.bio.isNotEmpty == true) ? profile!.bio : pro.bio,
-    //       offeredServices: profile?.services.map((s) => s.serviceName).toList() ?? pro.offeredServices,
-    //       reviews: pro.reviews,
-    //       region: pro.region,
-    //     );
-
-    //     matchingPros.add(updatedPro);
-    //   }
-    // }
-
-    // if (mounted) {
-    //   setState(() {
-    //     _proDistances = distances;
-    //     _professionals = matchingPros;
-    //     _isLoading = false;
-    //   });
-    // }
+      if (mounted) {
+        setState(() {
+          _professionals = loadedPros;
+          _proDistances = distances;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _professionals = [];
+          _proDistances = {};
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   List<ProfessionalModel> get _sortedProfessionals {
     final list = List<ProfessionalModel>.from(_professionals);
+
     if (_selectedSort == 'Mais próximos') {
       list.sort((a, b) {
         final distA = _proDistances[a.id] ?? 999999.0;

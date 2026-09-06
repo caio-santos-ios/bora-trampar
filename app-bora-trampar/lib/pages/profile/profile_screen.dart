@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:brasil_fields/brasil_fields.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -193,6 +195,613 @@ class _ProfileScreenState extends State<ProfileScreen> {
         }
       }
     }
+  }
+
+  Future<void> _showEditCustomerProfileModal() async {
+    if (_user == null) return;
+
+    final nameController = TextEditingController(text: _user!.name);
+    final whatsappController = TextEditingController(text: _user!.whatsapp ?? '');
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 24,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Dados Pessoais',
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nome Completo',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: nameController,
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: 'Seu nome completo',
+                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted),
+                        prefixIcon: const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold, size: 20),
+                        filled: true,
+                        fillColor: AppColors.cardElevated,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGold)),
+                      ),
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Informe seu nome';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'WhatsApp / Celular',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: whatsappController,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        TelefoneInputFormatter(),
+                      ],
+                      style: GoogleFonts.inter(color: AppColors.textPrimary),
+                      decoration: InputDecoration(
+                        hintText: '(11) 99999-9999',
+                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted),
+                        prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.primaryGold, size: 20),
+                        filled: true,
+                        fillColor: AppColors.cardElevated,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryGold)),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'E-mail',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      initialValue: _user!.email,
+                      readOnly: true,
+                      style: GoogleFonts.inter(color: AppColors.textMuted),
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted, size: 20),
+                        filled: true,
+                        fillColor: AppColors.cardElevated.withValues(alpha: 0.5),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.cardBorder)),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: isSaving
+                            ? null
+                            : () async {
+                                if (!formKey.currentState!.validate()) return;
+                                setModalState(() => isSaving = true);
+
+                                final updatedName = nameController.text.trim();
+                                final updatedWhatsapp = whatsappController.text.trim();
+
+                                final success = await UserRepository().updateUser(
+                                  id: _user!.id,
+                                  name: updatedName,
+                                  whatsapp: updatedWhatsapp,
+                                );
+
+                                if (!mounted) return;
+
+                                if (success) {
+                                  final updatedUser = _user!.copyWith(
+                                    name: updatedName,
+                                    whatsapp: updatedWhatsapp,
+                                  );
+                                  await StorageService.setUser(updatedUser.toJson());
+                                  final prefs = await SharedPreferences.getInstance();
+                                  await prefs.setString('user_profile', jsonEncode(updatedUser.toJson()));
+
+                                  setState(() => _user = updatedUser);
+                                  Navigator.of(context).pop();
+
+                                  ScaffoldMessenger.of(this.context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Dados atualizados com sucesso!',
+                                        style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                                      ),
+                                      backgroundColor: AppColors.primaryGold,
+                                    ),
+                                  );
+                                } else {
+                                  setModalState(() => isSaving = false);
+                                  ScaffoldMessenger.of(this.context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Falha ao atualizar dados. Tente novamente.',
+                                        style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+                                      ),
+                                      backgroundColor: AppColors.errorRed,
+                                    ),
+                                  );
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: AppColors.textDark,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: isSaving
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textDark),
+                              )
+                            : Text(
+                                'Salvar Alterações',
+                                style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showPaymentMethodsModal() async {
+    final balance = _user?.walletBalance ?? 0.0;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Formas de Pagamento',
+                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardElevated,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryGold, size: 22),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Saldo em Carteira', style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                            const SizedBox(height: 2),
+                            Text('R\$ ${balance.toStringAsFixed(2).replaceAll('.', ',')}', style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text('Métodos Aceitos na Plataforma', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+                const SizedBox(height: 10),
+                _buildPaymentTile(
+                  icon: Icons.pix_rounded,
+                  title: 'PIX Instantâneo',
+                  subtitle: 'Aprovação imediata via QR Code ou Copia e Cola',
+                  badge: 'Mais rápido',
+                ),
+                const SizedBox(height: 10),
+                _buildPaymentTile(
+                  icon: Icons.credit_card_rounded,
+                  title: 'Cartão de Crédito',
+                  subtitle: 'Visa, Mastercard, Elo em até 12x',
+                  badge: 'Parcelado',
+                ),
+                const SizedBox(height: 10),
+                _buildPaymentTile(
+                  icon: Icons.shield_outlined,
+                  title: 'Pagamento Seguro Asaas',
+                  subtitle: 'Seus dados financeiros são 100% criptografados',
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.textDark,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Entendi', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPaymentTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    String? badge,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.cardElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.primaryGold, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+                    if (badge != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(badge, style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 10, fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(subtitle, style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 11)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showHelpCenterModal() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Central de Ajuda', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Estamos aqui para te ajudar. Escolha um canal de atendimento ou veja as dúvidas frequentes.',
+                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                ),
+                const SizedBox(height: 20),
+                InkWell(
+                  onTap: () async {
+                    final uri = Uri.parse('https://wa.me/5511999999999?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20no%20Bora%20Trampar');
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    } else {
+                      Clipboard.setData(const ClipboardData(text: '(11) 99999-9999'));
+                      if (mounted) {
+                        ScaffoldMessenger.of(this.context).showSnackBar(
+                          SnackBar(
+                            content: Text('WhatsApp de suporte copiado!', style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700)),
+                            backgroundColor: AppColors.primaryGold,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.success, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Atendimento via WhatsApp', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                              const SizedBox(height: 2),
+                              Text('Segunda a sábado, das 08h às 20h', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(const ClipboardData(text: 'suporte@boratrampar.com.br'));
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      SnackBar(
+                        content: Text('E-mail copiado: suporte@boratrampar.com.br', style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700)),
+                        backgroundColor: AppColors.primaryGold,
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElevated,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.cardBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.email_outlined, color: AppColors.primaryGold, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('E-mail de Suporte', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                              const SizedBox(height: 2),
+                              Text('suporte@boratrampar.com.br (Toque para copiar)', style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.copy_rounded, size: 14, color: AppColors.textMuted),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text('Dúvidas Frequentes', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                const SizedBox(height: 12),
+                _buildFaqItem('Como solicitar um agendamento?', 'Escolha a categoria e o serviço desejado, defina a data e horário, informe o endereço e selecione o profissional mais próximo. Conclua com o pagamento seguro.'),
+                _buildFaqItem('Como funciona a garantia do serviço?', 'Os pagamentos são intermediados com segurança. O valor só é repassado ao profissional após a confirmação da realização do serviço.'),
+                _buildFaqItem('Como cancelar ou reagendar?', 'Você pode cancelar diretamente na tela de rastreamento do pedido. Em caso de cancelamento elegível, o valor retorna como crédito para sua carteira.'),
+                _buildFaqItem('Como falar com o profissional?', 'Após o agendamento ser aceito, você terá acesso ao contato direto e WhatsApp do profissional para combinar os detalhes.'),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFaqItem(String question, String answer) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppColors.cardElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        iconColor: AppColors.primaryGold,
+        collapsedIconColor: AppColors.textMuted,
+        title: Text(question, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+        children: [
+          Text(answer, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showTermsAndPrivacyModal() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, scrollController) {
+            return ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Termos e Privacidade', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+                    IconButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _buildLegalSection('1. Termos Gerais de Uso', 'A plataforma Bora Trampar conecta clientes a profissionais autônomos prestadores de serviços. O cliente e o profissional concordam em agir com respeito mútuo, integridade e pontualidade nos atendimentos combinados.'),
+                _buildLegalSection('2. Política de Privacidade (LGPD)', 'Valorizamos a sua privacidade e segurança. Os dados cadastrais coletados (nome, contato, endereço) são utilizados exclusivamente para operacionalizar os agendamentos e intermediar pagamentos. Em nenhuma hipótese seus dados são comercializados para terceiros.'),
+                _buildLegalSection('3. Política de Cancelamento e Reembolso', 'O cancelamento pode ser efetuado antes da execução do serviço. Em caso de desistência antes do deslocamento do profissional, o montante correspondente é convertido integralmente em saldo na sua carteira digital para novas contratações.'),
+                _buildLegalSection('4. Responsabilidades', 'Os profissionais parceiros são responsáveis pela qualidade técnica dos serviços executados. A plataforma disponibiliza o sistema de avaliações para garantir excelência contínua na comunidade.'),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.textDark,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Concordo e Fechar', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLegalSection(String title, String content) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardElevated,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primaryGold)),
+          const SizedBox(height: 6),
+          Text(content, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
+        ],
+      ),
+    );
   }
 
   Future<void> _pickAndUploadProfilePhoto() async {
@@ -799,6 +1408,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () async {
                   if (title == 'Excluir Conta') {
                     _handleDeleteAccount();
+                  } else if (title == 'Dados Pessoais' && _user != null) {
+                    _showEditCustomerProfileModal();
+                  } else if (title == 'Formas de Pagamento') {
+                    _showPaymentMethodsModal();
+                  } else if (title == 'Central de Ajuda') {
+                    _showHelpCenterModal();
+                  } else if (title == 'Termos e Privacidade') {
+                    _showTermsAndPrivacyModal();
                   } else if (title == 'Editar Perfil Profissional' && _user != null) {
                     final updated = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(

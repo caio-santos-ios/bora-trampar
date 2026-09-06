@@ -33,5 +33,6 @@ namespace api_bora_trampar.src.Configuration
         public IMongoCollection<Reviews> Reviews => Database.GetCollection<Reviews>("reviews");
         public IMongoCollection<ProfileProfessional> ProfileProfessionals => Database.GetCollection<ProfileProfessional>("profile_professionals");
         public IMongoCollection<PlatformSettings> PlatformSettings => Database.GetCollection<PlatformSettings>("platform_settings");
+        public IMongoCollection<Notification> Notifications => Database.GetCollection<Notification>("notifications");
     }
 }

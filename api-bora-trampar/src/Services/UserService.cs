@@ -173,5 +173,24 @@ namespace api_bora_trampar.src.Services
                 return new(0, 500, $"Erro ao atualizar saldo: {ex.Message}");
             }
         }
+
+        public async Task<ResponseApi<User?>> UpdateTokenFcmAsync(string userId, string tokenFcm)
+        {
+            try
+            {
+                User? user = await repository.GetByIdAsync(userId);
+                if (user is null) return new(null, 404, "Usuário não encontrado");
+
+                user.TokenFCM = tokenFcm;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await repository.UpdateAsync(user);
+                return new(user, 200, "Token FCM atualizado com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Erro ao atualizar token FCM: {ex.Message}");
+            }
+        }
     }
 }

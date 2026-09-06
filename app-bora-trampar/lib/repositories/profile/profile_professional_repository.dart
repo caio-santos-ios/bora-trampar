@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../api/http_client_api.dart';
 import '../../models/profile_professional_model.dart';
+import '../../models/professional_model.dart';
 
 class ProfileProfessionalRepository {
   final HttpClientApi _api = HttpClientApi();
@@ -10,12 +11,15 @@ class ProfileProfessionalRepository {
       final response = await _api.client.get('/api/profile-professionals/me');
 
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is Map) {
-          return ProfileProfessionalModel.fromJson(Map<String, dynamic>.from(res));
+          return ProfileProfessionalModel.fromJson(
+            Map<String, dynamic>.from(res),
+          );
         }
       }
       return null;
@@ -28,15 +32,20 @@ class ProfileProfessionalRepository {
 
   Future<ProfileProfessionalModel?> getByUserId(String userId) async {
     try {
-      final response = await _api.client.get('/api/profile-professionals/user/$userId');
+      final response = await _api.client.get(
+        '/api/profile-professionals/user/$userId',
+      );
 
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is Map) {
-          return ProfileProfessionalModel.fromJson(Map<String, dynamic>.from(res));
+          return ProfileProfessionalModel.fromJson(
+            Map<String, dynamic>.from(res),
+          );
         }
       }
       return null;
@@ -52,13 +61,18 @@ class ProfileProfessionalRepository {
       final response = await _api.client.get('/api/profile-professionals');
 
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is List) {
           return res
-              .map((item) => ProfileProfessionalModel.fromJson(Map<String, dynamic>.from(item as Map)))
+              .map(
+                (item) => ProfileProfessionalModel.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ),
+              )
               .toList();
         }
       }
@@ -70,19 +84,67 @@ class ProfileProfessionalRepository {
     }
   }
 
-  Future<ProfileProfessionalModel?> saveProfile(ProfileProfessionalModel profile) async {
+  Future<List<Map<String, dynamic>>> getProfessionalsAvailabilityRaw(
+    DateTime date,
+    String hour,
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      final response = await _api.client.get(
+        '/api/profile-professionals/professional-availability',
+        queryParameters: {
+          'date': date.toIso8601String(),
+          'hour': hour,
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
+        if (res is Map && res['data'] != null) {
+          res = res['data'];
+        }
+        if (res is List) {
+          return res.map((item) => Map<String, dynamic>.from(item as Map)).toList();
+        }
+      }
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<ProfessionalModel>> getProfessionalsAvailability(
+    DateTime date,
+    String hour,
+    double latitude,
+    double longitude,
+  ) async {
+    final rawList = await getProfessionalsAvailabilityRaw(date, hour, latitude, longitude);
+    return rawList.map((item) => ProfessionalModel.fromJson(item)).toList();
+  }
+
+  Future<ProfileProfessionalModel?> saveProfile(
+    ProfileProfessionalModel profile,
+  ) async {
     try {
       final response = await _api.client.post(
         '/api/profile-professionals',
         data: profile.toJson(),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is Map) {
-          return ProfileProfessionalModel.fromJson(Map<String, dynamic>.from(res));
+          return ProfileProfessionalModel.fromJson(
+            Map<String, dynamic>.from(res),
+          );
         }
       }
       return null;

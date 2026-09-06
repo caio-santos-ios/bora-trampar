@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_model.dart';
 import '../../repositories/auth/auth_repository.dart';
 import 'storage_service.dart';
+import 'notification_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -132,7 +133,7 @@ class AuthService {
     }
   }
 
-  Future<void> _saveSession(String token, String? refreshToken, dynamic user) async {
+  Future<void> saveSession(String token, String? refreshToken, dynamic user) async {
     await StorageService.setToken(token);
     if (refreshToken != null) {
       await StorageService.setRefreshToken(refreshToken);
@@ -149,6 +150,7 @@ class AuthService {
     if (user != null) {
       await prefs.setString('user_profile', jsonEncode(user));
     }
+    NotificationService().syncFcmToken();
   }
 
   Future<UserModel?> getCurrentUser() async {

@@ -16,6 +16,7 @@ import '../customer/customer_register_screen.dart';
 import 'forgot_password_screen.dart';
 import '../professional/professional_register_screen.dart';
 import 'package:app_bora_trampar/core/services/storage_service.dart';
+import 'package:app_bora_trampar/core/services/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final String initialRole;
@@ -90,6 +91,9 @@ class _LoginScreenState extends State<LoginScreen> {
         if (userMap != null) {
           await prefs.setString('user_profile', jsonEncode(userMap));
         }
+
+        // Sincroniza FCM Token com o backend
+        NotificationService().syncFcmToken();
       }
 
       if (widget.initialRole == "Customer") {

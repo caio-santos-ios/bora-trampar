@@ -11,22 +11,34 @@ namespace api_bora_trampar.src.Services
     public class ServicesService(IServicesRepository repository) : IServicesService
     {
         #region READ
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(string? categoryId = null)
         {
             try
             {
+                var matchConditions = new BsonArray
+                {
+                    new BsonDocument("deleted", false)
+                };
+
+                if (!string.IsNullOrWhiteSpace(categoryId))
+                {
+                    matchConditions.Add(new BsonDocument("$or", new BsonArray
+                    {
+                        new BsonDocument("categoryId", categoryId),
+                        new BsonDocument("category_id", categoryId)
+                    }));
+                }
+
                 List<BsonDocument> pipeline =
                 [
-                    new("$match", new BsonDocument
-                    {
-                        {"deleted", false},
-                    }),
+                    new("$match", new BsonDocument("$and", matchConditions)),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"name", 1},
-                        {"categoryId", 1},
+                        {"categoryId", new BsonDocument("$ifNull", new BsonArray { "$categoryId", "$category_id", "" })},
+                        {"category_id", new BsonDocument("$ifNull", new BsonArray { "$categoryId", "$category_id", "" })},
                         {"icon", 1},
                         {"createdAt", 1}
                     }),

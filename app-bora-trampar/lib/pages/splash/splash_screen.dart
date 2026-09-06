@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/storage_service.dart';
@@ -11,6 +11,7 @@ import '../main/main_navigation_screen.dart';
 import '../onboarding/identity_verification_pending_screen.dart';
 import '../onboarding/professional_onboarding_screen.dart';
 import '../onboarding/welcome_screen.dart';
+import '../../core/services/notification_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -115,6 +116,9 @@ class _SplashScreenState extends State<SplashScreen>
           if (userMap != null) {
             await prefs.setString('user_profile', jsonEncode(userMap));
           }
+
+          // Sincroniza FCM Token
+          NotificationService().syncFcmToken();
 
           final role = userMap?["role"]?.toString() ?? "Customer";
           final identityVerificationStatus =

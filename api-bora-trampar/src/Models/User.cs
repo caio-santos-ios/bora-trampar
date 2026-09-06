@@ -48,5 +48,8 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("wallet_balance")]
         public decimal WalletBalance { get; set; } = 0;
+
+        [BsonElement("token_fcm")]
+        public string? TokenFCM { get; set; }
     }
 }

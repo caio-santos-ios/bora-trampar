@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "20955964616",
+    "project_id": "app-barber-90445",
+    "storage_bucket": "app-barber-90445.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20955964616:android:cbbdcf26a5a5784cf931fd",
+        "android_client_info": {
+          "package_name": "br.com.caiodesenvolvedor.app_barber"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjdKEXnHct4OKPd6gzlz9IcrbzLH21xuM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:20955964616:android:cbbdcf26a5a5784cf931fd",
+        "android_client_info": {
+          "package_name": "com.boratrampar.app_bora_trampar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjdKEXnHct4OKPd6gzlz9IcrbzLH21xuM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

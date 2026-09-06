@@ -54,6 +54,10 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<ICloudinaryHandler, CloudinaryHandler>();
             builder.Services.AddTransient<ISettingsService, SettingsService>();
             builder.Services.AddTransient<MailHandler>();
+
+            builder.Services.AddTransient<INotificationService, NotificationService>();
+            builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
+            builder.Services.AddHostedService<api_bora_trampar.src.Works.PushNotificationWork>();
         }
     }
 }

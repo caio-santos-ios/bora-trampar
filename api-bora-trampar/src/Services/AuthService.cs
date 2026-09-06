@@ -29,7 +29,7 @@ namespace api_bora_trampar.src.Services
                     string code = GenerateCode.GenerateCodeNumber();
                     DateTime today = DateTime.Now;
 
-                    string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                    string uriUi = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "";
                     string link = $"{uriUi}/confirmation/{code}";
                     string html = EmailTemplates.AccountConfirmation(user.Name, code, link, true);
 
@@ -97,7 +97,7 @@ namespace api_bora_trampar.src.Services
                     string code = GenerateCode.GenerateCodeNumber();
                     DateTime today = DateTime.Now;
 
-                    string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                    string uriUi = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "";
                     string link = $"{uriUi}/confirmation/{code}/app";
                     string html = EmailTemplates.AccountConfirmation(user.Name, code, link, true);
 

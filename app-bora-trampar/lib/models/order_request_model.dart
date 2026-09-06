@@ -33,7 +33,7 @@ class OrderRequestModel {
     this.customerCity = '',
     this.customerState = '',
     this.scheduledDate,
-    this.scheduledTimeSlot = 'A partir das 14:00',
+    this.scheduledTimeSlot = '',
     this.notes = '',
     this.selectedProfessional,
     this.appFee = 0.0,

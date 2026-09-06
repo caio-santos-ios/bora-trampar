@@ -155,6 +155,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     final srvId = widget.orderRequest.selectedServices.isNotEmpty
         ? widget.orderRequest.selectedServices.first.id
         : '';
+    final srvNames = widget.orderRequest.selectedServices.map((s) => s.name).join(', ');
+    final catName = widget.orderRequest.selectedCategory?.title ?? '';
 
     final amountToPay = widget.orderRequest.amountToPay;
     final remainingCredit = widget.orderRequest.remainingCredit;
@@ -168,6 +170,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       status: isFullyCovered ? 'PendingAcceptance' : 'PendingPayment',
       categoryId: catId,
       serviceId: srvId,
+      serviceNames: srvNames,
+      categoryName: catName,
       address: widget.orderRequest.address,
       description: widget.orderRequest.description,
       notes: widget.orderRequest.notes,

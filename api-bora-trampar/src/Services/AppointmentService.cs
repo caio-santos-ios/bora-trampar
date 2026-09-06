@@ -8,7 +8,10 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class AppointmentService(IAppointmentRepository repository, IUserRepository userRepository) : IAppointmentService
+    public class AppointmentService(
+        IAppointmentRepository repository,
+        IUserRepository userRepository,
+        INotificationRepository notificationRepository) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -176,12 +179,51 @@ namespace api_bora_trampar.src.Services
             {
                 Appointment entity = ObjectMapper.Map<CreateAppointmentRequest, Appointment>(request);
 
-                entity.ServiceNames = null;
-                entity.CategoryName = null;
+                string serviceText = !string.IsNullOrWhiteSpace(request.ServiceNames)
+                    ? request.ServiceNames
+                    : (!string.IsNullOrWhiteSpace(request.ServiceNamesSnake) ? request.ServiceNamesSnake : "");
+
+                entity.ServiceNames = !string.IsNullOrWhiteSpace(serviceText) ? serviceText : null;
+                entity.CategoryName = !string.IsNullOrWhiteSpace(request.CategoryName)
+                    ? request.CategoryName
+                    : (!string.IsNullOrWhiteSpace(request.CategoryNameSnake) ? request.CategoryNameSnake : null);
+
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
                 Appointment? appointment = await repository.CreateAsync(entity);
                 if (appointment is null) return new(null, 400, "Falha ao criar agendamento");
+
+                // Envia notificação automática para o profissional
+                if (!string.IsNullOrWhiteSpace(appointment.ProfissionalId))
+                {
+                    try
+                    {
+                        string subtitle = !string.IsNullOrWhiteSpace(serviceText) ? serviceText : "Serviço solicitado";
+                        string message = !string.IsNullOrWhiteSpace(serviceText)
+                            ? $"Serviços: {serviceText}"
+                            : "Você recebeu uma nova solicitação de agendamento.";
+
+                        Notification notification = new()
+                        {
+                            UserId = appointment.ProfissionalId,
+                            Title = "Novo Agendamento Recebido!",
+                            Message = message,
+                            Subtitle = subtitle,
+                            AppointmentId = appointment.Id,
+                            Type = Models.Enums.NotificationTypeEnum.Service,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.UtcNow,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        await notificationRepository.CreateAsync(notification);
+                    }
+                    catch
+                    {
+                        // Não interrompe o fluxo de criação caso a notificação falhe
+                    }
+                }
 
                 return new(appointment, 201, "Agendamento criado com sucesso");
             }
