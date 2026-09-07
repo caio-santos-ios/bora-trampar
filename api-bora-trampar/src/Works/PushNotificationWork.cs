@@ -1,4 +1,4 @@
-using api_bora_trampar.src.Configuration;
+﻿using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Models;
 using FirebaseAdmin.Messaging;
 using MongoDB.Driver;
@@ -20,7 +20,7 @@ namespace api_bora_trampar.src.Works
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Erro no background worker de notificações.");
+                    _logger.LogError(ex, "Erro no background worker de notificaÃ§Ãµes.");
                 }
 
                 await Task.Delay(CheckInterval, stoppingToken);
@@ -66,11 +66,6 @@ namespace api_bora_trampar.src.Works
                         var message = new Message
                         {
                             Token = token,
-                            Notification = new FirebaseAdmin.Messaging.Notification
-                            {
-                                Title = notification.Title,
-                                Body = notification.Message
-                            },
                             Data = new Dictionary<string, string>
                             {
                                 { "notificationId", notification.Id ?? "" },
@@ -83,11 +78,6 @@ namespace api_bora_trampar.src.Works
                             Android = new AndroidConfig
                             {
                                 Priority = Priority.High,
-                                Notification = new AndroidNotification
-                                {
-                                    ChannelId = "high_importance_channel",
-                                    Sound = "default"
-                                }
                             },
                             Apns = new ApnsConfig
                             {
@@ -100,14 +90,14 @@ namespace api_bora_trampar.src.Works
                         };
 
                         await FirebaseMessaging.DefaultInstance.SendAsync(message);
-                        _logger.LogInformation("Notificação push FCM enviada para usuário {UserId}: {Title}", notification.UserId, notification.Title);
+                        _logger.LogInformation("NotificaÃ§Ã£o push FCM enviada para usuÃ¡rio {UserId}: {Title}", notification.UserId, notification.Title);
                     }
 
                     await MarkAsSentAsync(context, notification.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Falha ao enviar notificação {Id} para o usuário {UserId}", notification.Id, notification.UserId);
+                    _logger.LogError(ex, "Falha ao enviar notificaÃ§Ã£o {Id} para o usuÃ¡rio {UserId}", notification.Id, notification.UserId);
                     await MarkAsSentAsync(context, notification.Id);
                 }
             }
@@ -123,4 +113,6 @@ namespace api_bora_trampar.src.Works
         }
     }
 }
+
+
 

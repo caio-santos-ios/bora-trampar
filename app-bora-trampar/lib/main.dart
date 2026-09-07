@@ -1,8 +1,9 @@
-import 'package:app_bora_trampar/bora_trampar_app.dart';
+﻿import 'package:app_bora_trampar/bora_trampar_app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/core/services/notification_service.dart';
@@ -15,11 +16,71 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (_) {}
+
+  final appointmentId = message.data['appointmentId']?.toString() ?? '';
+  final title = message.data['title']?.toString() ??
+      message.notification?.title ??
+      'Novo Agendamento Recebido!';
+  final body = message.data['body']?.toString() ??
+      message.notification?.body ??
+      '';
+  final isAppointment =
+      appointmentId.isNotEmpty || message.data['type']?.toString().toLowerCase() == 'service';
+
+  final localNotifications = FlutterLocalNotificationsPlugin();
+
+  const androidChannel = AndroidNotificationChannel(
+    'high_importance_channel',
+    'Notificações Importantes',
+    importance: Importance.high,
+  );
+
+  await localNotifications
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(androidChannel);
+
+  await localNotifications.initialize(
+    const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    ),
+  );
+
+  final androidDetails = AndroidNotificationDetails(
+    'high_importance_channel',
+    'Notificações Importantes',
+    importance: Importance.high,
+    priority: Priority.high,
+    actions: isAppointment
+        ? const <AndroidNotificationAction>[
+            AndroidNotificationAction(
+              'decline_appointment',
+              'Recusar',
+              cancelNotification: true,
+              showsUserInterface: true,
+            ),
+            AndroidNotificationAction(
+              'accept_appointment',
+              'Aceitar',
+              cancelNotification: true,
+              showsUserInterface: true,
+            ),
+          ]
+        : null,
+  );
+
+  await localNotifications.show(
+    message.hashCode,
+    title,
+    body,
+    NotificationDetails(android: androidDetails),
+    payload: appointmentId,
+  );
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -39,10 +100,8 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await NotificationService().init();
   } catch (e) {
-    debugPrint('[main] Erro ao inicializar Firebase/Notificações: $e');
+    debugPrint('[main] Erro ao inicializar Firebase/Notificações: ');
   }
 
   runApp(const BoraTrampaApp());
 }
-
-
