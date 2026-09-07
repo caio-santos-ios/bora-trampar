@@ -7,6 +7,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/core/services/notification_service.dart';
+import 'package:app_bora_trampar/core/services/notification_action_handler.dart';
 import 'firebase_options.dart';
 
 @pragma('vm:entry-point')
@@ -44,6 +45,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     ),
+    onDidReceiveBackgroundNotificationResponse: onNotificationActionBackground,
   );
 
   final androidDetails = AndroidNotificationDetails(
@@ -57,13 +59,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
               'decline_appointment',
               'Recusar',
               cancelNotification: true,
-              showsUserInterface: true,
+              showsUserInterface: false,
             ),
             AndroidNotificationAction(
               'accept_appointment',
               'Aceitar',
               cancelNotification: true,
-              showsUserInterface: true,
+              showsUserInterface: false,
             ),
           ]
         : null,

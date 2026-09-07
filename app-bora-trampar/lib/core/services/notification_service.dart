@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/services/notification_action_handler.dart';
 import '../../pages/notifications/notifications_screen.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/notification/notification_repository.dart';
@@ -59,6 +60,7 @@ class NotificationService {
 
           _navigateToNotifications();
         },
+        onDidReceiveBackgroundNotificationResponse: onNotificationActionBackground,
       );
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -79,13 +81,13 @@ class NotificationService {
                     'decline_appointment',
                     'Recusar',
                     cancelNotification: true,
-                    showsUserInterface: true,
+                    showsUserInterface: false,
                   ),
                   AndroidNotificationAction(
                     'accept_appointment',
                     'Aceitar',
                     cancelNotification: true,
-                    showsUserInterface: true,
+                    showsUserInterface: false,
                   ),
                 ]
               : null,
