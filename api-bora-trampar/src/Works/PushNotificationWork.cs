@@ -71,6 +71,15 @@ namespace api_bora_trampar.src.Works
                                 Title = notification.Title,
                                 Body = notification.Message
                             },
+                            Data = new Dictionary<string, string>
+                            {
+                                { "notificationId", notification.Id ?? "" },
+                                { "appointmentId", notification.AppointmentId ?? "" },
+                                { "type", notification.Type.ToString() },
+                                { "title", notification.Title ?? "" },
+                                { "body", notification.Message ?? "" },
+                                { "subtitle", notification.Subtitle ?? "" }
+                            },
                             Android = new AndroidConfig
                             {
                                 Priority = Priority.High,
