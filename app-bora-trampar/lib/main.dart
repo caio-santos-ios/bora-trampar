@@ -31,7 +31,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   const androidChannel = AndroidNotificationChannel(
     'high_importance_channel',
-    'Notificações Importantes',
+    'Notificacoes Importantes',
     importance: Importance.high,
   );
 
@@ -40,7 +40,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       ?.createNotificationChannel(androidChannel);
 
   await localNotifications.initialize(
-    const InitializationSettings(
+    settings: const InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
       iOS: DarwinInitializationSettings(),
     ),
@@ -48,7 +48,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   final androidDetails = AndroidNotificationDetails(
     'high_importance_channel',
-    'Notificações Importantes',
+    'Notificacoes Importantes',
     importance: Importance.high,
     priority: Priority.high,
     actions: isAppointment
@@ -70,10 +70,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
 
   await localNotifications.show(
-    message.hashCode,
-    title,
-    body,
-    NotificationDetails(android: androidDetails),
+    id: message.hashCode,
+    title: title,
+    body: body,
+    notificationDetails: NotificationDetails(android: androidDetails),
     payload: appointmentId,
   );
 }
@@ -100,7 +100,7 @@ void main() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await NotificationService().init();
   } catch (e) {
-    debugPrint('[main] Erro ao inicializar Firebase/Notificações: ');
+    debugPrint('[main] Erro ao inicializar Firebase/Notificacoes: $e');
   }
 
   runApp(const BoraTrampaApp());
