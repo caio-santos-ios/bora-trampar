@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'core/services/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'pages/splash/splash_screen.dart';
 
@@ -9,6 +10,7 @@ class BoraTrampaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'BoraTrampa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
