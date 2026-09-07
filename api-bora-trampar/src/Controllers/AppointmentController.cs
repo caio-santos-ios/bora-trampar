@@ -49,6 +49,7 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [AllowAnonymous]
         [HttpPut("{id}/accept")]
         public async Task<IActionResult> Accept(string id)
         {
@@ -57,6 +58,7 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [AllowAnonymous]
         [HttpPut("{id}/decline")]
         public async Task<IActionResult> Decline(string id)
         {

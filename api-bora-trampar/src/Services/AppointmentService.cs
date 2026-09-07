@@ -262,7 +262,7 @@ namespace api_bora_trampar.src.Services
                 if (appointment is null) return new(null, 404, "Agendamento não encontrado");
 
                 appointment.Status = "Accepted";
-                appointment.UpdatedBy = userId;
+                appointment.UpdatedBy = string.IsNullOrEmpty(userId) ? (appointment.ProfissionalId ?? "") : userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
                 Appointment? updated = await repository.UpdateAsync(appointment);
@@ -282,7 +282,7 @@ namespace api_bora_trampar.src.Services
                 if (appointment is null) return new(null, 404, "Agendamento não encontrado");
 
                 appointment.Status = "Declined";
-                appointment.UpdatedBy = userId;
+                appointment.UpdatedBy = string.IsNullOrEmpty(userId) ? (appointment.ProfissionalId ?? "") : userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
                 Appointment? updated = await repository.UpdateAsync(appointment);

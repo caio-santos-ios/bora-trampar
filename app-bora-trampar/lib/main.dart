@@ -1,4 +1,4 @@
-﻿import 'package:app_bora_trampar/bora_trampar_app.dart';
+import 'package:app_bora_trampar/bora_trampar_app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -59,13 +59,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
               'decline_appointment',
               'Recusar',
               cancelNotification: true,
-              showsUserInterface: true,
+              showsUserInterface: false,
             ),
             AndroidNotificationAction(
               'accept_appointment',
               'Aceitar',
               cancelNotification: true,
-              showsUserInterface: true,
+              showsUserInterface: false,
             ),
           ]
         : null,

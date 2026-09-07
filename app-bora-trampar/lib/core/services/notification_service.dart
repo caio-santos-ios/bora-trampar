@@ -81,13 +81,13 @@ class NotificationService {
                     'decline_appointment',
                     'Recusar',
                     cancelNotification: true,
-                    showsUserInterface: true,
+                    showsUserInterface: false,
                   ),
                   AndroidNotificationAction(
                     'accept_appointment',
                     'Aceitar',
                     cancelNotification: true,
-                    showsUserInterface: true,
+                    showsUserInterface: false,
                   ),
                 ]
               : null,
