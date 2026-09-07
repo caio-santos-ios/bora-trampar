@@ -178,7 +178,7 @@ namespace api_bora_trampar.src.Services
                     new("$match", new BsonDocument
                     {
                         {"user_lookup.deleted", false},
-                        {"user_lookup.active", true},
+                        // {"user_lookup.active", true},
                         {"user_lookup.blocked", false},
                         {"user_lookup.confirm_account", true},
                         {"is_available_now", true},
