@@ -1,9 +1,9 @@
 using api_bora_trampar.src.Configuration;
-using api_bora_trampar.src.Enums;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Services
@@ -48,7 +48,7 @@ namespace api_bora_trampar.src.Services
             }
             catch (Exception ex)
             {
-                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+                return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
 
@@ -88,7 +88,7 @@ namespace api_bora_trampar.src.Services
             }
             catch (Exception ex)
             {
-                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+                return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
 
@@ -134,65 +134,109 @@ namespace api_bora_trampar.src.Services
             }
             catch (Exception ex)
             {
-                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+                return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
-        
         public async Task<ResponseApi<List<dynamic>>> GetProfessionalAvailabilityAsync(DateTime date, string hour, double latitude, double longitude)
         {
             try
             {
-                if (Math.Abs(latitude) > Math.Abs(longitude) && longitude > -30 && latitude < -30)
-                {
-                    (latitude, longitude) = (longitude, latitude);
-                }
+                List<BsonDocument> pipeline =
+                [
+                    new("$geoNear", new BsonDocument
+                    {
+                        { "near", new BsonDocument
+                            {
+                                { "type", "Point" },
+                                { "coordinates", new BsonArray { longitude, latitude } }
+                            }
+                        },
+                        { "distanceField", "distanciaMetros" },
+                        { "spherical", true },
+                        { "key", "address.location" }
+                    }),
+                    new("$addFields", new BsonDocument("distanciaKm",
+                        new BsonDocument("$divide", new BsonArray { "$distanciaMetros", 1000 })) ),
+                    new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$lte", new BsonArray { "$distanciaKm", "$address.service_radius_km" }) }
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"let", new BsonDocument("userId", "$user_id")},
+                        {"pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match", new BsonDocument("$expr",
+                                    new BsonDocument("$eq", new BsonArray { new BsonDocument("$toString", "$_id"), "$$userId" })
+                                ))
+                            }
+                        },
+                        {"as", "user_lookup"}
+                    }),
+                    new("$unwind", "$user_lookup"),
+                    new("$match", new BsonDocument
+                    {
+                        {"user_lookup.deleted", false},
+                        {"user_lookup.active", true},
+                        {"user_lookup.blocked", false},
+                        {"user_lookup.confirm_account", true},
+                        {"is_available_now", true},
+                        {"user_lookup.role", "Professional"}
+                    }),
+                    new("$project", new BsonDocument
+                    {
+                        {"_id", 0},
+                        {"id", new BsonDocument("$toString", "$user_lookup._id")},
+                        {"name", "$user_lookup.name"},
+                        {"role", "$user_lookup.role"},
+                        {"avatarUrl", new BsonDocument("$ifNull", new BsonArray { "$user_lookup.photo", "" })},
+                        {"profession", 1},
+                        {"distanciaKm", 1},
+                        {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
+                    }),
+                    new("$sort", new BsonDocument { { "distanciaKm", 1 } } )
+                ];
 
-                bool hasCustomerLoc = Math.Abs(latitude) > 0.001 || Math.Abs(longitude) > 0.001;
-
-                var allProfiles = await repository.GetProfileAllAsync();
-
-                var profUserIdsFromProfiles = allProfiles
-                    .Select(p => p.UserId)
-                    .Where(id => !string.IsNullOrWhiteSpace(id))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-                var allUsers = await appDbContext.Users
-                    .Find(u => !u.Deleted)
+                List<BsonDocument> candidateDocs = await appDbContext.ProfileProfessionals
+                    .Aggregate<BsonDocument>(pipeline)
                     .ToListAsync();
 
-                var profUsers = allUsers.Where(u =>
-                    u.Role == RoleUserEnum.Professional ||
-                    u.Role == RoleUserEnum.Profissional ||
-                    profUserIdsFromProfiles.Contains(u.Id) ||
-                    (!string.IsNullOrEmpty(u.Role.ToString()) && u.Role.ToString().Contains("prof", StringComparison.OrdinalIgnoreCase))
-                ).ToList();
-
-                var profileMap = new Dictionary<string, ProfileProfessional>(StringComparer.OrdinalIgnoreCase);
-                foreach (var p in allProfiles)
+                if (candidateDocs.Count == 0)
                 {
-                    if (!string.IsNullOrWhiteSpace(p.UserId))
-                        profileMap[p.UserId.Trim()] = p;
-                    if (!string.IsNullOrWhiteSpace(p.Id) && !profileMap.ContainsKey(p.Id.Trim()))
-                        profileMap[p.Id.Trim()] = p;
+                    return new([], 200, "Profissionais listados com sucesso");
                 }
 
-                var candidateUserIds = profUsers.Select(u => u.Id).ToList();
-                var searchStart = date.Date.AddDays(-1);
-                var searchEnd = date.Date.AddDays(2);
+                var availableCandidates = candidateDocs
+                    .Where(doc => IsProfessionalWorkingAt(doc, date, hour))
+                    .ToList();
 
-                var existingAppointments = await appDbContext.Appointments
-                    .Find(a => !a.Deleted
-                            && candidateUserIds.Contains(a.ProfissionalId)
-                            && a.Date >= searchStart
-                            && a.Date < searchEnd)
-                    .ToListAsync();
+                if (availableCandidates.Count == 0)
+                {
+                    return new([], 200, "Nenhum profissional disponível para o horário informado");
+                }
+
+                var candidateIds = availableCandidates
+                    .Select(d => d.GetValue("id", "").AsString)
+                    .Where(id => !string.IsNullOrEmpty(id))
+                    .ToList();
 
                 var canceledStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
                     "cancelled", "canceled", "declined", "cancelado", "recusado"
                 };
 
-                var busyProfessionalIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var searchStart = date.Date.AddDays(-1);
+                var searchEnd = date.Date.AddDays(2);
+
+                var existingAppointments = await appDbContext.Appointments
+                    .Find(a => !a.Deleted
+                            && candidateIds.Contains(a.ProfissionalId)
+                            && a.Date >= searchStart
+                            && a.Date < searchEnd)
+                    .ToListAsync();
+
+                var busyProfessionalIds = new HashSet<string>();
                 foreach (var apt in existingAppointments)
                 {
                     if (string.IsNullOrEmpty(apt.ProfissionalId)) continue;
@@ -223,114 +267,43 @@ namespace api_bora_trampar.src.Services
                     }
                 }
 
-                List<dynamic> usersResult = [];
-                foreach (var u in profUsers)
+                List<dynamic> users = [];
+                foreach (var doc in availableCandidates)
                 {
-                    profileMap.TryGetValue(u.Id, out var profile);
-
-                    if (busyProfessionalIds.Contains(u.Id) && profUsers.Count > 1)
+                    string profId = doc.GetValue("id", "").AsString;
+                    if (busyProfessionalIds.Contains(profId))
                         continue;
 
-                    if (profile != null && !profile.IsAvailableNow && profUsers.Count > 1)
-                        continue;
-
-                    bool isWorking = IsProfessionalWorkingAt(profile, date, hour);
-                    if (!isWorking && profUsers.Count > 1)
-                        continue;
-
-                    double distKm = 0.0;
-                    double proLat = profile?.Address?.Latitude ?? 0.0;
-                    double proLon = profile?.Address?.Longitude ?? 0.0;
-
-                    if (Math.Abs(proLat) < 0.001 && Math.Abs(proLon) < 0.001 && profile?.Address?.Location?.Coordinates?.Length == 2)
+                    double dist = 0.0;
+                    if (doc.Contains("distanciaKm"))
                     {
-                        proLon = profile.Address.Location.Coordinates[0];
-                        proLat = profile.Address.Location.Coordinates[1];
+                        var distVal = doc["distanciaKm"];
+                        dist = distVal.IsDouble ? distVal.AsDouble : distVal.ToDouble();
                     }
 
-                    if (Math.Abs(proLat) > Math.Abs(proLon) && proLon > -30 && proLat < -30)
+                    users.Add(new
                     {
-                        (proLat, proLon) = (proLon, proLat);
-                    }
-
-                    if (hasCustomerLoc && (Math.Abs(proLat) > 0.001 || Math.Abs(proLon) > 0.001))
-                    {
-                        distKm = CalculateDistanceKm(latitude, longitude, proLat, proLon);
-                        int radius = (profile?.Address?.ServiceRadiusKm > 0) ? profile.Address.ServiceRadiusKm : 25;
-                        if (distKm > radius && profUsers.Count > 1)
-                        {
-                            continue;
-                        }
-                    }
-
-                    decimal basePrice = 150m;
-                    List<string> serviceNames = [];
-                    if (profile?.Services != null && profile.Services.Count > 0)
-                    {
-                        var sWithPrice = profile.Services.FirstOrDefault(s => s.Price > 0);
-                        if (sWithPrice != null) basePrice = sWithPrice.Price;
-                        serviceNames = profile.Services
-                            .Select(s => s.ServiceName)
-                            .Where(n => !string.IsNullOrWhiteSpace(n))
-                            .ToList();
-                    }
-                    if (serviceNames.Count == 0 && !string.IsNullOrWhiteSpace(profile?.Profession))
-                    {
-                        serviceNames.Add(profile.Profession);
-                    }
-
-                    string profession = !string.IsNullOrWhiteSpace(profile?.Profession) ? profile.Profession : "Profissional";
-                    string avatarUrl = !string.IsNullOrWhiteSpace(u.Photo) ? u.Photo : (!string.IsNullOrWhiteSpace(profile?.IdentitySelfieUrl) ? profile.IdentitySelfieUrl : "");
-
-                    usersResult.Add(new
-                    {
-                        id = u.Id,
-                        name = !string.IsNullOrWhiteSpace(u.Name) ? u.Name : "Profissional",
-                        profession = profession,
-                        avatarUrl = avatarUrl,
-                        role = u.Role.ToString(),
-                        distanciaKm = Math.Round(distKm, 1),
-                        isAvailable = profile?.IsAvailableNow ?? true,
+                        id = profId,
+                        name = doc.GetValue("name", "").AsString,
+                        profession = doc.GetValue("profession", "").AsString,
+                        avatarUrl = doc.GetValue("avatarUrl", "").AsString,
+                        role = doc.GetValue("role", "").AsString,
+                        distanciaKm = dist,
+                        isAvailable = true,
                         isVerified = true,
-                        rating = (profile?.Rating > 0) ? profile.Rating : 5.0,
-                        reviewCount = profile?.ReviewCount ?? 0,
-                        completedServicesCount = profile?.CompletedServicesCount ?? 0,
-                        region = !string.IsNullOrWhiteSpace(profile?.Address?.City) ? $"{profile.Address.City}, {profile.Address.State}" : "",
-                        highlightBadge = (profile?.Badges != null && profile.Badges.Count > 0) ? profile.Badges.First() : "",
-                        basePrice = basePrice,
-                        bio = profile?.Bio ?? "",
-                        offeredServices = serviceNames,
-                        services = profile?.Services?.Select(s => new { serviceName = s.ServiceName, price = s.Price, priceType = s.PriceType }) ?? []
+                        reviewCount = 0,
+                        completedServicesCount = 0,
+                        region = "",
+                        highlightBadge = "",
                     });
                 }
 
-                usersResult = usersResult.OrderBy(x => (double)x.distanciaKm).ToList();
-
-                Console.WriteLine($"[GetProfessionalAvailability] Encontrados {usersResult.Count} profissionais para {date:yyyy-MM-dd} {hour}");
-
-                return new(usersResult, 200, "Profissionais listados com sucesso");
+                return new(users, 200, "Profissionais listados com sucesso");
             }
             catch (Exception ex)
             {
-                return new([], 200, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
-        }
-
-        private static double CalculateDistanceKm(double lat1, double lon1, double lat2, double lon2)
-        {
-            if (Math.Abs(lat1) < 0.0001 && Math.Abs(lon1) < 0.0001) return 0.0;
-            if (Math.Abs(lat2) < 0.0001 && Math.Abs(lon2) < 0.0001) return 0.0;
-
-            const double R = 6371.0;
-            double dLat = (lat2 - lat1) * Math.PI / 180.0;
-            double dLon = (lon2 - lon1) * Math.PI / 180.0;
-            double rLat1 = lat1 * Math.PI / 180.0;
-            double rLat2 = lat2 * Math.PI / 180.0;
-
-            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2) * Math.Cos(rLat1) * Math.Cos(rLat2);
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
         }
 
         private static bool TryParseTime(string? timeStr, out TimeSpan time)
@@ -350,11 +323,18 @@ namespace api_bora_trampar.src.Services
             return false;
         }
 
-        private static bool IsProfessionalWorkingAt(ProfileProfessional? profile, DateTime date, string hour)
+        private static bool IsProfessionalWorkingAt(BsonDocument doc, DateTime date, string hour)
         {
-            if (profile == null || profile.WorkingHours == null || profile.WorkingHours.Count == 0)
+            BsonArray? workingHours = null;
+            if (doc.Contains("working_hours") && doc["working_hours"].IsBsonArray)
+                workingHours = doc["working_hours"].AsBsonArray;
+            else if (doc.Contains("workingHours") && doc["workingHours"].IsBsonArray)
+                workingHours = doc["workingHours"].AsBsonArray;
+
+            if (workingHours == null || workingHours.Count == 0)
                 return true;
 
+            // Segunda = 0, Terça = 1, ..., Domingo = 6
             int targetDayOfWeek = date.DayOfWeek switch
             {
                 DayOfWeek.Monday => 0,
@@ -367,25 +347,66 @@ namespace api_bora_trampar.src.Services
                 _ => 0
             };
 
-            var matchingDay = profile.WorkingHours.FirstOrDefault(w => w.DayOfWeek == targetDayOfWeek);
+            BsonDocument? matchingDay = null;
+            foreach (var item in workingHours)
+            {
+                if (!item.IsBsonDocument) continue;
+                var dayDoc = item.AsBsonDocument;
+
+                int dayIndex = -1;
+                if (dayDoc.Contains("day_of_week") && (dayDoc["day_of_week"].IsInt32 || dayDoc["day_of_week"].IsInt64))
+                    dayIndex = dayDoc["day_of_week"].ToInt32();
+                else if (dayDoc.Contains("dayOfWeek") && (dayDoc["dayOfWeek"].IsInt32 || dayDoc["dayOfWeek"].IsInt64))
+                    dayIndex = dayDoc["dayOfWeek"].ToInt32();
+
+                if (dayIndex == targetDayOfWeek)
+                {
+                    matchingDay = dayDoc;
+                    break;
+                }
+            }
+
             if (matchingDay == null)
             {
                 string[] prefixes = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"];
                 string targetPrefix = prefixes[targetDayOfWeek];
-                matchingDay = profile.WorkingHours.FirstOrDefault(w =>
-                    !string.IsNullOrWhiteSpace(w.DayName) && w.DayName.ToLower().Contains(targetPrefix));
+
+                foreach (var item in workingHours)
+                {
+                    if (!item.IsBsonDocument) continue;
+                    var dayDoc = item.AsBsonDocument;
+                    string dayName = "";
+                    if (dayDoc.Contains("day_name") && dayDoc["day_name"].IsString)
+                        dayName = dayDoc["day_name"].AsString.ToLower();
+                    else if (dayDoc.Contains("dayName") && dayDoc["dayName"].IsString)
+                        dayName = dayDoc["dayName"].AsString.ToLower();
+
+                    if (dayName.Contains(targetPrefix))
+                    {
+                        matchingDay = dayDoc;
+                        break;
+                    }
+                }
             }
 
             if (matchingDay == null) return true;
 
-            if (!matchingDay.IsActive) return false;
+            bool isActive = true;
+            if (matchingDay.Contains("is_active"))
+                isActive = matchingDay["is_active"].ToBoolean();
+            else if (matchingDay.Contains("isActive"))
+                isActive = matchingDay["isActive"].ToBoolean();
+
+            if (!isActive) return false;
 
             if (string.IsNullOrWhiteSpace(hour)) return true;
 
             if (!TryParseTime(hour, out var requestedTime)) return true;
 
-            string startHourStr = !string.IsNullOrWhiteSpace(matchingDay.StartHour) ? matchingDay.StartHour : "08:00";
-            string endHourStr = !string.IsNullOrWhiteSpace(matchingDay.EndHour) ? matchingDay.EndHour : "18:00";
+            string startHourStr = matchingDay.Contains("start_hour") ? matchingDay["start_hour"].AsString :
+                                  (matchingDay.Contains("startHour") ? matchingDay["startHour"].AsString : "08:00");
+            string endHourStr = matchingDay.Contains("end_hour") ? matchingDay["end_hour"].AsString :
+                                (matchingDay.Contains("endHour") ? matchingDay["endHour"].AsString : "18:00");
 
             if (TryParseTime(startHourStr, out var startTime) && requestedTime < startTime)
                 return false;
@@ -393,7 +414,12 @@ namespace api_bora_trampar.src.Services
             if (TryParseTime(endHourStr, out var endTime) && requestedTime >= endTime)
                 return false;
 
-            if (TryParseTime(matchingDay.BreakStart, out var breakStart) && TryParseTime(matchingDay.BreakEnd, out var breakEnd))
+            string breakStartStr = matchingDay.Contains("break_start") ? matchingDay["break_start"].AsString :
+                                   (matchingDay.Contains("breakStart") ? matchingDay["breakStart"].AsString : "");
+            string breakEndStr = matchingDay.Contains("break_end") ? matchingDay["break_end"].AsString :
+                                 (matchingDay.Contains("breakEnd") ? matchingDay["breakEnd"].AsString : "");
+
+            if (TryParseTime(breakStartStr, out var breakStart) && TryParseTime(breakEndStr, out var breakEnd))
             {
                 if (requestedTime >= breakStart && requestedTime < breakEnd)
                     return false;
@@ -406,16 +432,6 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                if (request.Address?.Location?.Coordinates != null && request.Address.Location.Coordinates.Length == 2)
-                {
-                    var c0 = request.Address.Location.Coordinates[0];
-                    var c1 = request.Address.Location.Coordinates[1];
-                    if (c0 > c1 && c1 < -30)
-                    {
-                        request.Address.Location.Coordinates = [c1, c0];
-                    }
-                }
-
                 var effectiveUserId = string.IsNullOrWhiteSpace(request.UserId) ? userId : request.UserId;
                 var existing = await repository.GetByUserIdAsync(effectiveUserId);
                 ProfileProfessional? resultProfile = null;
