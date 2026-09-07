@@ -31,7 +31,7 @@ class NotificationService {
 
       const androidChannel = AndroidNotificationChannel(
         'high_importance_channel',
-        'Notificações Importantes',
+        'NotificaÃ§Ãµes Importantes',
         importance: Importance.high,
       );
 
@@ -72,7 +72,7 @@ class NotificationService {
 
         final androidDetails = AndroidNotificationDetails(
           'high_importance_channel',
-          'Notificações Importantes',
+          'NotificaÃ§Ãµes Importantes',
           importance: Importance.high,
           priority: Priority.high,
           actions: isAppointment
@@ -81,13 +81,13 @@ class NotificationService {
                     'decline_appointment',
                     'Recusar',
                     cancelNotification: true,
-                    showsUserInterface: false,
+                    showsUserInterface: true,
                   ),
                   AndroidNotificationAction(
                     'accept_appointment',
                     'Aceitar',
                     cancelNotification: true,
-                    showsUserInterface: false,
+                    showsUserInterface: true,
                   ),
                 ]
               : null,
@@ -119,7 +119,7 @@ class NotificationService {
       // Atualiza token FCM no backend
       syncFcmToken();
     } catch (e) {
-      debugPrint('[NotificationService] Erro ao inicializar notificações: $e');
+      debugPrint('[NotificationService] Erro ao inicializar notificaÃ§Ãµes: $e');
     }
   }
 
@@ -291,19 +291,11 @@ class NotificationService {
   Future<void> _handleAcceptAppointment(String appointmentId) async {
     try {
       final success = await _appointmentRepo.acceptAppointment(appointmentId);
-      final context = navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: success ? AppColors.textDark : Colors.white),
-            ),
-            backgroundColor: success ? AppColors.primaryGold : AppColors.errorRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      _showActionSnackBar(
+        success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
+        success ? AppColors.primaryGold : AppColors.errorRed,
+        success ? AppColors.textDark : Colors.white,
+      );
     } catch (e) {
       debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
     }
@@ -312,22 +304,35 @@ class NotificationService {
   Future<void> _handleDeclineAppointment(String appointmentId) async {
     try {
       final success = await _appointmentRepo.declineAppointment(appointmentId);
+      _showActionSnackBar(
+        success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
+        AppColors.errorRed,
+        Colors.white,
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
+    }
+  }
+
+  void _showActionSnackBar(String message, Color background, Color textColor) {
+    // Aguarda o frame seguinte para garantir que o context esteja pronto
+    // mesmo quando o app foi aberto a partir do estado fechado.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = navigatorKey.currentContext;
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white),
+              message,
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: textColor),
             ),
-            backgroundColor: AppColors.errorRed,
+            backgroundColor: background,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
-    } catch (e) {
-      debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
-    }
+    });
   }
 
   void _navigateToNotifications() {
@@ -351,3 +356,4 @@ class NotificationService {
     }
   }
 }
+

@@ -59,13 +59,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
               'decline_appointment',
               'Recusar',
               cancelNotification: true,
-              showsUserInterface: false,
+              showsUserInterface: true,
             ),
             AndroidNotificationAction(
               'accept_appointment',
               'Aceitar',
               cancelNotification: true,
-              showsUserInterface: false,
+              showsUserInterface: true,
             ),
           ]
         : null,
