@@ -396,13 +396,16 @@ class _ProfessionalOnboardingScreenState
           ? _stateController.text.trim()
           : '',
       serviceRadiusKm: _serviceRadiusKm.round(),
-      location: ProfessionalAddressLocationModel(
-        type: _typeLocationController.text,
-        coordinates: [
-          double.parse(_longController.text),
-          double.parse(_latController.text),
-        ],
-      ),
+      location: () {
+        final rawLng = double.tryParse(_longController.text) ?? 0.0;
+        final rawLat = double.tryParse(_latController.text) ?? 0.0;
+        final lng = (rawLng > rawLat && rawLat < -30) ? rawLat : rawLng;
+        final lat = (rawLng > rawLat && rawLat < -30) ? rawLng : rawLat;
+        return ProfessionalAddressLocationModel(
+          type: _typeLocationController.text.isNotEmpty ? _typeLocationController.text : 'Point',
+          coordinates: [lng, lat],
+        );
+      }(),
     );
 
     final profile = ProfileProfessionalModel(
