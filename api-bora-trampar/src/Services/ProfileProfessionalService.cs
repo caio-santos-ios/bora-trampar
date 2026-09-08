@@ -137,6 +137,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
+        
         public async Task<ResponseApi<List<dynamic>>> GetProfessionalAvailabilityAsync(DateTime date, string hour, double latitude, double longitude)
         {
             try
@@ -217,19 +218,21 @@ namespace api_bora_trampar.src.Services
                     .Aggregate<BsonDocument>(pipeline)
                     .ToListAsync();
 
-                if (candidateDocs.Count == 0)
-                {
-                    return new([], 200, "Profissionais listados com sucesso");
-                }
+                var list = await repository.GetAllAsync(pipeline);
+
+                // if (candidateDocs.Count == 0)
+                // {
+                //     return new([], 200, "Profissionais listados com sucesso");
+                // }
 
                 var availableCandidates = candidateDocs
                     .Where(doc => IsProfessionalWorkingAt(doc, date, hour))
                     .ToList();
 
-                if (availableCandidates.Count == 0)
-                {
-                    return new([], 200, "Nenhum profissional disponível para o horário informado");
-                }
+                // if (availableCandidates.Count == 0)
+                // {
+                //     return new([], 200, "Nenhum profissional disponível para o horário informado");
+                // }
 
                 var candidateIds = availableCandidates
                     .Select(d => d.GetValue("id", "").AsString)
@@ -373,11 +376,23 @@ namespace api_bora_trampar.src.Services
                     }
 
                     string region = "";
+                    string city = "";
+                    string state = "";
+                    string addressComplete = "";
+                    dynamic location = new { lat = 0, lon = 0 };
                     if (doc.Contains("address") && doc["address"].IsBsonDocument)
                     {
                         var addrDoc = doc["address"].AsBsonDocument;
-                        string city = addrDoc.GetValue("city", "").AsString;
-                        string state = addrDoc.GetValue("state", "").AsString;
+                        city = addrDoc.GetValue("city", "").AsString;
+                        state = addrDoc.GetValue("state", "").AsString;
+                        string street = addrDoc.GetValue("street", "").AsString;
+                        string neighborhood = addrDoc.GetValue("neighborhood", "").AsString;
+                        string zip_code = addrDoc.GetValue("zip_code", "").AsString;
+                        addressComplete = $"{zip_code} - {street}, {neighborhood} - {city}/{state}";
+
+                        BsonArray bsonArray = addrDoc["location"]["coordinates"].AsBsonArray;
+                        location = new { lon = bsonArray[0].AsDouble, lat = bsonArray[1].AsDouble };
+
                         if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(state))
                             region = $"{city} - {state}";
                         else if (!string.IsNullOrEmpty(city))
@@ -394,25 +409,30 @@ namespace api_bora_trampar.src.Services
                     {
                         id = profId,
                         name = doc.GetValue("name", "").AsString,
-                        profession = doc.GetValue("profession", "").AsString,
-                        avatarUrl,
-                        photo = avatarUrl,
-                        role = doc.GetValue("role", "").AsString,
+                        // profession = doc.GetValue("profession", "").AsString,
+                        // avatarUrl,
+                        address = new
+                        {
+                            location,
+                            addressComplete
+                        },
+                        // photo = avatarUrl,
+                        // role = doc.GetValue("role", "").AsString,
                         distanciaKm = Math.Round(dist, 1),
-                        isAvailable = true,
-                        isVerified = true,
-                        rating,
-                        reviewCount,
-                        completedServicesCount,
-                        region,
-                        highlightBadge = badge,
-                        bio,
-                        basePrice,
-                        services = servicesList
+                        // isAvailable = true,
+                        // isVerified = true,
+                        // rating,
+                        // reviewCount,
+                        // completedServicesCount,
+                        // region,
+                        // highlightBadge = badge,
+                        // bio,
+                        // basePrice,
+                        // services = servicesList,
                     });
                 }
 
-                return new(users, 200, "Profissionais listados com sucesso");
+                return new(list, 200, "Profissionais listados com sucesso");
             }
             catch (Exception ex)
             {
@@ -448,7 +468,6 @@ namespace api_bora_trampar.src.Services
             if (workingHours == null || workingHours.Count == 0)
                 return true;
 
-            // Segunda = 0, Terça = 1, ..., Domingo = 6
             int targetDayOfWeek = date.DayOfWeek switch
             {
                 DayOfWeek.Monday => 0,

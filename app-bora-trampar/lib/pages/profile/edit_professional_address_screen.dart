@@ -12,10 +12,7 @@ import '../../repositories/profile/profile_professional_repository.dart';
 class EditProfessionalAddressScreen extends StatefulWidget {
   final ProfileProfessionalModel proProfile;
 
-  const EditProfessionalAddressScreen({
-    super.key,
-    required this.proProfile,
-  });
+  const EditProfessionalAddressScreen({super.key, required this.proProfile});
 
   @override
   State<EditProfessionalAddressScreen> createState() =>
@@ -116,15 +113,21 @@ class _EditProfessionalAddressScreenState
             final loc = data['location'];
             if (loc is Map && loc['coordinates'] is Map) {
               final rawLat = double.tryParse(
-                loc['coordinates']['latitude']?.toString() ?? '',
+                loc['coordinates']['latitude']?.toString() ?? '0',
               );
               final rawLng = double.tryParse(
-                loc['coordinates']['longitude']?.toString() ?? '',
+                loc['coordinates']['longitude']?.toString() ?? '0',
               );
-              if (rawLat != null && rawLng != null && rawLat != 0 && rawLng != 0) {
-                _latitude = rawLat;
-                _longitude = rawLng;
+              if (rawLat != null &&
+                  rawLng != null &&
+                  rawLat != 0 &&
+                  rawLng != 0) {
+                setState(() {
+                  _latitude = rawLat;
+                  _longitude = rawLng;
+                });
               }
+              print(_longitude);
             }
           });
           return;
@@ -136,7 +139,8 @@ class _EditProfessionalAddressScreenState
         if (res != null) {
           setState(() {
             if (_cityController.text.isEmpty) _cityController.text = res.city;
-            if (_stateController.text.isEmpty) _stateController.text = res.state;
+            if (_stateController.text.isEmpty)
+              _stateController.text = res.state;
             _latitude = res.latitude;
             _longitude = res.longitude;
           });
@@ -303,7 +307,11 @@ class _EditProfessionalAddressScreenState
         backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -442,7 +450,9 @@ class _EditProfessionalAddressScreenState
                       activeTrackColor: AppColors.primaryGold,
                       inactiveTrackColor: AppColors.cardBorder,
                       thumbColor: AppColors.primaryGold,
-                      overlayColor: AppColors.primaryGold.withValues(alpha: 0.2),
+                      overlayColor: AppColors.primaryGold.withValues(
+                        alpha: 0.2,
+                      ),
                       valueIndicatorColor: AppColors.primaryGold,
                       valueIndicatorTextStyle: GoogleFonts.inter(
                         color: AppColors.textDark,
@@ -518,8 +528,9 @@ class _EditProfessionalAddressScreenState
                         ),
                         labelStyle: GoogleFonts.inter(
                           fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.w800 : FontWeight.w500,
+                          fontWeight: isSelected
+                              ? FontWeight.w800
+                              : FontWeight.w500,
                           color: isSelected
                               ? AppColors.textDark
                               : AppColors.textPrimary,
@@ -563,8 +574,9 @@ class _EditProfessionalAddressScreenState
                         ],
                       ),
                       TextButton.icon(
-                        onPressed:
-                            _isGettingLocation ? null : _useCurrentGpsLocation,
+                        onPressed: _isGettingLocation
+                            ? null
+                            : _useCurrentGpsLocation,
                         icon: _isGettingLocation
                             ? const SizedBox(
                                 width: 14,
@@ -697,8 +709,8 @@ class _EditProfessionalAddressScreenState
                               ),
                               validator: (val) =>
                                   (val == null || val.trim().isEmpty)
-                                      ? 'Informe o número'
-                                      : null,
+                                  ? 'Informe o número'
+                                  : null,
                             ),
                           ],
                         ),
@@ -780,8 +792,8 @@ class _EditProfessionalAddressScreenState
                               ),
                               validator: (val) =>
                                   (val == null || val.trim().isEmpty)
-                                      ? 'Informe a cidade'
-                                      : null,
+                                  ? 'Informe a cidade'
+                                  : null,
                             ),
                           ],
                         ),
@@ -816,52 +828,14 @@ class _EditProfessionalAddressScreenState
                               ),
                               validator: (val) =>
                                   (val == null || val.trim().isEmpty)
-                                      ? 'UF'
-                                      : null,
+                                  ? 'UF'
+                                  : null,
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  if (_latitude != null &&
-                      _longitude != null &&
-                      _latitude != 0 &&
-                      _longitude != 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: AppColors.success.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.check_circle_rounded,
-                            color: AppColors.success,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Geolocalização identificada (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                 ],
               ),
             ),

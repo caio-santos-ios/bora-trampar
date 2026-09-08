@@ -1,5 +1,6 @@
 using api_bora_trampar.src.Handlers;
 using api_bora_trampar.src.Interfaces;
+using api_bora_trampar.src.Interfaces.Address;
 using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Interfaces.Dashboard;
 using api_bora_trampar.src.Repositories;
@@ -50,6 +51,9 @@ namespace api_bora_trampar.src.Configuration
 
             builder.Services.AddTransient<IProfileProfessionalService, ProfileProfessionalService>();
             builder.Services.AddTransient<IProfileProfessionalRepository, ProfileProfessionalRepository>();
+
+            // builder.Services.AddTransient<IAddressService, AddressService>();
+            builder.Services.AddHttpClient<IAddressService, AddressService>();
 
             builder.Services.AddTransient<ICloudinaryHandler, CloudinaryHandler>();
             builder.Services.AddTransient<ISettingsService, SettingsService>();
