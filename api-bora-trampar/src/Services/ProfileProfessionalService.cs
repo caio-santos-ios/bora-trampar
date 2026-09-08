@@ -189,8 +189,24 @@ namespace api_bora_trampar.src.Services
                         {"id", new BsonDocument("$toString", "$user_lookup._id")},
                         {"name", "$user_lookup.name"},
                         {"role", "$user_lookup.role"},
-                        {"avatarUrl", new BsonDocument("$ifNull", new BsonArray { "$user_lookup.photo", "" })},
+                        {"avatarUrl", new BsonDocument("$ifNull", new BsonArray {
+                            "$user_lookup.photo",
+                            new BsonDocument("$ifNull", new BsonArray {
+                                "$photo",
+                                new BsonDocument("$ifNull", new BsonArray {
+                                    new BsonDocument("$arrayElemAt", new BsonArray { "$portfolio_photos", 0 }),
+                                    ""
+                                })
+                            })
+                        })},
                         {"profession", 1},
+                        {"bio", new BsonDocument("$ifNull", new BsonArray { "$bio", "" })},
+                        {"services", new BsonDocument("$ifNull", new BsonArray { "$services", new BsonArray() })},
+                        {"rating", new BsonDocument("$ifNull", new BsonArray { "$rating", 5.0 })},
+                        {"review_count", new BsonDocument("$ifNull", new BsonArray { "$review_count", 0 })},
+                        {"completed_services_count", new BsonDocument("$ifNull", new BsonArray { "$completed_services_count", 0 })},
+                        {"badges", new BsonDocument("$ifNull", new BsonArray { "$badges", new BsonArray() })},
+                        {"address", 1},
                         {"distanciaKm", 1},
                         {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
                     }),
@@ -280,20 +296,119 @@ namespace api_bora_trampar.src.Services
                         dist = distVal.IsDouble ? distVal.AsDouble : distVal.ToDouble();
                     }
 
+                    string avatarUrl = doc.Contains("avatarUrl") && !doc["avatarUrl"].IsBsonNull
+                        ? doc["avatarUrl"].AsString
+                        : "";
+
+                    string bio = doc.Contains("bio") && !doc["bio"].IsBsonNull
+                        ? doc["bio"].AsString
+                        : "";
+
+                    decimal basePrice = 0m;
+                    List<dynamic> servicesList = [];
+                    if (doc.Contains("services") && doc["services"].IsBsonArray)
+                    {
+                        foreach (var s in doc["services"].AsBsonArray)
+                        {
+                            if (s.IsBsonDocument)
+                            {
+                                var sDoc = s.AsBsonDocument;
+                                decimal sPrice = 0m;
+                                if (sDoc.Contains("price"))
+                                {
+                                    var pVal = sDoc["price"];
+                                    if (pVal.IsDecimal128) sPrice = (decimal)pVal.AsDecimal128;
+                                    else if (pVal.IsDouble) sPrice = (decimal)pVal.AsDouble;
+                                    else if (pVal.IsInt32) sPrice = pVal.AsInt32;
+                                    else if (pVal.IsInt64) sPrice = pVal.AsInt64;
+                                }
+
+                                string pType = sDoc.GetValue("price_type", sDoc.GetValue("priceType", "Diária")).AsString;
+                                string sName = sDoc.GetValue("service_name", sDoc.GetValue("serviceName", "")).AsString;
+                                string catId = sDoc.GetValue("category_id", sDoc.GetValue("categoryId", "")).AsString;
+                                string catName = sDoc.GetValue("category_name", sDoc.GetValue("categoryName", "")).AsString;
+                                string servId = sDoc.GetValue("service_id", sDoc.GetValue("serviceId", "")).AsString;
+
+                                servicesList.Add(new
+                                {
+                                    serviceId = servId,
+                                    serviceName = sName,
+                                    categoryId = catId,
+                                    categoryName = catName,
+                                    price = sPrice,
+                                    priceType = pType
+                                });
+
+                                if (basePrice == 0m && sPrice > 0m)
+                                {
+                                    basePrice = sPrice;
+                                }
+                                else if (string.Equals(pType, "Diária", StringComparison.OrdinalIgnoreCase) && sPrice > 0m)
+                                {
+                                    basePrice = sPrice;
+                                }
+                            }
+                        }
+                    }
+
+                    double rating = 5.0;
+                    if (doc.Contains("rating") && !doc["rating"].IsBsonNull)
+                    {
+                        var rVal = doc["rating"];
+                        rating = rVal.IsDouble ? rVal.AsDouble : (rVal.IsInt32 ? rVal.AsInt32 : (rVal.IsDecimal128 ? (double)rVal.AsDecimal128 : 5.0));
+                    }
+
+                    int reviewCount = 0;
+                    if (doc.Contains("review_count") && !doc["review_count"].IsBsonNull)
+                    {
+                        var rcVal = doc["review_count"];
+                        reviewCount = rcVal.IsInt32 ? rcVal.AsInt32 : (rcVal.IsInt64 ? (int)rcVal.AsInt64 : 0);
+                    }
+
+                    int completedServicesCount = 0;
+                    if (doc.Contains("completed_services_count") && !doc["completed_services_count"].IsBsonNull)
+                    {
+                        var csVal = doc["completed_services_count"];
+                        completedServicesCount = csVal.IsInt32 ? csVal.AsInt32 : (csVal.IsInt64 ? (int)csVal.AsInt64 : 0);
+                    }
+
+                    string region = "";
+                    if (doc.Contains("address") && doc["address"].IsBsonDocument)
+                    {
+                        var addrDoc = doc["address"].AsBsonDocument;
+                        string city = addrDoc.GetValue("city", "").AsString;
+                        string state = addrDoc.GetValue("state", "").AsString;
+                        if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(state))
+                            region = $"{city} - {state}";
+                        else if (!string.IsNullOrEmpty(city))
+                            region = city;
+                    }
+
+                    string badge = "";
+                    if (doc.Contains("badges") && doc["badges"].IsBsonArray && doc["badges"].AsBsonArray.Count > 0)
+                    {
+                        badge = doc["badges"].AsBsonArray[0].AsString;
+                    }
+
                     users.Add(new
                     {
                         id = profId,
                         name = doc.GetValue("name", "").AsString,
                         profession = doc.GetValue("profession", "").AsString,
-                        avatarUrl = doc.GetValue("avatarUrl", "").AsString,
+                        avatarUrl,
+                        photo = avatarUrl,
                         role = doc.GetValue("role", "").AsString,
-                        distanciaKm = dist,
+                        distanciaKm = Math.Round(dist, 1),
                         isAvailable = true,
                         isVerified = true,
-                        reviewCount = 0,
-                        completedServicesCount = 0,
-                        region = "",
-                        highlightBadge = "",
+                        rating,
+                        reviewCount,
+                        completedServicesCount,
+                        region,
+                        highlightBadge = badge,
+                        bio,
+                        basePrice,
+                        services = servicesList
                     });
                 }
 

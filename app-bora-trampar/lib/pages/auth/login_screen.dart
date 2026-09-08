@@ -1,4 +1,5 @@
-import 'dart:convert';
+import 'package:app_bora_trampar/core/services/util_service.dart';
+import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
 import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/pages/main/main_navigation_screen.dart';
 import 'package:app_bora_trampar/pages/onboarding/identity_verification_pending_screen.dart';
@@ -58,13 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final resultData = result is Map
           ? (result["data"] ?? result)
           : response.data;
-      final token =
-          (resultData is Map
-                  ? (resultData["token"] ?? resultData["data"]?["token"])
-                  : null)
-              ?.toString() ??
-          '';
+      final token = resultData["data"]?["token"].toString() ?? "";
       final refreshToken = resultData["data"]?["refreshToken"].toString() ?? "";
+      
       final rawUser = resultData is Map
           ? (resultData["user"] ?? resultData["data"]?["user"])
           : null;
@@ -88,23 +85,16 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (widget.initialRole == "Customer") {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Login realizado com sucesso!',
-              style: GoogleFonts.inter(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        if (mounted) {
+          Toastfy.show(context, "Login realizado com sucesso!", "success");
 
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-          (route) => false,
-        );
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MainNavigationScreen(),
+            ),
+            (route) => false,
+          );
+        }
       } else {
         bool isProfileCompleted =
             resultData["user"]["isProfileCompleted"].toString() == "true";
@@ -127,25 +117,16 @@ class _LoginScreenState extends State<LoginScreen> {
             '';
 
         if (useridentityVerificationStatusId == "Approved") {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Login realizado com sucesso!',
-                style: GoogleFonts.inter(
-                  color: AppColors.textDark,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              backgroundColor: AppColors.success,
-            ),
-          );
+          if (mounted) {
+            Toastfy.show(context, "Login realizado com sucesso!", "success");
 
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => const MainNavigationScreen(),
-            ),
-            (route) => false,
-          );
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const MainNavigationScreen(),
+              ),
+              (route) => false,
+            );
+          }
         } else {
           String userId =
               (userObj is Map ? userObj["id"] : null)?.toString() ?? '';
@@ -162,36 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } on DioException catch (err) {
-      String errorMessage = 'Ocorreu um erro. Tente novamente.';
-
-      if (err.response != null) {
-        final data = err.response?.data;
-        if (data is Map) {
-          errorMessage =
-              data['result']?['message'] ?? data['message'] ?? errorMessage;
-        }
-      } else if (err.type == DioExceptionType.connectionTimeout ||
-          err.type == DioExceptionType.receiveTimeout ||
-          err.type == DioExceptionType.sendTimeout) {
-        errorMessage = 'Tempo de conexão esgotado. Verifique sua internet.';
-      } else if (err.type == DioExceptionType.connectionError) {
-        errorMessage = 'Sem conexão com o servidor. Verifique sua internet.';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              errorMessage,
-              style: GoogleFonts.inter(
-                color: AppColors.textDark,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      if (mounted) UtilService.normalizeError(context, err);
     } finally {
       setState(() => _isLoading = false);
     }

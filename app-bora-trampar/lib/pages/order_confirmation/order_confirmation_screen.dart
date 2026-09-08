@@ -14,6 +14,7 @@ import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
 import '../order_tracking/order_tracking_screen.dart';
 import '../payment/payment_asaas_screen.dart';
+import '../professionals/professional_profile_screen.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final OrderRequestModel orderRequest;
@@ -385,122 +386,164 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 const SizedBox(height: 18),
 
                 if (prof != null)
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Stack(
-                          children: [
-                            CircleAvatar(
-                              radius: 28,
-                              backgroundImage: NetworkImage(prof.avatarUrl),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: AppColors.success,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.cardBackground, width: 2),
-                                ),
-                              ),
-                            ),
-                          ],
+                  InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProfessionalProfileScreen(
+                            orderRequest: widget.orderRequest,
+                            professional: prof,
+                          ),
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.cardBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Text(
-                                'Profissional selecionado',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textMuted,
-                                  fontSize: 11,
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: AppColors.cardElevated,
+                                    backgroundImage: prof.avatarUrl.isNotEmpty
+                                        ? NetworkImage(prof.avatarUrl)
+                                        : null,
+                                    child: prof.avatarUrl.isEmpty
+                                        ? Text(
+                                            prof.name.isNotEmpty
+                                                ? prof.name[0].toUpperCase()
+                                                : 'P',
+                                            style: GoogleFonts.inter(
+                                              color: AppColors.primaryGold,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(
+                                      width: 12,
+                                      height: 12,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.success,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(color: AppColors.cardBackground, width: 2),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Profissional selecionado',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textMuted,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Flexible(
+                                          child: Text(
+                                            prof.name,
+                                            style: GoogleFonts.inter(
+                                              color: AppColors.textPrimary,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 15),
+                                      ],
+                                    ),
+                                    Text(
+                                      prof.role,
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
+                                          style: GoogleFonts.inter(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ),
-                              Row(
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    prof.name,
+                                    'Diária',
+                                    style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 10),
+                                  ),
+                                  Text(
+                                    'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
                                     style: GoogleFonts.inter(
                                       color: AppColors.textPrimary,
                                       fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 15),
-                                ],
-                              ),
-                              Text(
-                                prof.role,
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
-                                    style: GoogleFonts.inter(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'A partir de',
-                              style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 10),
-                            ),
-                            Text(
-                              'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 12),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'Chega em até\n${prof.arrivalTimeMinutes} min',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 9,
-                                  ),
-                                  textAlign: TextAlign.right,
+                          const SizedBox(height: 10),
+                          const Divider(height: 1, color: AppColors.divider),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                'Visualizar perfil do profissional',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.primaryGold,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppColors.primaryGold,
+                                size: 12,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 const SizedBox(height: 12),

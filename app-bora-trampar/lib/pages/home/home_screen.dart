@@ -689,25 +689,32 @@ class _HomeScreenState extends State<HomeScreen> {
           const Divider(color: AppColors.cardBorder),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMetricItem(
-                icon: Icons.star_rounded,
-                iconColor: AppColors.primaryGold,
-                title: ratingText,
-                subtitle: '$reviewCount avaliações',
+              Expanded(
+                child: _buildMetricItem(
+                  icon: Icons.star_rounded,
+                  iconColor: AppColors.primaryGold,
+                  title: ratingText,
+                  subtitle: '$reviewCount avaliações',
+                ),
               ),
-              _buildMetricItem(
-                icon: Icons.task_alt_rounded,
-                iconColor: AppColors.success,
-                title: '$completedCount',
-                subtitle: 'Concluídos',
+              Container(width: 1, height: 28, color: AppColors.cardBorder),
+              Expanded(
+                child: _buildMetricItem(
+                  icon: Icons.task_alt_rounded,
+                  iconColor: AppColors.success,
+                  title: '$completedCount',
+                  subtitle: 'Concluídos',
+                ),
               ),
-              _buildMetricItem(
-                icon: Icons.bolt_rounded,
-                iconColor: Colors.amber,
-                title: 'Ativo',
-                subtitle: 'Status da Conta',
+              Container(width: 1, height: 28, color: AppColors.cardBorder),
+              Expanded(
+                child: _buildMetricItem(
+                  icon: Icons.bolt_rounded,
+                  iconColor: Colors.amber,
+                  title: 'Ativo',
+                  subtitle: 'Status da Conta',
+                ),
               ),
             ],
           ),
@@ -722,22 +729,40 @@ class _HomeScreenState extends State<HomeScreen> {
     required String title,
     required String subtitle,
   }) {
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: iconColor, size: 18),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-            ),
-            Text(
-              subtitle,
-              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+            Icon(icon, color: iconColor, size: 16),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                title,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
+        ),
+        const SizedBox(height: 2),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: Text(
+            subtitle,
+            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
         ),
       ],
     );

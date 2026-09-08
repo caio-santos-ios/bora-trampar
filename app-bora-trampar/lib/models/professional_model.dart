@@ -45,7 +45,7 @@ class ProfessionalModel {
 
   factory ProfessionalModel.fromJson(Map<String, dynamic> json) {
     final rawBasePrice = json['basePrice'] ?? json['base_price'] ?? json['price'] ?? json['Price'];
-    final basePrice = rawBasePrice is num
+    double basePrice = rawBasePrice is num
         ? rawBasePrice.toDouble()
         : (rawBasePrice != null ? double.tryParse(rawBasePrice.toString().replaceAll(',', '.')) ?? 0.0 : 0.0);
 
@@ -58,6 +58,16 @@ class ProfessionalModel {
         } else if (s is Map) {
           final sName = s['serviceName'] ?? s['service_name'] ?? s['name'];
           if (sName != null) serviceNames.add(sName.toString());
+
+          if (basePrice <= 0.0) {
+            final p = s['price'] ?? s['Price'];
+            if (p is num && p > 0) {
+              basePrice = p.toDouble();
+            } else if (p != null) {
+              final parsed = double.tryParse(p.toString().replaceAll(',', '.'));
+              if (parsed != null && parsed > 0) basePrice = parsed;
+            }
+          }
         }
       }
     }
@@ -69,7 +79,7 @@ class ProfessionalModel {
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
       name: json['name']?.toString() ?? 'Profissional',
       role: json['profession']?.toString() ?? json['role']?.toString() ?? 'Profissional',
-      avatarUrl: json['avatarUrl']?.toString() ?? json['photo']?.toString() ?? '',
+      avatarUrl: json['avatarUrl']?.toString() ?? json['photo']?.toString() ?? json['photoUrl']?.toString() ?? '',
       isVerified: json['isVerified'] == true,
       isAvailable: json['isAvailable'] == null ? true : json['isAvailable'] == true,
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,

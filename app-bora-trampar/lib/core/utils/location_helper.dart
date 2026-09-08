@@ -71,8 +71,38 @@ class LocationHelper {
         ),
       );
 
-      final cleanCep = query.replaceAll(RegExp(r'\D'), '');
-      if (cleanCep.length == 8) {
+      final cepMatch = RegExp(r'\b\d{5}-?\d{3}\b').firstMatch(query);
+      final cleanCep = cepMatch != null
+          ? cepMatch.group(0)!.replaceAll(RegExp(r'\D'), '')
+          : (query.replaceAll(RegExp(r'\D'), '').length == 8
+              ? query.replaceAll(RegExp(r'\D'), '')
+              : null);
+
+      if (cleanCep != null && cleanCep.length == 8) {
+        try {
+          final bApiRes = await dio.get('https://brasilapi.com.br/api/cep/v2/$cleanCep');
+          if (bApiRes.statusCode == 200 && bApiRes.data is Map && bApiRes.data['type'] != 'service_error') {
+            final loc = bApiRes.data['location'];
+            final coords = loc is Map ? loc['coordinates'] as Map? : null;
+            final lat = double.tryParse(coords?['latitude']?.toString() ?? '') ?? 0.0;
+            final lon = double.tryParse(coords?['longitude']?.toString() ?? '') ?? 0.0;
+            final street = bApiRes.data['street']?.toString() ?? '';
+            final b = bApiRes.data['neighborhood']?.toString() ?? '';
+            final c = bApiRes.data['city']?.toString() ?? '';
+            final uf = bApiRes.data['state']?.toString() ?? '';
+            final formatted = [street, b, c, uf].where((s) => s.isNotEmpty).join(', ');
+            if (lat != 0.0 && lon != 0.0) {
+              return LocationResult(
+                latitude: lat,
+                longitude: lon,
+                address: formatted.isNotEmpty ? formatted : query,
+                city: c,
+                state: uf,
+              );
+            }
+          }
+        } catch (_) {}
+
         try {
           final viaCepRes = await dio.get('https://viacep.com.br/ws/$cleanCep/json/');
           if (viaCepRes.statusCode == 200 && viaCepRes.data is Map && viaCepRes.data['erro'] != true) {

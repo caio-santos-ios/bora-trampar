@@ -58,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     try {
       String refreshToken = StorageService.getRefreshToken();
-
+      print(refreshToken);
       if (refreshToken.isEmpty) {
         _goToWelcome();
         return;
@@ -103,7 +103,6 @@ class _SplashScreenState extends State<SplashScreen>
             await StorageService.setUser(userMap);
           }
 
-          // Sincroniza FCM Token
           NotificationService().syncFcmToken();
 
           final role = userMap?["role"]?.toString() ?? "Customer";
@@ -159,9 +158,35 @@ class _SplashScreenState extends State<SplashScreen>
       }
 
       await _clearSessionAndGoWelcome();
-    } catch (_) {
-      await _clearSessionAndGoWelcome();
+    } catch (e) {
+      if (!_tryNavigateWithLocalSession()) {
+        await _clearSessionAndGoWelcome();
+      }
     }
+  }
+
+  bool _tryNavigateWithLocalSession() {
+    if (!mounted) return false;
+    final rawUser = StorageService.getUser();
+    final token = StorageService.getToken();
+    if (token.isEmpty || rawUser == null) return false;
+
+    Map<String, dynamic>? userMap;
+    if (rawUser is Map) {
+      userMap = Map<String, dynamic>.from(rawUser);
+    } else if (rawUser is String) {
+      try {
+        final decoded = jsonDecode(rawUser);
+        if (decoded is Map) userMap = Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+    if (userMap == null) return false;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+      (route) => false,
+    );
+    return true;
   }
 
   Future<void> _clearSessionAndGoWelcome() async {

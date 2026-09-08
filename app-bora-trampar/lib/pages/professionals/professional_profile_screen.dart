@@ -323,32 +323,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Container(width: 1, height: 36, color: AppColors.divider),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              const Icon(Icons.timer_outlined, color: AppColors.primaryGold, size: 18),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Até ${professional.arrivalTimeMinutes} min',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                              Text(
-                                'Tempo estimado',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.textMuted,
-                                  fontSize: 9,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
+
                         Container(width: 1, height: 36, color: AppColors.divider),
                         Expanded(
                           child: Column(
@@ -434,7 +409,9 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    professional.bio,
+                    professional.bio.isNotEmpty
+                        ? professional.bio
+                        : 'Profissional especialista dedicado à excelência no atendimento.',
                     style: GoogleFonts.inter(
                       color: AppColors.textSecondary,
                       fontSize: 13,
