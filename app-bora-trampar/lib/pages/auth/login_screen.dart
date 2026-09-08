@@ -56,16 +56,11 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       final result = response.data["result"];
-      final resultData = result is Map
-          ? (result["data"] ?? result)
-          : response.data;
-      final token = resultData["data"]?["token"].toString() ?? "";
-      final refreshToken = resultData["data"]?["refreshToken"].toString() ?? "";
+      final resultData = result["data"];
+      final token = resultData["token"].toString();
+      final refreshToken = resultData["refreshToken"].toString();      
+      final rawUser =  resultData["user"];
       
-      final rawUser = resultData is Map
-          ? (resultData["user"] ?? resultData["data"]?["user"])
-          : null;
-
       Map<String, dynamic>? userMap;
       if (rawUser is Map) {
         userMap = Map<String, dynamic>.from(rawUser);

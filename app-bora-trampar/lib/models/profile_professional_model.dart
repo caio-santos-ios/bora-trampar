@@ -271,6 +271,36 @@ class ProfessionalAddressModel {
       'serviceRadiusKm': serviceRadiusKm,
     };
   }
+
+  ProfessionalAddressModel copyWith({
+    String? zipCode,
+    String? street,
+    String? number,
+    String? complement,
+    String? neighborhood,
+    String? city,
+    String? state,
+    ProfessionalAddressLocationModel? location,
+    int? serviceRadiusKm,
+  }) {
+    return ProfessionalAddressModel(
+      zipCode: zipCode ?? this.zipCode,
+      street: street ?? this.street,
+      number: number ?? this.number,
+      complement: complement ?? this.complement,
+      neighborhood: neighborhood ?? this.neighborhood,
+      city: city ?? this.city,
+      state: state ?? this.state,
+      location: location ?? this.location,
+      serviceRadiusKm: serviceRadiusKm ?? this.serviceRadiusKm,
+    );
+  }
+
+  double? get latitude =>
+      location.coordinates.length >= 2 ? location.coordinates[1] : null;
+
+  double? get longitude =>
+      location.coordinates.length >= 2 ? location.coordinates[0] : null;
 }
 
 class ProfessionalAddressLocationModel {

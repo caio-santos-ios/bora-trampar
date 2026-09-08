@@ -58,7 +58,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     try {
       String refreshToken = StorageService.getRefreshToken();
-      print(refreshToken);
+
       if (refreshToken.isEmpty) {
         _goToWelcome();
         return;
@@ -70,26 +70,10 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (response.statusCode == 200 && response.data != null) {
         final result = response.data["result"];
-        final resultData = result is Map
-            ? (result["data"] ?? result)
-            : response.data;
-
-        final newToken =
-            (resultData is Map
-                    ? (resultData["token"] ?? resultData["data"]?["token"])
-                    : null)
-                ?.toString() ??
-            '';
-        final newRefreshToken =
-            (resultData is Map
-                    ? (resultData["refreshToken"] ??
-                          resultData["data"]?["refreshToken"])
-                    : null)
-                ?.toString() ??
-            '';
-        final rawUser = resultData is Map
-            ? (resultData["user"] ?? resultData["data"]?["user"])
-            : null;
+        final resultData = result["data"];
+        final newToken = resultData["token"].toString();
+        final newRefreshToken = resultData["refreshToken"].toString();
+        final rawUser =  resultData["user"];        
 
         if (newToken.isNotEmpty) {
           await StorageService.setToken(newToken);

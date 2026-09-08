@@ -547,6 +547,25 @@ namespace api_bora_trampar.src.Services
             try
             {
                 var effectiveUserId = string.IsNullOrWhiteSpace(request.UserId) ? userId : request.UserId;
+
+                if (request.Address != null)
+                {
+                    if ((request.Address.Location?.Coordinates == null || request.Address.Location.Coordinates.Length == 0) &&
+                        (request.Address.Latitude != 0 || request.Address.Longitude != 0))
+                    {
+                        request.Address.Location = new Location
+                        {
+                            Type = "Point",
+                            Coordinates = [request.Address.Longitude, request.Address.Latitude]
+                        };
+                    }
+                    else if (request.Address.Location?.Coordinates != null && request.Address.Location.Coordinates.Length >= 2)
+                    {
+                        request.Address.Longitude = request.Address.Location.Coordinates[0];
+                        request.Address.Latitude = request.Address.Location.Coordinates[1];
+                    }
+                }
+
                 var existing = await repository.GetByUserIdAsync(effectiveUserId);
                 ProfileProfessional? resultProfile = null;
 

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +18,7 @@ import '../onboarding/welcome_screen.dart';
 import 'edit_professional_profile_screen.dart';
 import 'edit_working_hours_screen.dart';
 import 'documents_verification_screen.dart';
+import 'edit_professional_address_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -58,6 +58,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _proProfile = proProfile;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _navigateToEditAddress() async {
+    if (_user == null) return;
+    final currentPro = _proProfile ??
+        ProfileProfessionalModel(
+          userId: _user!.id,
+          profession: '',
+          bio: '',
+          address: ProfessionalAddressModel(
+            location: ProfessionalAddressLocationModel.empty(),
+          ),
+        );
+
+    final updated = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute(
+        builder: (_) => EditProfessionalAddressScreen(
+          proProfile: currentPro,
+        ),
+      ),
+    );
+
+    if (updated is ProfileProfessionalModel) {
+      setState(() => _proProfile = updated);
+    }
+    if (updated != null) {
+      await _loadData();
     }
   }
 
@@ -1094,25 +1122,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        if (address != null && address.city.isNotEmpty) ...[
-          _buildSection(
-            title: 'Área de Atendimento',
+        _buildSection(
+          title: 'Localização e Raio de Atuação',
+          trailing: GestureDetector(
+            onTap: _navigateToEditAddress,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.edit_outlined, size: 12, color: AppColors.primaryGold),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Alterar',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          child: InkWell(
+            onTap: _navigateToEditAddress,
+            borderRadius: BorderRadius.circular(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow(
                   Icons.location_on_outlined,
-                  [address.city, address.state].where((s) => s.isNotEmpty).join(', '),
+                  address != null &&
+                          (address.street.isNotEmpty ||
+                              address.neighborhood.isNotEmpty ||
+                              address.city.isNotEmpty)
+                      ? [
+                          if (address.street.isNotEmpty) address.street,
+                          if (address.neighborhood.isNotEmpty) address.neighborhood,
+                          [address.city, address.state].where((s) => s.isNotEmpty).join(', ')
+                        ].where((s) => s.isNotEmpty).join(' - ')
+                      : 'Toque para cadastrar seu endereço de atendimento',
                 ),
-                if (address.serviceRadiusKm > 0) ...[
-                  const SizedBox(height: 8),
-                  _buildInfoRow(Icons.radar_rounded, 'Raio de atendimento: ${address.serviceRadiusKm} km'),
-                ],
+                const SizedBox(height: 8),
+                _buildInfoRow(
+                  Icons.radar_rounded,
+                  'Raio de atendimento: ${address?.serviceRadiusKm != null && address!.serviceRadiusKm > 0 ? address.serviceRadiusKm : 25} km',
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-        ],
+        ),
+        const SizedBox(height: 16),
         if (services.isNotEmpty) ...[
           _buildSection(
             title: 'Meus Serviços (${services.length})',
@@ -1286,7 +1351,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSection({required String title, required Widget child}) {
+  Widget _buildSection({required String title, required Widget child, Widget? trailing}) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1297,7 +1362,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              ?trailing,
+            ],
+          ),
           const SizedBox(height: 12),
           const Divider(color: AppColors.cardBorder, height: 1),
           const SizedBox(height: 12),
@@ -1324,6 +1395,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final tiles = isProfessional
         ? [
             (Icons.edit_outlined, 'Editar Perfil Profissional', 'Profissão, bio e serviços', false),
+            (Icons.location_on_outlined, 'Endereço e Raio de Atuação', 'Localização base e raio em km', false),
             (Icons.schedule_outlined, 'Horários de Disponibilidade', 'Dias e horários de atendimento', false),
             (Icons.verified_user_outlined, 'Documentos e Verificação', 'Status de aprovação de identidade', false),
             (Icons.help_outline_rounded, 'Central de Ajuda', 'Dúvidas e suporte', false),
@@ -1362,6 +1434,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _showHelpCenterModal();
                   } else if (title == 'Termos e Privacidade') {
                     _showTermsAndPrivacyModal();
+                  } else if (title == 'Endereço e Raio de Atuação' && _user != null) {
+                    _navigateToEditAddress();
                   } else if (title == 'Editar Perfil Profissional' && _user != null) {
                     final updated = await Navigator.of(context).push<bool>(
                       MaterialPageRoute(

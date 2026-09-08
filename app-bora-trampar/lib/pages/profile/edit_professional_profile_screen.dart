@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +13,7 @@ import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/services/services_repository.dart';
 import '../../repositories/user/user_repository.dart';
+import 'edit_professional_address_screen.dart';
 
 class EditProfessionalProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -43,6 +43,7 @@ class _EditProfessionalProfileScreenState
   int _experienceYears = 0;
   bool _isAvailableNow = true;
   List<ProfessionalServiceItemModel> _services = [];
+  late ProfessionalAddressModel _currentAddress;
 
   bool _isSaving = false;
   bool _hasSavedSuccessfully = false;
@@ -69,6 +70,10 @@ class _EditProfessionalProfileScreenState
     _services = List<ProfessionalServiceItemModel>.from(
       widget.proProfile?.services ?? [],
     );
+    _currentAddress = widget.proProfile?.address ??
+        ProfessionalAddressModel(
+          location: ProfessionalAddressLocationModel.empty(),
+        );
 
     _loadCatalog();
   }
@@ -239,9 +244,7 @@ class _EditProfessionalProfileScreenState
             userId: widget.user.id,
             profession: profession,
             bio: bio,
-            address: ProfessionalAddressModel(
-              location: ProfessionalAddressLocationModel.empty(),
-            ),
+            address: _currentAddress,
           );
 
       final updatedProfile = baseProfile.copyWith(
@@ -250,6 +253,7 @@ class _EditProfessionalProfileScreenState
         experienceYears: _experienceYears,
         isAvailableNow: _isAvailableNow,
         isProfileCompleted: true,
+        address: _currentAddress,
         services: _services,
       );
 
@@ -409,6 +413,13 @@ class _EditProfessionalProfileScreenState
               _buildAvailabilitySwitch(),
               const SizedBox(height: 28),
               _buildSectionTitle(
+                'Endereço & Raio de Atuação',
+                Icons.location_on_outlined,
+              ),
+              const SizedBox(height: 12),
+              _buildAddressSection(),
+              const SizedBox(height: 28),
+              _buildSectionTitle(
                 'Meus Serviços & Preços',
                 Icons.miscellaneous_services_rounded,
               ),
@@ -426,6 +437,125 @@ class _EditProfessionalProfileScreenState
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAddressSection() {
+    final addr = _currentAddress;
+    final hasAddress = addr.street.isNotEmpty ||
+        addr.city.isNotEmpty ||
+        addr.neighborhood.isNotEmpty;
+    final addressText = hasAddress
+        ? [
+            if (addr.street.isNotEmpty)
+              '${addr.street}${addr.number.isNotEmpty ? ', ${addr.number}' : ''}',
+            if (addr.neighborhood.isNotEmpty) addr.neighborhood,
+            [addr.city, addr.state].where((s) => s.isNotEmpty).join(', '),
+          ].where((s) => s.isNotEmpty).join(' - ')
+        : 'Nenhum endereço cadastrado';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.pin_drop_rounded,
+                  color: AppColors.primaryGold,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      addressText,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Raio de atendimento: ${addr.serviceRadiusKm > 0 ? addr.serviceRadiusKm : 25} km',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Divider(color: AppColors.cardBorder, height: 1),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final baseProfile = widget.proProfile ??
+                    ProfileProfessionalModel(
+                      userId: widget.user.id,
+                      profession: _professionController.text.trim(),
+                      bio: _bioController.text.trim(),
+                      address: _currentAddress,
+                    );
+                final updated = await Navigator.of(context).push<dynamic>(
+                  MaterialPageRoute(
+                    builder: (_) => EditProfessionalAddressScreen(
+                      proProfile:
+                          baseProfile.copyWith(address: _currentAddress),
+                    ),
+                  ),
+                );
+                if (updated is ProfileProfessionalModel) {
+                  setState(() {
+                    _currentAddress = updated.address;
+                  });
+                }
+              },
+              icon: const Icon(
+                Icons.edit_location_alt_outlined,
+                size: 18,
+                color: AppColors.primaryGold,
+              ),
+              label: Text(
+                'Alterar Endereço e Raio',
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGold,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primaryGold),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
