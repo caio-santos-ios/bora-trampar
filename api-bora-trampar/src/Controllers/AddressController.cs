@@ -10,6 +10,7 @@ namespace api_bora_trampar.src.Controllers
     [Route("api/addresses")]
     public class AddressController(IAddressService service) : ControllerBase
     {
+        [AllowAnonymous]
         [HttpGet("{zipCode}")]
         public async Task<IActionResult> GetByZipCode(string zipCode)
         {

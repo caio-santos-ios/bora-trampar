@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:brasil_fields/brasil_fields.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +11,7 @@ import '../../core/widgets/primary_button.dart';
 import '../../models/category_model.dart';
 import '../../models/profile_professional_model.dart';
 import '../../models/service_item_model.dart';
+import '../../repositories/address/address_repository.dart';
 import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/services/services_repository.dart';
@@ -157,30 +157,19 @@ class _ProfessionalOnboardingScreenState
     setState(() => _isSearchingCep = true);
 
     try {
-      final dio = Dio();
-      // final response = await dio.get('https://viacep.com.br/ws/$cleanCep/json/');
-      final response = await dio.get(
-        'https://brasilapi.com.br/api/cep/v2/$cleanCep',
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
-
-        if (data['type'] != 'service_error') {
-          setState(() {
-            _streetController.text = data['street'];
-            _neighborhoodController.text = data['neighborhood'];
-
-            _cityController.text = data['city'];
-            _stateController.text = data['state'];
-            _latController.text =
-                data['location']['coordinates']['latitude']?.toString() ?? '0';
-            _longController.text =
-                data['location']['coordinates']['longitude']?.toString() ?? '0';
-            _typeLocationController.text =
-                data['location']['type']?.toString() ?? '';
-          });
-        } else {
+      final address = await AddressRepository().getAddressByCep(cleanCep);
+      if (address != null && mounted) {
+        setState(() {
+          _streetController.text = address.street;
+          _neighborhoodController.text = address.neighborhood;
+          _cityController.text = address.city;
+          _stateController.text = address.state;
+          _latController.text = address.latitude?.toString() ?? '0';
+          _longController.text = address.longitude?.toString() ?? '0';
+          _typeLocationController.text = 'Point';
+        });
+      } else {
+        setState(() {
           _streetController.text = "";
           _neighborhoodController.text = "";
           _cityController.text = "";
@@ -188,7 +177,7 @@ class _ProfessionalOnboardingScreenState
           _latController.text = "0";
           _longController.text = "0";
           _typeLocationController.text = "";
-        }
+        });
       }
     } catch (_) {
     } finally {

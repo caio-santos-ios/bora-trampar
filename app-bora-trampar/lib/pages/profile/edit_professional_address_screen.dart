@@ -1,5 +1,4 @@
 import 'package:brasil_fields/brasil_fields.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/utils/location_helper.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../models/profile_professional_model.dart';
+import '../../repositories/address/address_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 
 class EditProfessionalAddressScreen extends StatefulWidget {
@@ -89,58 +89,32 @@ class _EditProfessionalAddressScreenState
     setState(() => _isSearchingCep = true);
 
     try {
-      final dio = Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 6),
-          receiveTimeout: const Duration(seconds: 6),
-        ),
-      );
+      final address = await AddressRepository().getAddressByCep(cleanCep);
+      if (address != null && mounted) {
+        setState(() {
+          _streetController.text = address.street;
+          _neighborhoodController.text = address.neighborhood;
+          _cityController.text = address.city;
+          _stateController.text = address.state;
 
-      final response = await dio.get(
-        'https://brasilapi.com.br/api/cep/v2/$cleanCep',
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        final data = response.data;
-        if (data is Map && data['type'] != 'service_error') {
-          setState(() {
-            _streetController.text = data['street']?.toString() ?? '';
-            _neighborhoodController.text =
-                data['neighborhood']?.toString() ?? '';
-            _cityController.text = data['city']?.toString() ?? '';
-            _stateController.text = data['state']?.toString() ?? '';
-
-            final loc = data['location'];
-            if (loc is Map && loc['coordinates'] is Map) {
-              final rawLat = double.tryParse(
-                loc['coordinates']['latitude']?.toString() ?? '0',
-              );
-              final rawLng = double.tryParse(
-                loc['coordinates']['longitude']?.toString() ?? '0',
-              );
-              if (rawLat != null &&
-                  rawLng != null &&
-                  rawLat != 0 &&
-                  rawLng != 0) {
-                setState(() {
-                  _latitude = rawLat;
-                  _longitude = rawLng;
-                });
-              }
-              print(_longitude);
-            }
-          });
-          return;
-        }
+          if (address.latitude != null &&
+              address.longitude != null &&
+              address.latitude != 0 &&
+              address.longitude != 0) {
+            _latitude = address.latitude;
+            _longitude = address.longitude;
+          }
+        });
       }
     } catch (_) {
       try {
         final res = await LocationHelper.geocodeAddress(cleanCep);
-        if (res != null) {
+        if (res != null && mounted) {
           setState(() {
             if (_cityController.text.isEmpty) _cityController.text = res.city;
-            if (_stateController.text.isEmpty)
+            if (_stateController.text.isEmpty) {
               _stateController.text = res.state;
+            }
             _latitude = res.latitude;
             _longitude = res.longitude;
           });

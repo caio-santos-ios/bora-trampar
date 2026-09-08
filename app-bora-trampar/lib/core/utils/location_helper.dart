@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:geolocator/geolocator.dart';
+import '../../repositories/address/address_repository.dart';
 
 class LocationResult {
   final double latitude;
@@ -80,26 +81,18 @@ class LocationHelper {
 
       if (cleanCep != null && cleanCep.length == 8) {
         try {
-          final bApiRes = await dio.get('https://brasilapi.com.br/api/cep/v2/$cleanCep');
-          if (bApiRes.statusCode == 200 && bApiRes.data is Map && bApiRes.data['type'] != 'service_error') {
-            final loc = bApiRes.data['location'];
-            final coords = loc is Map ? loc['coordinates'] as Map? : null;
-            final lat = double.tryParse(coords?['latitude']?.toString() ?? '') ?? 0.0;
-            final lon = double.tryParse(coords?['longitude']?.toString() ?? '') ?? 0.0;
-            final street = bApiRes.data['street']?.toString() ?? '';
-            final b = bApiRes.data['neighborhood']?.toString() ?? '';
-            final c = bApiRes.data['city']?.toString() ?? '';
-            final uf = bApiRes.data['state']?.toString() ?? '';
-            final formatted = [street, b, c, uf].where((s) => s.isNotEmpty).join(', ');
-            if (lat != 0.0 && lon != 0.0) {
-              return LocationResult(
-                latitude: lat,
-                longitude: lon,
-                address: formatted.isNotEmpty ? formatted : query,
-                city: c,
-                state: uf,
-              );
-            }
+          final addr = await AddressRepository().getAddressByCep(cleanCep);
+          if (addr != null) {
+            final formatted = [addr.street, addr.neighborhood, addr.city, addr.state]
+                .where((s) => s.isNotEmpty)
+                .join(', ');
+            return LocationResult(
+              latitude: addr.latitude ?? 0.0,
+              longitude: addr.longitude ?? 0.0,
+              address: formatted.isNotEmpty ? formatted : query,
+              city: addr.city,
+              state: addr.state,
+            );
           }
         } catch (_) {}
 
