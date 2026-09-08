@@ -49,11 +49,17 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
         timeStr = match.group(0)!;
       }
 
+      final serviceIds = widget.orderRequest.selectedServices
+          .map((s) => s.id)
+          .where((id) => id.isNotEmpty)
+          .join(';');
+
       final rawList = await _profileRepository.getProfessionalsAvailabilityRaw(
         widget.orderRequest.scheduledDate ?? DateTime.now(),
         timeStr,
         widget.orderRequest.customerLatitude,
         widget.orderRequest.customerLongitude,
+        serviceIds: serviceIds.isNotEmpty ? serviceIds : null,
       );
 
       final List<ProfessionalModel> loadedPros = [];
@@ -62,7 +68,7 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
       for (final item in rawList) {
         final prof = ProfessionalModel.fromJson(item);
         loadedPros.add(prof);
-        final dist = (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
+        final dist = prof.distanceKm ?? (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
         distances[prof.id] = dist;
       }
 
@@ -91,8 +97,8 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
 
     if (_selectedSort == 'Mais próximos') {
       list.sort((a, b) {
-        final distA = _proDistances[a.id] ?? 999999.0;
-        final distB = _proDistances[b.id] ?? 999999.0;
+        final distA = a.distanceKm ?? _proDistances[a.id] ?? 999999.0;
+        final distB = b.distanceKm ?? _proDistances[b.id] ?? 999999.0;
         return distA.compareTo(distB);
       });
     } else if (_selectedSort == 'Menor preço') {
@@ -110,33 +116,34 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
   }
 
   void _onSelectProfessional(ProfessionalModel professional) {
-    final effectivePrice = professional.basePrice > 0
-        ? professional.basePrice
-        : (widget.orderRequest.selectedServices.isNotEmpty &&
-                  widget.orderRequest.selectedServices.first.basePrice > 0
-              ? widget.orderRequest.selectedServices.first.basePrice
-              : 150.0);
+    double effectivePrice = professional.basePrice;
+    if (effectivePrice <= 0.0 && professional.servicesList.isNotEmpty) {
+      final matching = professional.servicesList.firstWhere(
+        (s) => widget.orderRequest.selectedServices.any(
+          (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
+        ),
+        orElse: () => professional.servicesList.firstWhere(
+          (s) => s.price > 0,
+          orElse: () => professional.servicesList.first,
+        ),
+      );
+      if (matching.price > 0) {
+        effectivePrice = matching.price;
+      }
+    }
 
-    final resolvedProf = ProfessionalModel(
-      id: professional.id,
-      name: professional.name,
-      role: professional.role,
-      avatarUrl: professional.avatarUrl,
-      isVerified: professional.isVerified,
-      isAvailable: professional.isAvailable,
-      rating: professional.rating,
-      reviewCount: professional.reviewCount,
-      completedServicesCount: professional.completedServicesCount,
-      highlightBadge: professional.highlightBadge,
+    if (effectivePrice <= 0.0 &&
+        widget.orderRequest.selectedServices.isNotEmpty &&
+        widget.orderRequest.selectedServices.first.basePrice > 0) {
+      effectivePrice = widget.orderRequest.selectedServices.first.basePrice;
+    }
+
+    if (effectivePrice <= 0.0) {
+      effectivePrice = 150.0;
+    }
+
+    final resolvedProf = professional.copyWith(
       basePrice: effectivePrice,
-      arrivalTimeMinutes: professional.arrivalTimeMinutes,
-      sinceYear: professional.sinceYear,
-      responseTime: professional.responseTime,
-      completionRate: professional.completionRate,
-      bio: professional.bio,
-      offeredServices: professional.offeredServices,
-      reviews: professional.reviews,
-      region: professional.region,
     );
 
     widget.orderRequest.selectedProfessional = resolvedProf;
@@ -634,24 +641,42 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
             children: [
               Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: AppColors.cardElevated,
-                    backgroundImage: prof.avatarUrl.isNotEmpty
-                        ? NetworkImage(prof.avatarUrl)
-                        : null,
-                    child: prof.avatarUrl.isEmpty
-                        ? Text(
-                            prof.name.isNotEmpty
-                                ? prof.name[0].toUpperCase()
-                                : 'P',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.cardElevated,
+                    ),
+                    child: ClipOval(
+                      child: prof.avatarUrl.isNotEmpty
+                          ? Image.network(
+                              prof.avatarUrl,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Center(
+                                child: Text(
+                                  prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.primaryGold,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
-                          )
-                        : null,
+                    ),
                   ),
                   if (prof.isAvailable)
                     Positioned(
@@ -751,7 +776,7 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                     ],
                     Builder(
                       builder: (context) {
-                        final dist = _proDistances[prof.id];
+                        final dist = prof.distanceKm ?? _proDistances[prof.id];
                         if (dist != null && dist > 0) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 4),
@@ -859,34 +884,34 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
                       fontSize: 11,
                     ),
                   ),
-                  Text(
-                    'R\$ ${(prof.basePrice > 0 ? prof.basePrice : (widget.orderRequest.selectedServices.isNotEmpty && widget.orderRequest.selectedServices.first.basePrice > 0 ? widget.orderRequest.selectedServices.first.basePrice : 150.0)).toStringAsFixed(2).replaceAll('.', ',')}',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.access_time_rounded,
-                        color: AppColors.primaryGold,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Chega em até\n${prof.arrivalTimeMinutes} min',
+                  Builder(
+                    builder: (context) {
+                      double cardPrice = prof.basePrice;
+                      if (cardPrice <= 0.0 && prof.servicesList.isNotEmpty) {
+                        final matching = prof.servicesList.firstWhere(
+                          (s) => widget.orderRequest.selectedServices.any(
+                            (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
+                          ),
+                          orElse: () => prof.servicesList.firstWhere((s) => s.price > 0, orElse: () => prof.servicesList.first),
+                        );
+                        if (matching.price > 0) cardPrice = matching.price;
+                      }
+                      if (cardPrice <= 0.0 &&
+                          widget.orderRequest.selectedServices.isNotEmpty &&
+                          widget.orderRequest.selectedServices.first.basePrice > 0) {
+                        cardPrice = widget.orderRequest.selectedServices.first.basePrice;
+                      }
+                      if (cardPrice <= 0.0) cardPrice = 150.0;
+
+                      return Text(
+                        'R\$ ${cardPrice.toStringAsFixed(2).replaceAll('.', ',')}',
                         style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
-                          fontSize: 10,
-                          height: 1.2,
+                          color: AppColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
                         ),
-                        textAlign: TextAlign.right,
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ],
               ),

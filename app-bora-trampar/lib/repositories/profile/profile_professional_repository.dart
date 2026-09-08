@@ -88,17 +88,21 @@ class ProfileProfessionalRepository {
     DateTime date,
     String hour,
     double latitude,
-    double longitude,
-  ) async {
+    double longitude, {
+    String? serviceIds,
+  }) async {
     try {
+      final queryParams = <String, dynamic>{
+        'date': date.toIso8601String(),
+        'hour': hour,
+        'latitude': latitude,
+        'longitude': longitude,
+        'serviceIds': serviceIds ?? '',
+      };
+
       final response = await _api.client.get(
         '/api/profile-professionals/professional-availability',
-        queryParameters: {
-          'date': date.toIso8601String(),
-          'hour': hour,
-          'latitude': latitude,
-          'longitude': longitude,
-        },
+        queryParameters: queryParams,
       );
 
       if (response.statusCode == 200 && response.data != null) {
@@ -121,9 +125,16 @@ class ProfileProfessionalRepository {
     DateTime date,
     String hour,
     double latitude,
-    double longitude,
-  ) async {
-    final rawList = await getProfessionalsAvailabilityRaw(date, hour, latitude, longitude);
+    double longitude, {
+    String? serviceIds,
+  }) async {
+    final rawList = await getProfessionalsAvailabilityRaw(
+      date,
+      hour,
+      latitude,
+      longitude,
+      serviceIds: serviceIds,
+    );
     return rawList.map((item) => ProfessionalModel.fromJson(item)).toList();
   }
 

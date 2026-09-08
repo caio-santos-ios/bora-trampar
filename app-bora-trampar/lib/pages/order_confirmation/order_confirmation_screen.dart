@@ -7,7 +7,6 @@ import '../../core/widgets/app_stepper.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../models/order_request_model.dart';
-import '../../models/professional_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/payment/payment_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
@@ -57,26 +56,15 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         if (resolvedPrice > 0 && resolvedPrice != prof.basePrice) {
           if (mounted) {
             setState(() {
-              widget.orderRequest.selectedProfessional = ProfessionalModel(
-                id: prof.id,
-                name: prof.name,
-                role: prof.role,
-                avatarUrl: prof.avatarUrl,
-                isVerified: prof.isVerified,
-                isAvailable: prof.isAvailable,
-                rating: prof.rating,
-                reviewCount: prof.reviewCount,
-                completedServicesCount: prof.completedServicesCount,
-                highlightBadge: prof.highlightBadge,
+              final photoFallback = prof.avatarUrl.isNotEmpty
+                  ? prof.avatarUrl
+                  : (profile.portfolioPhotos.isNotEmpty ? profile.portfolioPhotos.first : prof.avatarUrl);
+
+              widget.orderRequest.selectedProfessional = prof.copyWith(
                 basePrice: resolvedPrice,
-                arrivalTimeMinutes: prof.arrivalTimeMinutes,
-                sinceYear: prof.sinceYear,
-                responseTime: prof.responseTime,
-                completionRate: prof.completionRate,
-                bio: prof.bio,
-                offeredServices: prof.offeredServices,
-                reviews: prof.reviews,
-                region: prof.region,
+                bio: prof.bio.isNotEmpty ? prof.bio : (profile.bio.isNotEmpty ? profile.bio : prof.bio),
+                avatarUrl: photoFallback,
+                servicesList: profile.services.isNotEmpty ? profile.services : prof.servicesList,
               );
             });
           }
@@ -413,24 +401,42 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             children: [
                               Stack(
                                 children: [
-                                  CircleAvatar(
-                                    radius: 28,
-                                    backgroundColor: AppColors.cardElevated,
-                                    backgroundImage: prof.avatarUrl.isNotEmpty
-                                        ? NetworkImage(prof.avatarUrl)
-                                        : null,
-                                    child: prof.avatarUrl.isEmpty
-                                        ? Text(
-                                            prof.name.isNotEmpty
-                                                ? prof.name[0].toUpperCase()
-                                                : 'P',
-                                            style: GoogleFonts.inter(
-                                              color: AppColors.primaryGold,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w700,
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.cardElevated,
+                                    ),
+                                    child: ClipOval(
+                                      child: prof.avatarUrl.isNotEmpty
+                                          ? Image.network(
+                                              prof.avatarUrl,
+                                              width: 56,
+                                              height: 56,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => Center(
+                                                child: Text(
+                                                  prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                                                  style: GoogleFonts.inter(
+                                                    color: AppColors.primaryGold,
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                                                style: GoogleFonts.inter(
+                                                  color: AppColors.primaryGold,
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
                                             ),
-                                          )
-                                        : null,
+                                    ),
                                   ),
                                   Positioned(
                                     bottom: 0,

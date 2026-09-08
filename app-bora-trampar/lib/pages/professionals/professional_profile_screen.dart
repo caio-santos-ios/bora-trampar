@@ -27,15 +27,36 @@ class ProfessionalProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final services = professional.offeredServices.isNotEmpty
-        ? professional.offeredServices
-        : [orderRequest.serviceNamesDisplay];
+    double effectivePrice = professional.basePrice;
+    if (effectivePrice <= 0.0 && professional.servicesList.isNotEmpty) {
+      final matching = professional.servicesList.firstWhere(
+        (s) => orderRequest.selectedServices.any(
+          (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
+        ),
+        orElse: () => professional.servicesList.firstWhere((s) => s.price > 0, orElse: () => professional.servicesList.first),
+      );
+      if (matching.price > 0) {
+        effectivePrice = matching.price;
+      }
+    }
+    if (effectivePrice <= 0.0 &&
+        orderRequest.selectedServices.isNotEmpty &&
+        orderRequest.selectedServices.first.basePrice > 0) {
+      effectivePrice = orderRequest.selectedServices.first.basePrice;
+    }
+    if (effectivePrice <= 0.0) {
+      effectivePrice = 150.0;
+    }
 
-    final effectivePrice = professional.basePrice > 0
-        ? professional.basePrice
-        : (orderRequest.selectedServices.isNotEmpty && orderRequest.selectedServices.first.basePrice > 0
-            ? orderRequest.selectedServices.first.basePrice
-            : 150.0);
+    final services = professional.servicesList.isNotEmpty
+        ? professional.servicesList
+            .map((s) => s.price > 0
+                ? '${s.serviceName} (R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')})'
+                : s.serviceName)
+            .toList()
+        : (professional.offeredServices.isNotEmpty
+            ? professional.offeredServices
+            : [orderRequest.serviceNamesDisplay]);
 
     return Scaffold(
       backgroundColor: AppColors.background,
