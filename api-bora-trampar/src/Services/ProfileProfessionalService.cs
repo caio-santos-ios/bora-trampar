@@ -137,11 +137,14 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
-        
+
         public async Task<ResponseApi<List<dynamic>>> GetProfessionalAvailabilityAsync(DateTime date, string hour, double latitude, double longitude)
         {
             try
             {
+                int diaSemanaIndex = ((int)date.DayOfWeek + 6) % 7;
+                System.Console.WriteLine(diaSemanaIndex);
+
                 List<BsonDocument> pipeline =
                 [
                     new("$geoNear", new BsonDocument
@@ -184,6 +187,60 @@ namespace api_bora_trampar.src.Services
                         {"is_available_now", true},
                         {"user_lookup.role", "Professional"}
                     }),
+
+                    new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$let", new BsonDocument
+                            {
+                                { "vars", new BsonDocument("diaAtual", new BsonDocument("$first",
+                                    new BsonDocument("$filter", new BsonDocument
+                                    {
+                                        { "input", "$working_hours" },
+                                        { "as", "wh" },
+                                        { "cond", new BsonDocument("$eq", new BsonArray { "$$wh.day_of_week", diaSemanaIndex }) }
+                                    })
+                                ))},
+                                { "in", new BsonDocument("$and", new BsonArray
+                                    {
+                                        new BsonDocument("$eq", new BsonArray { "$$diaAtual.is_active", true }),
+                                        new BsonDocument("$lte", new BsonArray { "$$diaAtual.start_hour", hour }),
+                                        new BsonDocument("$gte", new BsonArray { "$$diaAtual.end_hour", hour }),
+                                        new BsonDocument("$or", new BsonArray
+                                            {
+                                                new BsonDocument("$eq", new BsonArray { "$$diaAtual.break_start", BsonNull.Value }),
+                                                new BsonDocument("$lt", new BsonArray { hour, "$$diaAtual.break_start" }),
+                                                new BsonDocument("$gte", new BsonArray { hour, "$$diaAtual.break_end" })
+                                            })
+                                    })
+                                }
+                            })
+                        }
+                    }),
+
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "appointments"},
+                        {"let", new BsonDocument { { "profId", "$user_id" } }},
+                        {"pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match", new BsonDocument("$expr",
+                                    new BsonDocument("$and", new BsonArray
+                                    {
+                                        new BsonDocument("$eq", new BsonArray { "$professional_id", "$$profId" }),
+                                        new BsonDocument("$eq", new BsonArray { "$date", date }),
+                                        new BsonDocument("$eq", new BsonArray { "$hour", hour }),
+                                        new BsonDocument("$eq", new BsonArray { "$status", "confirmed" })
+                                    })
+                                ))
+                            }
+                        },
+                        {"as", "conflitos_agenda"}
+                    }),
+                    new("$match", new BsonDocument
+                    {
+                        { "conflitos_agenda", new BsonDocument("$size", 0) }
+                    }),
+
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -207,230 +264,14 @@ namespace api_bora_trampar.src.Services
                         {"review_count", new BsonDocument("$ifNull", new BsonArray { "$review_count", 0 })},
                         {"completed_services_count", new BsonDocument("$ifNull", new BsonArray { "$completed_services_count", 0 })},
                         {"badges", new BsonDocument("$ifNull", new BsonArray { "$badges", new BsonArray() })},
-                        {"address", 1},
                         {"distanciaKm", 1},
-                        {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })}
+                        {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })},
+                        {"address", 1},
                     }),
                     new("$sort", new BsonDocument { { "distanciaKm", 1 } } )
                 ];
 
-                List<BsonDocument> candidateDocs = await appDbContext.ProfileProfessionals
-                    .Aggregate<BsonDocument>(pipeline)
-                    .ToListAsync();
-
                 var list = await repository.GetAllAsync(pipeline);
-
-                // if (candidateDocs.Count == 0)
-                // {
-                //     return new([], 200, "Profissionais listados com sucesso");
-                // }
-
-                var availableCandidates = candidateDocs
-                    .Where(doc => IsProfessionalWorkingAt(doc, date, hour))
-                    .ToList();
-
-                // if (availableCandidates.Count == 0)
-                // {
-                //     return new([], 200, "Nenhum profissional disponível para o horário informado");
-                // }
-
-                var candidateIds = availableCandidates
-                    .Select(d => d.GetValue("id", "").AsString)
-                    .Where(id => !string.IsNullOrEmpty(id))
-                    .ToList();
-
-                var canceledStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                {
-                    "cancelled", "canceled", "declined", "cancelado", "recusado"
-                };
-
-                var searchStart = date.Date.AddDays(-1);
-                var searchEnd = date.Date.AddDays(2);
-
-                var existingAppointments = await appDbContext.Appointments
-                    .Find(a => !a.Deleted
-                            && candidateIds.Contains(a.ProfissionalId)
-                            && a.Date >= searchStart
-                            && a.Date < searchEnd)
-                    .ToListAsync();
-
-                var busyProfessionalIds = new HashSet<string>();
-                foreach (var apt in existingAppointments)
-                {
-                    if (string.IsNullOrEmpty(apt.ProfissionalId)) continue;
-                    if (canceledStatuses.Contains(apt.Status ?? "")) continue;
-
-                    bool isSameDay = (apt.Date.Year == date.Year && apt.Date.Month == date.Month && apt.Date.Day == date.Day)
-                                  || (apt.Date.ToLocalTime().Year == date.Year && apt.Date.ToLocalTime().Month == date.Month && apt.Date.ToLocalTime().Day == date.Day);
-
-                    if (!isSameDay) continue;
-
-                    if (!string.IsNullOrWhiteSpace(hour))
-                    {
-                        if (string.Equals(apt.Hour?.Trim(), hour.Trim(), StringComparison.OrdinalIgnoreCase))
-                        {
-                            busyProfessionalIds.Add(apt.ProfissionalId);
-                        }
-                        else if (TryParseTime(apt.Hour, out var aptTime) && TryParseTime(hour, out var reqTime))
-                        {
-                            if (Math.Abs((aptTime - reqTime).TotalMinutes) < 60)
-                            {
-                                busyProfessionalIds.Add(apt.ProfissionalId);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        busyProfessionalIds.Add(apt.ProfissionalId);
-                    }
-                }
-
-                List<dynamic> users = [];
-                foreach (var doc in availableCandidates)
-                {
-                    string profId = doc.GetValue("id", "").AsString;
-                    if (busyProfessionalIds.Contains(profId))
-                        continue;
-
-                    double dist = 0.0;
-                    if (doc.Contains("distanciaKm"))
-                    {
-                        var distVal = doc["distanciaKm"];
-                        dist = distVal.IsDouble ? distVal.AsDouble : distVal.ToDouble();
-                    }
-
-                    string avatarUrl = doc.Contains("avatarUrl") && !doc["avatarUrl"].IsBsonNull
-                        ? doc["avatarUrl"].AsString
-                        : "";
-
-                    string bio = doc.Contains("bio") && !doc["bio"].IsBsonNull
-                        ? doc["bio"].AsString
-                        : "";
-
-                    decimal basePrice = 0m;
-                    List<dynamic> servicesList = [];
-                    if (doc.Contains("services") && doc["services"].IsBsonArray)
-                    {
-                        foreach (var s in doc["services"].AsBsonArray)
-                        {
-                            if (s.IsBsonDocument)
-                            {
-                                var sDoc = s.AsBsonDocument;
-                                decimal sPrice = 0m;
-                                if (sDoc.Contains("price"))
-                                {
-                                    var pVal = sDoc["price"];
-                                    if (pVal.IsDecimal128) sPrice = (decimal)pVal.AsDecimal128;
-                                    else if (pVal.IsDouble) sPrice = (decimal)pVal.AsDouble;
-                                    else if (pVal.IsInt32) sPrice = pVal.AsInt32;
-                                    else if (pVal.IsInt64) sPrice = pVal.AsInt64;
-                                }
-
-                                string pType = sDoc.GetValue("price_type", sDoc.GetValue("priceType", "Diária")).AsString;
-                                string sName = sDoc.GetValue("service_name", sDoc.GetValue("serviceName", "")).AsString;
-                                string catId = sDoc.GetValue("category_id", sDoc.GetValue("categoryId", "")).AsString;
-                                string catName = sDoc.GetValue("category_name", sDoc.GetValue("categoryName", "")).AsString;
-                                string servId = sDoc.GetValue("service_id", sDoc.GetValue("serviceId", "")).AsString;
-
-                                servicesList.Add(new
-                                {
-                                    serviceId = servId,
-                                    serviceName = sName,
-                                    categoryId = catId,
-                                    categoryName = catName,
-                                    price = sPrice,
-                                    priceType = pType
-                                });
-
-                                if (basePrice == 0m && sPrice > 0m)
-                                {
-                                    basePrice = sPrice;
-                                }
-                                else if (string.Equals(pType, "Diária", StringComparison.OrdinalIgnoreCase) && sPrice > 0m)
-                                {
-                                    basePrice = sPrice;
-                                }
-                            }
-                        }
-                    }
-
-                    double rating = 5.0;
-                    if (doc.Contains("rating") && !doc["rating"].IsBsonNull)
-                    {
-                        var rVal = doc["rating"];
-                        rating = rVal.IsDouble ? rVal.AsDouble : (rVal.IsInt32 ? rVal.AsInt32 : (rVal.IsDecimal128 ? (double)rVal.AsDecimal128 : 5.0));
-                    }
-
-                    int reviewCount = 0;
-                    if (doc.Contains("review_count") && !doc["review_count"].IsBsonNull)
-                    {
-                        var rcVal = doc["review_count"];
-                        reviewCount = rcVal.IsInt32 ? rcVal.AsInt32 : (rcVal.IsInt64 ? (int)rcVal.AsInt64 : 0);
-                    }
-
-                    int completedServicesCount = 0;
-                    if (doc.Contains("completed_services_count") && !doc["completed_services_count"].IsBsonNull)
-                    {
-                        var csVal = doc["completed_services_count"];
-                        completedServicesCount = csVal.IsInt32 ? csVal.AsInt32 : (csVal.IsInt64 ? (int)csVal.AsInt64 : 0);
-                    }
-
-                    string region = "";
-                    string city = "";
-                    string state = "";
-                    string addressComplete = "";
-                    dynamic location = new { lat = 0, lon = 0 };
-                    if (doc.Contains("address") && doc["address"].IsBsonDocument)
-                    {
-                        var addrDoc = doc["address"].AsBsonDocument;
-                        city = addrDoc.GetValue("city", "").AsString;
-                        state = addrDoc.GetValue("state", "").AsString;
-                        string street = addrDoc.GetValue("street", "").AsString;
-                        string neighborhood = addrDoc.GetValue("neighborhood", "").AsString;
-                        string zip_code = addrDoc.GetValue("zip_code", "").AsString;
-                        addressComplete = $"{zip_code} - {street}, {neighborhood} - {city}/{state}";
-
-                        BsonArray bsonArray = addrDoc["location"]["coordinates"].AsBsonArray;
-                        location = new { lon = bsonArray[0].AsDouble, lat = bsonArray[1].AsDouble };
-
-                        if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(state))
-                            region = $"{city} - {state}";
-                        else if (!string.IsNullOrEmpty(city))
-                            region = city;
-                    }
-
-                    string badge = "";
-                    if (doc.Contains("badges") && doc["badges"].IsBsonArray && doc["badges"].AsBsonArray.Count > 0)
-                    {
-                        badge = doc["badges"].AsBsonArray[0].AsString;
-                    }
-
-                    users.Add(new
-                    {
-                        id = profId,
-                        name = doc.GetValue("name", "").AsString,
-                        // profession = doc.GetValue("profession", "").AsString,
-                        // avatarUrl,
-                        address = new
-                        {
-                            location,
-                            addressComplete
-                        },
-                        // photo = avatarUrl,
-                        // role = doc.GetValue("role", "").AsString,
-                        distanciaKm = Math.Round(dist, 1),
-                        // isAvailable = true,
-                        // isVerified = true,
-                        // rating,
-                        // reviewCount,
-                        // completedServicesCount,
-                        // region,
-                        // highlightBadge = badge,
-                        // bio,
-                        // basePrice,
-                        // services = servicesList,
-                    });
-                }
 
                 return new(list, 200, "Profissionais listados com sucesso");
             }
