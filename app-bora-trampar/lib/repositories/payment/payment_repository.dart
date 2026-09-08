@@ -10,10 +10,8 @@ class PaymentRepository {
       final response = await _api.client.get('/api/payments');
 
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
-        if (res is Map && res['data'] != null) {
-          res = res['data'];
-        }
+        dynamic res = response.data['result']['data'];
+        
         if (res is List) {
           return res.map((item) => PaymentModel.fromJson(item as Map<String, dynamic>)).toList();
         }
@@ -21,7 +19,7 @@ class PaymentRepository {
       return [];
     } on DioException {
       return [];
-    } catch (_) {
+    } catch (e) {
       return [];
     }
   }

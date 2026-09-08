@@ -56,6 +56,7 @@ class _FinancialHistoryScreenState extends State<FinancialHistoryScreen> {
 
   double get _totalRevenue {
     if (_isProfessional) {
+      print(_appointments[0].status);
       return _appointments
           .where((a) {
             final s = a.status.toLowerCase();

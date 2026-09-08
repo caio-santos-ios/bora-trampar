@@ -4,13 +4,15 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Notification;
 using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class PaymentService(IPaymentRepository repository, IAppointmentService appointmentService, IUserService userService, IAsaasService asaasService) : IPaymentService
+    public class PaymentService(IPaymentRepository repository, IAppointmentService appointmentService, IUserService userService, IAsaasService asaasService, INotificationService notificationService) : IPaymentService
     {
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
             try
@@ -28,7 +30,7 @@ namespace api_bora_trampar.src.Services
                         {"appointment_id", 1},
                         {"method_payment", 1},
                         {"date", 1},
-                        {"value", 1},
+                        {"value", new BsonDocument("$toDouble", "$value")},
                         {"status", 1},
                         {"asaas_id", 1},
                         {"qr_code_image", 1},
@@ -62,8 +64,6 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-
-        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
 
         public async Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request)
         {
@@ -120,7 +120,7 @@ namespace api_bora_trampar.src.Services
                 }
 
                 ResponseApi<User?> user = await userService.GetByIdAsync(userId);
-                
+
                 if (user?.Data is null) return new(null, 400, "Cliente não encontrado");
 
                 string asaasCustomerId = await asaasService.GetOrCreateCustomerAsync(user.Data.Name, user.Data.Document, user.Data.Email, user.Data.WhatsApp);
@@ -180,7 +180,7 @@ namespace api_bora_trampar.src.Services
 
                 if (!isReceived)
                 {
-                    return new(payment, 400, "O pagamento via PIX ainda não foi identificado pelo Asaas. Se você já realizou o pagamento ou simulou no sandbox, aguarde alguns segundos e tente novamente.");
+                    return new(payment, 400, "O pagamento via PIX ainda não foi identificado. Se você já realizou o pagamento, aguarde alguns segundos e tente novamente.");
                 }
 
                 payment.Status = "RECEIVED";
@@ -199,6 +199,24 @@ namespace api_bora_trampar.src.Services
                         appointment.Data.UpdatedAt = DateTime.UtcNow;
                         UpdateAppointmentRequest app = ObjectMapper.Map<Appointment, UpdateAppointmentRequest>(appointment.Data);
                         await appointmentService.UpdateAsync(app);
+
+                        if (!string.IsNullOrWhiteSpace(appointment.Data.ProfissionalId))
+                        {
+                            string message = "Você recebeu uma nova solicitação de agendamento.";
+
+                            CreateNotificationRequest notification = new()
+                            {
+                                UserId = appointment.Data.ProfissionalId,
+                                Title = "Novo Agendamento Recebido!",
+                                Message = message,
+                                Type = Models.Enums.NotificationTypeEnum.Service,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            };
+
+                            await notificationService.CreateAsync(notification);
+                        }
                     }
                 }
 

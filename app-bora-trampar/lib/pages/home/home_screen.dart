@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'package:app_bora_trampar/core/services/util_service.dart';
+import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -36,10 +39,10 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final CategoryRepository _categoryRepo = CategoryRepository();
-  final ProfileProfessionalRepository _profileRepo = ProfileProfessionalRepository();
-  final AppointmentRepository _appointmentRepo = AppointmentRepository();
-  final UserRepository _userRepo = UserRepository();
+  final _categoryRepo = CategoryRepository();
+  final _profileRepo = ProfileProfessionalRepository();
+  final _appointmentRepo = AppointmentRepository();
+  final _userRepo = UserRepository();
 
   UserModel? _user;
   ProfileProfessionalModel? _profile;
@@ -47,6 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<AppointmentModel> _appointments = [];
   List<ProfessionalModel> _nearbyPros = [];
   bool _isLoading = true;
+  bool _isStartLoading = true;
   bool _isAvailable = true;
   bool _showBalance = true;
   String _customerSearchQuery = '';
@@ -121,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          value ? 'Você está ONLINE para receber chamados!' : 'Você entrou em PAUSA.',
+          value
+              ? 'Você está ONLINE para receber chamados!'
+              : 'Você entrou em PAUSA.',
           style: GoogleFonts.inter(
             color: value ? AppColors.textDark : Colors.white,
             fontWeight: FontWeight.w700,
@@ -146,7 +152,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
     final name = customerName ?? 'Cliente';
-    final uri = Uri.parse('https://wa.me/55$cleanPhone?text=Olá%20$name,%20sou%20o%20profissional%20do%20Bora%20Trampar!');
+    final uri = Uri.parse(
+      'https://wa.me/55$cleanPhone?text=Olá%20$name,%20sou%20o%20profissional%20do%20Bora%20Trampar!',
+    );
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
@@ -171,7 +179,9 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}',
+    );
     try {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } catch (_) {
@@ -182,6 +192,40 @@ class _HomeScreenState extends State<HomeScreen> {
           backgroundColor: AppColors.errorRed,
         ),
       );
+    }
+  }
+
+  Future<void> _startService(String id) async {
+    try {
+      setState(() {
+        _isStartLoading = true;
+      });
+      await _appointmentRepo.startAppointment(id);
+      if (mounted) Toastfy.show(context, "Serviço iniciado!", "success");
+    } on DioException catch (err) {
+      if (mounted) UtilService.normalizeError(context, err);
+    } finally {
+      setState(() {
+        _isStartLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _finishService(String id) async {
+    try {
+      setState(() {
+        _isStartLoading = true;
+      });
+      await _appointmentRepo.finishAppointment(id);
+      if (mounted) Toastfy.show(context, "Serviço finalizado!", "success");
+
+      await _loadData();
+    } on DioException catch (err) {
+      if (mounted) UtilService.normalizeError(context, err);
+    } finally {
+      setState(() {
+        _isStartLoading = false;
+      });
     }
   }
 
@@ -207,10 +251,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Meus Serviços & Preços',
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.textMuted,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -222,7 +273,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
                         'Nenhum serviço cadastrado ainda no seu perfil.',
-                        style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 14),
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   )
@@ -245,19 +299,30 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 Text(
                                   s.serviceName,
-                                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   s.categoryName,
-                                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                           Text(
                             'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')} / ${s.priceType}',
-                            style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryGold),
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primaryGold,
+                            ),
                           ),
                         ],
                       ),
@@ -298,21 +363,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Icon(Icons.qr_code_2_rounded, size: 56, color: AppColors.primaryGold),
+                const Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 56,
+                  color: AppColors.primaryGold,
+                ),
                 const SizedBox(height: 14),
                 Text(
                   'Divulgue seu Perfil Bora Trampar',
-                  style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Compartilhe seu link exclusivo com clientes para receber solicitações diretas com pagamento seguro.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.cardElevated,
                     borderRadius: BorderRadius.circular(12),
@@ -323,18 +403,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           link,
-                          style: GoogleFonts.inter(color: AppColors.primaryGoldLight, fontSize: 13, fontWeight: FontWeight.w600),
+                          style: GoogleFonts.inter(
+                            color: AppColors.primaryGoldLight,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.copy_rounded, color: AppColors.primaryGold, size: 20),
+                        icon: const Icon(
+                          Icons.copy_rounded,
+                          color: AppColors.primaryGold,
+                          size: 20,
+                        ),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: link));
                           Navigator.pop(context);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Link do perfil copiado com sucesso!'),
+                              content: Text(
+                                'Link do perfil copiado com sucesso!',
+                              ),
                               backgroundColor: AppColors.primaryGold,
                             ),
                           );
@@ -378,7 +468,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(color: AppColors.primaryGold),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryGold,
+                    ),
                   ),
                 )
               else if (isCustomer)
@@ -407,10 +499,7 @@ class _HomeScreenState extends State<HomeScreen> {
         gradient: const RadialGradient(
           center: Alignment(0.8, -0.6),
           radius: 1.2,
-          colors: [
-            Color(0xFF2B2514),
-            Color(0xFF141414),
-          ],
+          colors: [Color(0xFF2B2514), Color(0xFF141414)],
         ),
       ),
       child: Column(
@@ -436,9 +525,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (!isCustomer && (_profile?.identityVerificationStatus.toLowerCase() == 'approved')) ...[
+                        if (!isCustomer &&
+                            (_profile?.identityVerificationStatus
+                                    .toLowerCase() ==
+                                'approved')) ...[
                           const SizedBox(width: 6),
-                          const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 20),
+                          const Icon(
+                            Icons.verified_rounded,
+                            color: AppColors.primaryGold,
+                            size: 20,
+                          ),
                         ],
                       ],
                     ),
@@ -446,7 +542,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       isCustomer
                           ? 'Encontre profissionais de confiança para sua diária'
-                          : (_profile?.profession.isNotEmpty == true ? _profile!.profession : 'Profissional'),
+                          : (_profile?.profession.isNotEmpty == true
+                                ? _profile!.profession
+                                : 'Profissional'),
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: AppColors.textSecondary,
@@ -457,11 +555,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primaryGold.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.primaryGold.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Text(
                   isCustomer ? 'Cliente' : 'Profissional',
@@ -487,20 +590,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: _isAvailable ? AppColors.success : AppColors.textMuted,
+                        color: _isAvailable
+                            ? AppColors.success
+                            : AppColors.textMuted,
                         shape: BoxShape.circle,
                         boxShadow: _isAvailable
-                            ? [BoxShadow(color: AppColors.success.withValues(alpha: 0.6), blurRadius: 6, spreadRadius: 1)]
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.success.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                ),
+                              ]
                             : null,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _isAvailable ? 'Disponível para novos trampos' : 'Em Pausa / Ocupado',
+                      _isAvailable
+                          ? 'Disponível para novos trampos'
+                          : 'Em Pausa / Ocupado',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: _isAvailable ? AppColors.success : AppColors.textMuted,
+                        color: _isAvailable
+                            ? AppColors.success
+                            : AppColors.textMuted,
                       ),
                     ),
                   ],
@@ -518,12 +635,19 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.primaryGold),
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 14,
+                    color: AppColors.primaryGold,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       'Atendendo em até $radius km • $city, $state',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -540,7 +664,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final now = DateTime.now();
     final completedAppointments = _appointments.where((a) {
       final s = a.status.toLowerCase();
-      return s == 'completed' || s == 'finished' || s == 'confirmed' || s == 'paid';
+      return s == 'completed' ||
+          s == 'finished' ||
+          s == 'confirmed' ||
+          s == 'paid';
     }).toList();
 
     final monthAppointments = completedAppointments.where((a) {
@@ -548,23 +675,40 @@ class _HomeScreenState extends State<HomeScreen> {
     }).toList();
 
     final todayAppointments = completedAppointments.where((a) {
-      return a.date.day == now.day && a.date.month == now.month && a.date.year == now.year;
+      return a.date.day == now.day &&
+          a.date.month == now.month &&
+          a.date.year == now.year;
     }).toList();
 
-    final monthRevenue = monthAppointments.fold<double>(0.0, (sum, a) => sum + (a.price ?? 0.0));
-    final todayRevenue = todayAppointments.fold<double>(0.0, (sum, a) => sum + (a.price ?? 0.0));
+    final monthRevenue = monthAppointments.fold<double>(
+      0.0,
+      (sum, a) => sum + (a.price ?? 0.0),
+    );
+    final todayRevenue = todayAppointments.fold<double>(
+      0.0,
+      (sum, a) => sum + (a.price ?? 0.0),
+    );
     final completedCount = completedAppointments.length;
 
     final pendingRequests = _appointments.where((a) {
-      final isForMe = _user == null ||
+      final isForMe =
+          _user == null ||
           a.profissionalId.isEmpty ||
           a.profissionalId == 'prof_default' ||
-          a.profissionalId.trim().toLowerCase() == _user!.id.trim().toLowerCase() ||
-          (_profile != null && _profile!.id != null && a.profissionalId.trim().toLowerCase() == _profile!.id!.trim().toLowerCase());
+          a.profissionalId.trim().toLowerCase() ==
+              _user!.id.trim().toLowerCase() ||
+          (_profile != null &&
+              _profile!.id != null &&
+              a.profissionalId.trim().toLowerCase() ==
+                  _profile!.id!.trim().toLowerCase());
       if (!isForMe) return false;
 
       final s = a.status.toLowerCase();
-      return (s.contains('pending') || s.contains('request') || s.contains('analysis') || s.contains('aguardando') || s == 'paid') &&
+      return (s.contains('pending') ||
+              s.contains('request') ||
+              s.contains('analysis') ||
+              s.contains('aguardando') ||
+              s == 'paid') &&
           s != 'accepted' &&
           s != 'confirmed' &&
           s != 'declined' &&
@@ -574,11 +718,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final activeAppointments = _appointments.where((a) {
       final s = a.status.toLowerCase();
-      return s == 'confirmed' || s == 'paid' || s == 'in_progress' || s == 'accepted';
+      return s == 'confirmed' ||
+          s == 'paid' ||
+          s == 'in_progress' ||
+          s == 'accepted';
     }).toList();
 
     activeAppointments.sort((a, b) => a.date.compareTo(b.date));
-    final nextJob = activeAppointments.isNotEmpty ? activeAppointments.first : null;
+    final nextJob = activeAppointments.isNotEmpty
+        ? activeAppointments.first
+        : null;
+
+    final startedAppointments = _appointments
+        .where((e) => e.status == "StartService")
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -587,17 +740,27 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 24),
         _buildNextJobSection(nextJob),
         const SizedBox(height: 24),
-        _buildPendingRequestsSection(pendingRequests),
+        if (startedAppointments.isEmpty)
+          _buildPendingRequestsSection(pendingRequests),
+        const SizedBox(height: 24),
+        if (startedAppointments.isNotEmpty)
+          _buildStartSection(startedAppointments),
         const SizedBox(height: 24),
         _buildQuickActionsSection(),
       ],
     );
   }
 
-  Widget _buildFinancialSummaryCard(double monthRevenue, double todayRevenue, int completedCount) {
+  Widget _buildFinancialSummaryCard(
+    double monthRevenue,
+    double todayRevenue,
+    int completedCount,
+  ) {
     final rating = _profile?.rating ?? 0.0;
     final reviewCount = _profile?.reviewCount ?? 0;
-    final ratingText = rating > 0 ? rating.toStringAsFixed(1) : 'Sem avaliações';
+    final ratingText = rating > 0
+        ? rating.toStringAsFixed(1)
+        : 'Sem avaliações';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -614,7 +777,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primaryGold, size: 18),
+                  const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: AppColors.primaryGold,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     'Resumo de Ganhos',
@@ -628,7 +795,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               IconButton(
                 icon: Icon(
-                  _showBalance ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _showBalance
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: AppColors.textMuted,
                   size: 20,
                 ),
@@ -647,11 +816,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Ganhos do Mês',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _showBalance ? 'R\$ ${monthRevenue.toStringAsFixed(2).replaceAll('.', ',')}' : '••••••••',
+                      _showBalance
+                          ? 'R\$ ${monthRevenue.toStringAsFixed(2).replaceAll('.', ',')}'
+                          : '••••••••',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -669,11 +843,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       'Hoje',
-                      style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _showBalance ? 'R\$ ${todayRevenue.toStringAsFixed(2).replaceAll('.', ',')}' : '••••••••',
+                      _showBalance
+                          ? 'R\$ ${todayRevenue.toStringAsFixed(2).replaceAll('.', ',')}'
+                          : '••••••••',
                       style: GoogleFonts.inter(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -777,13 +956,21 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               'Próximo Trampo',
-              style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             GestureDetector(
               onTap: widget.onNavigateToSchedule,
               child: Text(
                 'Ver agenda completa',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryGold),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryGold,
+                ),
               ),
             ),
           ],
@@ -804,37 +991,63 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.success.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         '${DateFormat('dd/MM').format(nextJob.date)}${nextJob.hour.isNotEmpty ? " • ${nextJob.hour}" : ""}',
-                        style: GoogleFonts.inter(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.inter(
+                          color: AppColors.success,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     if (nextJob.price != null && nextJob.price! > 0)
                       Text(
                         'R\$ ${nextJob.price!.toStringAsFixed(2).replaceAll('.', ',')}',
-                        style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 16, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.inter(
+                          color: AppColors.primaryGold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  nextJob.serviceName ?? nextJob.categoryName ?? 'Serviço Agendado',
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  nextJob.serviceName ??
+                      nextJob.categoryName ??
+                      'Serviço Agendado',
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                if (nextJob.customerName != null && nextJob.customerName!.isNotEmpty) ...[
+                if (nextJob.customerName != null &&
+                    nextJob.customerName!.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded, size: 15, color: AppColors.textMuted),
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        size: 15,
+                        color: AppColors.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'Cliente: ${nextJob.customerName}',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -843,12 +1056,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 15, color: AppColors.textMuted),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        size: 15,
+                        color: AppColors.textMuted,
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
                           nextJob.address!,
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.textMuted,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -863,31 +1083,52 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () => _openMaps(nextJob.address),
-                          icon: const Icon(Icons.directions_rounded, color: AppColors.primaryGold, size: 16),
+                          icon: const Icon(
+                            Icons.directions_rounded,
+                            color: AppColors.primaryGold,
+                            size: 16,
+                          ),
                           label: Text(
                             'Rota Maps',
-                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700, fontSize: 12),
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
                           ),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.primaryGold),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            side: const BorderSide(
+                              color: AppColors.primaryGold,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                         ),
                       ),
-                    if (nextJob.address != null && nextJob.address!.isNotEmpty)
-                      const SizedBox(width: 10),
+                    if (nextJob.status == "Accepted") const SizedBox(width: 10),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () => _openWhatsApp('', nextJob.customerName),
-                        icon: const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.textDark, size: 16),
+                        onPressed: () => _startService(nextJob.id),
+                        icon: const Icon(
+                          Icons.play_arrow,
+                          color: AppColors.textDark,
+                          size: 16,
+                        ),
                         label: Text(
-                          'WhatsApp',
-                          style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w800, fontSize: 12),
+                          'Inciar Serviço',
+                          style: GoogleFonts.inter(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
                         ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
@@ -913,7 +1154,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     shape: BoxShape.circle,
                     color: AppColors.primaryGold.withValues(alpha: 0.12),
                   ),
-                  child: const Icon(Icons.radar_rounded, color: AppColors.primaryGold, size: 26),
+                  child: const Icon(
+                    Icons.radar_rounded,
+                    color: AppColors.primaryGold,
+                    size: 26,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -922,12 +1167,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         'Nenhum trampo agendado',
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Mantenha seu status Online para receber chamados de clientes.',
-                        style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
@@ -949,12 +1201,20 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Text(
               'Solicitações Recebidas (${requests.length})',
-              style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
             ),
             if (requests.isNotEmpty)
               Text(
                 'Novos chamados',
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.primaryGold, fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
           ],
         ),
@@ -970,7 +1230,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Center(
               child: Text(
                 'Nenhuma solicitação pendente no momento.',
-                style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           )
@@ -985,7 +1248,9 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(
                 color: AppColors.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.primaryGold.withValues(alpha: 0.3),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -995,28 +1260,44 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          req.serviceName ?? req.categoryName ?? 'Serviço Solicitado',
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          req.serviceName ??
+                              req.categoryName ??
+                              'Serviço Solicitado',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (req.price != null && req.price! > 0)
                         Text(
                           'R\$ ${req.price!.toStringAsFixed(2).replaceAll('.', ',')}',
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.primaryGold),
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryGold,
+                          ),
                         ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Text(
                     '${req.customerName != null ? "Cliente: ${req.customerName} • " : ""}Data: $dateStr$hourStr',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   if (req.address != null && req.address!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
                       'Local: ${req.address}',
-                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
                   const SizedBox(height: 14),
@@ -1025,7 +1306,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () async {
-                            final success = await _appointmentRepo.declineAppointment(req.id);
+                            final success = await _appointmentRepo
+                                .declineAppointment(req.id);
                             if (success && mounted) {
                               setState(() {
                                 _appointments = _appointments.map((a) {
@@ -1056,12 +1338,18 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.cardBorder),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: Text(
                             'Recusar',
-                            style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(
+                              color: AppColors.textMuted,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
@@ -1069,7 +1357,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
-                            final success = await _appointmentRepo.acceptAppointment(req.id);
+                            final success = await _appointmentRepo
+                                .acceptAppointment(req.id);
                             if (success && mounted) {
                               setState(() {
                                 _appointments = _appointments.map((a) {
@@ -1098,7 +1387,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               _loadData();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Trampo aceito com sucesso! Verifique na sua Agenda.'),
+                                  content: Text(
+                                    'Trampo aceito com sucesso! Verifique na sua Agenda.',
+                                  ),
                                   backgroundColor: AppColors.primaryGold,
                                 ),
                               );
@@ -1107,12 +1398,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
                             foregroundColor: AppColors.textDark,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: Text(
                             'Aceitar Trampo',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800),
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
@@ -1126,13 +1422,131 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildStartSection(List<AppointmentModel> requests) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Serviço em andamento',
+              style: GoogleFonts.inter(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ...requests.take(3).map((req) {
+          final dateStr = DateFormat('dd/MM/yyyy').format(req.date);
+          final hourStr = req.hour.isNotEmpty ? ' • ${req.hour}' : '';
+
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryGold.withValues(alpha: 0.3),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        req.serviceName ??
+                            req.categoryName ??
+                            'Serviço Solicitado',
+                        style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (req.price != null && req.price! > 0)
+                      Text(
+                        'R\$ ${req.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryGold,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${req.customerName != null ? "Cliente: ${req.customerName} • " : ""}Data: $dateStr$hourStr',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (req.address != null && req.address!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Local: ${req.address}',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _finishService(req.id);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: AppColors.textDark,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: Text(
+                          'Finalizar Trampo',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildQuickActionsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Atalhos do Profissional',
-          style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          style: GoogleFonts.inter(
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
         ),
         const SizedBox(height: 12),
         GridView.count(
@@ -1206,11 +1620,18 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
@@ -1223,7 +1644,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCustomerView() {
     final filteredCategories = _customerSearchQuery.isEmpty
         ? _categories
-        : _categories.where((c) => c.title.toLowerCase().contains(_customerSearchQuery.toLowerCase())).toList();
+        : _categories
+              .where(
+                (c) => c.title.toLowerCase().contains(
+                  _customerSearchQuery.toLowerCase(),
+                ),
+              )
+              .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1236,12 +1663,23 @@ class _HomeScreenState extends State<HomeScreen> {
             border: Border.all(color: AppColors.inputBorder),
           ),
           child: TextField(
-            style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+            style: GoogleFonts.inter(
+              color: AppColors.textPrimary,
+              fontSize: 14,
+            ),
             onChanged: (v) => setState(() => _customerSearchQuery = v),
             decoration: InputDecoration(
-              icon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 22),
-              hintText: 'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
-              hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+              icon: const Icon(
+                Icons.search_rounded,
+                color: AppColors.textMuted,
+                size: 22,
+              ),
+              hintText:
+                  'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
+              hintStyle: GoogleFonts.inter(
+                color: AppColors.textMuted,
+                fontSize: 13,
+              ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
             ),
@@ -1264,7 +1702,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CategorySelectionScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const CategorySelectionScreen(),
+                    ),
                   );
                 },
                 child: Text(
@@ -1336,7 +1776,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: const Color(0xFF1F1C12),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(cat.icon, color: AppColors.primaryGold, size: 22),
+                        child: Icon(
+                          cat.icon,
+                          color: AppColors.primaryGold,
+                          size: 22,
+                        ),
                       ),
                       Text(
                         cat.title,
@@ -1370,7 +1814,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   shape: BoxShape.circle,
                   color: Color(0xFF1E1A10),
                 ),
-                child: const Icon(Icons.add_task_rounded, color: AppColors.primaryGold, size: 26),
+                child: const Icon(
+                  Icons.add_task_rounded,
+                  color: AppColors.primaryGold,
+                  size: 26,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1397,11 +1845,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.primaryGold, size: 18),
+                icon: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: AppColors.primaryGold,
+                  size: 18,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const CategorySelectionScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const CategorySelectionScreen(),
+                    ),
                   );
                 },
               ),
@@ -1433,11 +1887,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.cardElevated,
-                    backgroundImage: pro.avatarUrl.isNotEmpty ? NetworkImage(pro.avatarUrl) : null,
+                    backgroundImage: pro.avatarUrl.isNotEmpty
+                        ? NetworkImage(pro.avatarUrl)
+                        : null,
                     child: pro.avatarUrl.isEmpty
                         ? Text(
                             pro.name.isNotEmpty ? pro.name[0] : 'P',
-                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontWeight: FontWeight.w700,
+                            ),
                           )
                         : null,
                   ),
@@ -1448,26 +1907,46 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Text(
                           pro.name,
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           pro.role,
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: AppColors.primaryGold,
+                              size: 14,
+                            ),
                             const SizedBox(width: 2),
                             Text(
-                              pro.rating > 0 ? pro.rating.toStringAsFixed(1) : '--',
-                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                              pro.rating > 0
+                                  ? pro.rating.toStringAsFixed(1)
+                                  : '--',
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               '${pro.completedServicesCount} diárias',
-                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                              style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: AppColors.textMuted,
+                              ),
                             ),
                           ],
                         ),
@@ -1482,7 +1961,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           builder: (_) => ProfessionalProfileScreen(
                             professional: pro,
                             orderRequest: OrderRequestModel(
-                              selectedCategory: _categories.isNotEmpty ? _categories.first : null,
+                              selectedCategory: _categories.isNotEmpty
+                                  ? _categories.first
+                                  : null,
                             ),
                           ),
                         ),
@@ -1491,13 +1972,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: AppColors.textDark,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       minimumSize: Size.zero,
                     ),
                     child: Text(
                       'Ver Perfil',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],

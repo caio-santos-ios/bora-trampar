@@ -49,7 +49,6 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPut("{id}/accept")]
         public async Task<IActionResult> Accept(string id)
         {
@@ -58,12 +57,27 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
-        [AllowAnonymous]
         [HttpPut("{id}/decline")]
         public async Task<IActionResult> Decline(string id)
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
             ResponseApi<Appointment?> response = await service.DeclineAsync(id, userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+       
+        [HttpPut("{id}/start")]
+        public async Task<IActionResult> Start(string id)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            ResponseApi<Appointment?> response = await service.StartAsync(id, userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+       
+        [HttpPut("{id}/finish")]
+        public async Task<IActionResult> Finish(string id)
+        {
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            ResponseApi<Appointment?> response = await service.FinishAsync(id, userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

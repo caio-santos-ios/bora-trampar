@@ -25,7 +25,7 @@ class AppointmentRepository {
       return [];
     } on DioException {
       return [];
-    } catch (_) {
+    } catch (e) {
       return [];
     }
   }
@@ -132,6 +132,16 @@ class AppointmentRepository {
     } catch (_) {
       return false;
     }
+  }
+ 
+  Future<bool> startAppointment(String id) async {
+    final response = await _api.client.put('/api/appointments/$id/start');
+    return response.statusCode == 200;
+  }
+  
+  Future<bool> finishAppointment(String id) async {
+    final response = await _api.client.put('/api/appointments/$id/finish');
+    return response.statusCode == 200;
   }
 
   Future<bool> updateAppointment({

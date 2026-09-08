@@ -10,8 +10,7 @@ namespace api_bora_trampar.src.Services
 {
     public class AppointmentService(
         IAppointmentRepository repository,
-        IUserRepository userRepository,
-        INotificationRepository notificationRepository) : IAppointmentService
+        IUserRepository userRepository, IUserService userService) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -193,38 +192,6 @@ namespace api_bora_trampar.src.Services
                 Appointment? appointment = await repository.CreateAsync(entity);
                 if (appointment is null) return new(null, 400, "Falha ao criar agendamento");
 
-                // Envia notificação automática para o profissional
-                if (!string.IsNullOrWhiteSpace(appointment.ProfissionalId))
-                {
-                    try
-                    {
-                        string subtitle = !string.IsNullOrWhiteSpace(serviceText) ? serviceText : "Serviço solicitado";
-                        string message = !string.IsNullOrWhiteSpace(serviceText)
-                            ? $"Serviços: {serviceText}"
-                            : "Você recebeu uma nova solicitação de agendamento.";
-
-                        Notification notification = new()
-                        {
-                            UserId = appointment.ProfissionalId,
-                            Title = "Novo Agendamento Recebido!",
-                            Message = message,
-                            Subtitle = subtitle,
-                            AppointmentId = appointment.Id,
-                            Type = Models.Enums.NotificationTypeEnum.Service,
-                            Read = false,
-                            Send = false,
-                            SendAt = DateTime.UtcNow,
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        await notificationRepository.CreateAsync(notification);
-                    }
-                    catch
-                    {
-                        // Não interrompe o fluxo de criação caso a notificação falhe
-                    }
-                }
-
                 return new(appointment, 201, "Agendamento criado com sucesso");
             }
             catch (Exception ex)
@@ -287,6 +254,54 @@ namespace api_bora_trampar.src.Services
 
                 Appointment? updated = await repository.UpdateAsync(appointment);
                 return new(updated, 200, "Agendamento recusado");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+
+        public async Task<ResponseApi<Appointment?>> StartAsync(string id, string userId)
+        {
+            try
+            {
+                Appointment? appointment = await repository.GetByIdAsync(id);
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                appointment.Status = "StartService";
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedAt = DateTime.UtcNow;
+
+                Appointment? updated = await repository.UpdateAsync(appointment);
+                if (updated is null) return new(null, 404, "Agendamento não encontrado");
+
+                return new(updated, 200, "Agendamento iniciado");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<Appointment?>> FinishAsync(string id, string userId)
+        {
+            try
+            {
+                Appointment? appointment = await repository.GetByIdAsync(id);
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                appointment.Status = "Finish";
+                appointment.UpdatedBy = userId;
+                appointment.UpdatedAt = DateTime.UtcNow;
+
+                Appointment? updated = await repository.UpdateAsync(appointment);
+                if (updated is null) return new(null, 404, "Agendamento não encontrado");
+
+                ResponseApi<User?> user = await userService.GetByIdAsync(appointment.ProfissionalId);
+                if (user.Data is null) return new(null, 404, "Agendamento não encontrado");
+
+                await userService.UpdateWalletBalanceAsync(appointment.ProfissionalId, appointment.TotalPrice);
+
+                return new(updated, 200, "Agendamento finalizado");
             }
             catch (Exception ex)
             {

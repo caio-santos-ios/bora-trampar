@@ -26,7 +26,7 @@ class OrderConfirmationScreen extends StatefulWidget {
 }
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
-  String _selectedPaymentMethod = 'PIX Instantâneo';
+  // String _selectedPaymentMethod = 'PIX Instantâneo';
   bool _isSubmitting = false;
 
   @override
@@ -73,61 +73,61 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     }
   }
 
-  void _showPaymentMethodModal() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.cardBackground,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Forma de pagamento',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  onTap: () {
-                    setState(() => _selectedPaymentMethod = 'PIX Instantâneo');
-                    Navigator.of(context).pop();
-                  },
-                  leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primaryGold),
-                  title: const Text('PIX (Asaas)'),
-                  subtitle: const Text('Aprovação imediata'),
-                  trailing: _selectedPaymentMethod.contains('PIX')
-                      ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
-                      : null,
-                ),
-                ListTile(
-                  onTap: () {
-                    setState(() => _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242');
-                    Navigator.of(context).pop();
-                  },
-                  leading: const Icon(Icons.credit_card_rounded, color: AppColors.primaryGold),
-                  title: const Text('Cartão de Crédito'),
-                  subtitle: const Text('Pagamento seguro Asaas'),
-                  trailing: _selectedPaymentMethod.contains('4242')
-                      ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // void _showPaymentMethodModal() {
+  //   showModalBottomSheet(
+  //     context: context,
+  //     backgroundColor: AppColors.cardBackground,
+  //     shape: const RoundedRectangleBorder(
+  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  //     ),
+  //     builder: (context) {
+  //       return SafeArea(
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(20),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text(
+  //                 'Forma de pagamento',
+  //                 style: GoogleFonts.inter(
+  //                   color: AppColors.textPrimary,
+  //                   fontSize: 18,
+  //                   fontWeight: FontWeight.w700,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               ListTile(
+  //                 onTap: () {
+  //                   setState(() => _selectedPaymentMethod = 'PIX Instantâneo');
+  //                   Navigator.of(context).pop();
+  //                 },
+  //                 leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primaryGold),
+  //                 title: const Text('PIX (Asaas)'),
+  //                 subtitle: const Text('Aprovação imediata'),
+  //                 trailing: _selectedPaymentMethod.contains('PIX')
+  //                     ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
+  //                     : null,
+  //               ),
+  //               ListTile(
+  //                 onTap: () {
+  //                   setState(() => _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242');
+  //                   Navigator.of(context).pop();
+  //                 },
+  //                 leading: const Icon(Icons.credit_card_rounded, color: AppColors.primaryGold),
+  //                 title: const Text('Cartão de Crédito'),
+  //                 subtitle: const Text('Pagamento seguro Asaas'),
+  //                 trailing: _selectedPaymentMethod.contains('4242')
+  //                     ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
+  //                     : null,
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   Future<void> _onConfirmOrder() async {
     if (_isSubmitting) return;
@@ -800,48 +800,48 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                InkWell(
-                  onTap: _showPaymentMethodModal,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.cardBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Forma de pagamento',
-                                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _selectedPaymentMethod,
-                                style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              'Selecionar',
-                              style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                            const Icon(Icons.chevron_right_rounded, color: AppColors.primaryGold, size: 18),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                // InkWell(
+                //   onTap: _showPaymentMethodModal,
+                //   borderRadius: BorderRadius.circular(14),
+                //   child: Container(
+                //     padding: const EdgeInsets.all(16),
+                //     decoration: BoxDecoration(
+                //       color: AppColors.cardBackground,
+                //       borderRadius: BorderRadius.circular(14),
+                //       border: Border.all(color: AppColors.cardBorder),
+                //     ),
+                //     child: Row(
+                //       children: [
+                //         Expanded(
+                //           child: Column(
+                //             crossAxisAlignment: CrossAxisAlignment.start,
+                //             children: [
+                //               Text(
+                //                 'Forma de pagamento',
+                //                 style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+                //               ),
+                //               const SizedBox(height: 2),
+                //               Text(
+                //                 _selectedPaymentMethod,
+                //                 style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                //               ),
+                //             ],
+                //           ),
+                //         ),
+                //         Row(
+                //           children: [
+                //             Text(
+                //               'Selecionar',
+                //               style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 12, fontWeight: FontWeight.w600),
+                //             ),
+                //             const Icon(Icons.chevron_right_rounded, color: AppColors.primaryGold, size: 18),
+                //           ],
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                // const SizedBox(height: 12),
 
                 Container(
                   padding: const EdgeInsets.all(14),
