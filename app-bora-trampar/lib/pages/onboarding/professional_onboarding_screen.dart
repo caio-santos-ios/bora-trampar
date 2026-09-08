@@ -249,13 +249,28 @@ class _ProfessionalOnboardingScreenState
     );
 
     if (source != null) {
-      final picked = await _picker.pickImage(source: source, imageQuality: 80);
-      if (picked != null && mounted) {
-        setState(() {
-          if (type == 1) _docFrontPhoto = picked;
-          if (type == 2) _docBackPhoto = picked;
-          if (type == 3) _docSelfiePhoto = picked;
-        });
+      try {
+        final picked = await _picker.pickImage(source: source, imageQuality: 80);
+        if (picked != null && mounted) {
+          setState(() {
+            if (type == 1) _docFrontPhoto = picked;
+            if (type == 2) _docBackPhoto = picked;
+            if (type == 3) _docSelfiePhoto = picked;
+          });
+        }
+      } catch (e) {
+        debugPrint('Erro ao selecionar foto: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Não foi possível acessar a câmera ou galeria. Verifique as permissões do aplicativo.',
+                style: GoogleFonts.inter(color: Colors.white),
+              ),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+        }
       }
     }
   }

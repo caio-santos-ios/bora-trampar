@@ -139,17 +139,32 @@ class _DocumentsVerificationScreenState
 
     if (source == null) return;
 
-    final picked = await _picker.pickImage(
-      source: source,
-      imageQuality: 85,
-    );
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
 
-    if (picked != null && mounted) {
-      setState(() {
-        if (type == 'front') _newFrontPhoto = picked;
-        if (type == 'back') _newBackPhoto = picked;
-        if (type == 'selfie') _newSelfiePhoto = picked;
-      });
+      if (picked != null && mounted) {
+        setState(() {
+          if (type == 'front') _newFrontPhoto = picked;
+          if (type == 'back') _newBackPhoto = picked;
+          if (type == 'selfie') _newSelfiePhoto = picked;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro ao selecionar foto: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Não foi possível acessar a câmera ou galeria. Verifique as permissões do aplicativo.',
+              style: GoogleFonts.inter(color: Colors.white),
+            ),
+            backgroundColor: AppColors.errorRed,
+          ),
+        );
+      }
     }
   }
 
@@ -328,7 +343,9 @@ class _DocumentsVerificationScreenState
           _isEditing = false;
         });
 
-        Navigator.of(context).pop(_profile);
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(_profile);
+        }
         return;
       } else {
         if (mounted && !_hasSavedSuccessfully) {
