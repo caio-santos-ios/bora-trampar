@@ -7,7 +7,7 @@ namespace api_bora_trampar.src.Handlers
     {
         private readonly string EmailFrom = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? "";
         private readonly string Password = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? "";
-        public async Task SendMailAsync(string recipient, string subject, string body)
+        public async Task<string> SendMailAsync(string recipient, string subject, string body)
         {
             try
             {
@@ -25,11 +25,12 @@ namespace api_bora_trampar.src.Handlers
                 await smtp.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
                 await smtp.AuthenticateAsync(EmailFrom, Password);
                 await smtp.SendAsync(mensagem);
-                await smtp.DisconnectAsync(true);                
+                await smtp.DisconnectAsync(true);   
+                return "";             
             }
             catch(Exception ex)
             {
-                System.Console.WriteLine(ex.Message);
+                return ex.Message;
             }
         } 
     }
