@@ -189,10 +189,11 @@ namespace api_bora_trampar.src.Services
                 User? response = await authRepository.RegisterAsync(user);
                 if (response is null) return new(null, 400, "Falha ao criar conta");
 
-                string uriUi = Environment.GetEnvironmentVariable("EMAIL_FROM") ?? "";
+                string uriUi = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "";
                 string link = $"{uriUi}/confirmation/{code}/app";
                 string html = EmailTemplates.AccountConfirmation(user.Name, code, link, false);
-                await mailHandler.SendMailAsync(user.Email, "Confirmação de conta", html);
+                string res = await mailHandler.SendMailAsync(user.Email, "Confirmação de conta", html);
+                if (!string.IsNullOrEmpty(res)) return new(null, 400, "Falha ao criar conta");
 
                 return new(null, 201, "Conta criada com sucesso");
             }
