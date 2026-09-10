@@ -4,16 +4,17 @@ using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using api_bora_trampar.src.Requests.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api_bora_trampar.src.Controllers
 {
     [ApiController]
-    [Authorize]
     [Route("api/payments")]
     public class PaymentController(IPaymentService service) : ControllerBase
     {
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -64,6 +65,19 @@ namespace api_bora_trampar.src.Controllers
                 ?? User.FindFirst("sub")?.Value
                 ?? "";
             ResponseApi<Payment?> response = await service.ConfirmPaymentAsync(id, userId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
+        [HttpPost("check-payment")]
+        public async Task<IActionResult> CheckPayment([FromBody] CheckPaymentRequest request)
+        {
+            var token = Request.Headers["asaas-access-token"].ToString();
+            var expectedToken = Environment.GetEnvironmentVariable("ASAAS_WEBHOOK_TOKEN");
+
+            if (token != expectedToken)
+                return Unauthorized();
+
+            ResponseApi<Payment?> response = await service.CheckPaymentAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

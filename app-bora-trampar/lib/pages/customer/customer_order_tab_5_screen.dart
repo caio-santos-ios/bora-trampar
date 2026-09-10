@@ -1,5 +1,7 @@
 import 'package:app_bora_trampar/core/services/util_service.dart';
-import 'package:app_bora_trampar/pages/customer/customer_order_payment_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_6_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_7_screen.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,21 +16,19 @@ import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/payment/payment_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
-import '../order_tracking/order_tracking_screen.dart';
-import '../payment/payment_asaas_screen.dart';
 import '../professional/professional_profile_screen.dart';
 
-class OrderConfirmationScreen extends StatefulWidget {
+class CustomerOrderTab5Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
 
-  const OrderConfirmationScreen({super.key, required this.orderRequest});
+  const CustomerOrderTab5Screen({super.key, required this.orderRequest});
 
   @override
-  State<OrderConfirmationScreen> createState() =>
-      _OrderConfirmationScreenState();
+  State<CustomerOrderTab5Screen> createState() =>
+      _CustomerOrderTab5ScreenState();
 }
 
-class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
+class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
   bool _isSubmitting = false;
 
   @override
@@ -90,62 +90,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
     }
   }
 
-  // void _showPaymentMethodModal() {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     backgroundColor: AppColors.cardBackground,
-  //     shape: const RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-  //     ),
-  //     builder: (context) {
-  //       return SafeArea(
-  //         child: Padding(
-  //           padding: const EdgeInsets.all(20),
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text(
-  //                 'Forma de pagamento',
-  //                 style: GoogleFonts.inter(
-  //                   color: AppColors.textPrimary,
-  //                   fontSize: 18,
-  //                   fontWeight: FontWeight.w700,
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 16),
-  //               ListTile(
-  //                 onTap: () {
-  //                   setState(() => _selectedPaymentMethod = 'PIX Instantâneo');
-  //                   Navigator.of(context).pop();
-  //                 },
-  //                 leading: const Icon(Icons.qr_code_2_rounded, color: AppColors.primaryGold),
-  //                 title: const Text('PIX (Asaas)'),
-  //                 subtitle: const Text('Aprovação imediata'),
-  //                 trailing: _selectedPaymentMethod.contains('PIX')
-  //                     ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
-  //                     : null,
-  //               ),
-  //               ListTile(
-  //                 onTap: () {
-  //                   setState(() => _selectedPaymentMethod = 'Cartão de Crédito final •••• 4242');
-  //                   Navigator.of(context).pop();
-  //                 },
-  //                 leading: const Icon(Icons.credit_card_rounded, color: AppColors.primaryGold),
-  //                 title: const Text('Cartão de Crédito'),
-  //                 subtitle: const Text('Pagamento seguro Asaas'),
-  //                 trailing: _selectedPaymentMethod.contains('4242')
-  //                     ? const Icon(Icons.check_rounded, color: AppColors.primaryGold)
-  //                     : null,
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
-
   Future<void> _onConfirmOrder() async {
     try {
       if (_isSubmitting) return;
@@ -163,10 +107,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
       final srvId = widget.orderRequest.selectedServices.isNotEmpty
           ? widget.orderRequest.selectedServices.first.id
           : '';
-      final srvNames = widget.orderRequest.selectedServices
-          .map((s) => s.name)
-          .join(', ');
-      final catName = widget.orderRequest.selectedCategory?.title ?? '';
 
       final amountToPay = widget.orderRequest.amountToPay;
       final remainingCredit = widget.orderRequest.remainingCredit;
@@ -236,7 +176,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => OrderTrackingScreen(
+            builder: (context) => CustomerOrderTab7Screen(
               orderRequest: widget.orderRequest,
               appointmentId: appointmentId,
             ),
@@ -286,8 +226,13 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) =>
-              CustomerOrderPaymentScreen(appointmentId: appointmentId),
+          builder: (context) => CustomerOrderTab6Screen(
+            appointmentId: appointmentId,
+            orderRequest: widget.orderRequest,
+            paymentId: paymentId,
+            qrCodeImage: qrCodeImage,
+            qrCodePayload: qrCodePayload,
+          ),
         ),
       );
     } on DioException catch (err) {
@@ -597,7 +542,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                                       ),
                                     ),
                                     Text(
-                                      'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                                      UtilBrasilFields.obterReal(
+                                        prof.basePrice,
+                                      ),
                                       style: GoogleFonts.inter(
                                         color: AppColors.textPrimary,
                                         fontSize: 15,
@@ -920,49 +867,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  // InkWell(
-                  //   onTap: _showPaymentMethodModal,
-                  //   borderRadius: BorderRadius.circular(14),
-                  //   child: Container(
-                  //     padding: const EdgeInsets.all(16),
-                  //     decoration: BoxDecoration(
-                  //       color: AppColors.cardBackground,
-                  //       borderRadius: BorderRadius.circular(14),
-                  //       border: Border.all(color: AppColors.cardBorder),
-                  //     ),
-                  //     child: Row(
-                  //       children: [
-                  //         Expanded(
-                  //           child: Column(
-                  //             crossAxisAlignment: CrossAxisAlignment.start,
-                  //             children: [
-                  //               Text(
-                  //                 'Forma de pagamento',
-                  //                 style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
-                  //               ),
-                  //               const SizedBox(height: 2),
-                  //               Text(
-                  //                 _selectedPaymentMethod,
-                  //                 style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
-                  //               ),
-                  //             ],
-                  //           ),
-                  //         ),
-                  //         Row(
-                  //           children: [
-                  //             Text(
-                  //               'Selecionar',
-                  //               style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 12, fontWeight: FontWeight.w600),
-                  //             ),
-                  //             const Icon(Icons.chevron_right_rounded, color: AppColors.primaryGold, size: 18),
-                  //           ],
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
-                  // const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(

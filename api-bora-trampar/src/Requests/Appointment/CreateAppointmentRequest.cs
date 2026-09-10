@@ -6,18 +6,18 @@ namespace api_bora_trampar.src.Requests
 {
     public class CreateAppointmentRequest : RequestBase
     {
-        [Required(ErrorMessage = "O ProfissionalId é obrigatório.")]
+        [Required(ErrorMessage = "O ProfessionalId é obrigatório.")]
         [Display(Order = 1)]
-        [JsonPropertyName("profissionalId")]
-        public string ProfissionalId { get; set; } = string.Empty;
+        [JsonPropertyName("professionalId")]
+        public string ProfessionalId { get; set; } = string.Empty;
 
-        [JsonPropertyName("profissional_id")]
+        [JsonPropertyName("professional_id")]
         public string ProfissionalIdSnake
         {
-            get => ProfissionalId;
+            get => ProfessionalId;
             set
             {
-                if (!string.IsNullOrEmpty(value)) ProfissionalId = value;
+                if (!string.IsNullOrEmpty(value)) ProfessionalId = value;
             }
         }
 

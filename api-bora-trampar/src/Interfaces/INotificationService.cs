@@ -11,6 +11,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<Notification?>> GetByIdAsync(string id);
         Task<ResponseApi<Notification>> CreateAsync(CreateNotificationRequest request);
         Task<ResponseApi<Notification?>> MarkAsReadAsync(string id);
+        Task<ResponseApi<Notification?>> MarkAsReadAppointmentAsync(string appointmentId);
         Task<ResponseApi<Notification?>> DeleteAsync(DeleteRequest request);
     }
 }

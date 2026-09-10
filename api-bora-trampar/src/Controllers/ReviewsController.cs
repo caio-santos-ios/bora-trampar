@@ -32,7 +32,7 @@ namespace api_bora_trampar.src.Controllers
         {
             if (request == null) return BadRequest("Dados inválidos.");
 
-            request.UpdatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            request.CreatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
             ResponseApi<Reviews?> response = await service.CreateAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });

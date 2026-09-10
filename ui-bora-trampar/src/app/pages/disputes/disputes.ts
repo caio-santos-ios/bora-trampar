@@ -74,7 +74,7 @@ export class Disputes implements OnInit {
 
         this.disputes = disputed.map((apt: any) => {
           const customer = userMap.get(apt.customer_id || apt.customerId) || {};
-          const pro = userMap.get(apt.profissional_id || apt.profissionalId) || {};
+          const pro = userMap.get(apt.professional_id || apt.professionalId) || {};
 
           return {
             id: `DISP-${apt.id?.substring(0, 4) || '001'}`,

@@ -71,89 +71,89 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  Future<void> _handleAcceptAppointment(String appointmentId) async {
-    final success = await _appointmentRepo.acceptAppointment(appointmentId);
-    if (mounted) {
-      if (success) {
-        setState(() {
-          _appointments = _appointments.map((a) {
-            if (a.id == appointmentId) {
-              return AppointmentModel(
-                id: a.id,
-                profissionalId: a.profissionalId,
-                customerId: a.customerId,
-                date: a.date,
-                hour: a.hour,
-                serviceName: a.serviceName,
-                categoryName: a.categoryName,
-                customerName: a.customerName,
-                professionalName: a.professionalName,
-                address: a.address,
-                description: a.description,
-                notes: a.notes,
-                photoUrls: a.photoUrls,
-                price: a.price,
-                status: 'Accepted',
-              );
-            }
-            return a;
-          }).toList();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Serviço aceito! O cliente foi notificado.',
-              style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
-            ),
-            backgroundColor: AppColors.primaryGold,
-          ),
-        );
-        _loadData();
-      }
-    }
-  }
+  // Future<void> _handleAcceptAppointment(String appointmentId) async {
+  //   final success = await _appointmentRepo.acceptAppointment(appointmentId);
+  //   if (mounted) {
+  //     if (success) {
+  //       setState(() {
+  //         _appointments = _appointments.map((a) {
+  //           if (a.id == appointmentId) {
+  //             return AppointmentModel(
+  //               id: a.id,
+  //               professionalId: a.professionalId,
+  //               customerId: a.customerId,
+  //               date: a.date,
+  //               hour: a.hour,
+  //               serviceName: a.serviceName,
+  //               categoryName: a.categoryName,
+  //               customerName: a.customerName,
+  //               professionalName: a.professionalName,
+  //               address: a.address,
+  //               description: a.description,
+  //               notes: a.notes,
+  //               photoUrls: a.photoUrls,
+  //               price: a.price,
+  //               status: 'Accepted',
+  //             );
+  //           }
+  //           return a;
+  //         }).toList();
+  //       });
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             'Serviço aceito! O cliente foi notificado.',
+  //             style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+  //           ),
+  //           backgroundColor: AppColors.primaryGold,
+  //         ),
+  //       );
+  //       _loadData();
+  //     }
+  //   }
+  // }
 
-  Future<void> _handleDeclineAppointment(String appointmentId) async {
-    final success = await _appointmentRepo.declineAppointment(appointmentId);
-    if (mounted) {
-      if (success) {
-        setState(() {
-          _appointments = _appointments.map((a) {
-            if (a.id == appointmentId) {
-              return AppointmentModel(
-                id: a.id,
-                profissionalId: a.profissionalId,
-                customerId: a.customerId,
-                date: a.date,
-                hour: a.hour,
-                serviceName: a.serviceName,
-                categoryName: a.categoryName,
-                customerName: a.customerName,
-                professionalName: a.professionalName,
-                address: a.address,
-                description: a.description,
-                notes: a.notes,
-                photoUrls: a.photoUrls,
-                price: a.price,
-                status: 'Declined',
-              );
-            }
-            return a;
-          }).toList();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Solicitação recusada.',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-            backgroundColor: AppColors.errorRed,
-          ),
-        );
-        _loadData();
-      }
-    }
-  }
+  // Future<void> _handleDeclineAppointment(String appointmentId) async {
+  //   final success = await _appointmentRepo.declineAppointment(appointmentId);
+  //   if (mounted) {
+  //     if (success) {
+  //       setState(() {
+  //         _appointments = _appointments.map((a) {
+  //           if (a.id == appointmentId) {
+  //             return AppointmentModel(
+  //               id: a.id,
+  //               professionalId: a.professionalId,
+  //               customerId: a.customerId,
+  //               date: a.date,
+  //               hour: a.hour,
+  //               serviceName: a.serviceName,
+  //               categoryName: a.categoryName,
+  //               customerName: a.customerName,
+  //               professionalName: a.professionalName,
+  //               address: a.address,
+  //               description: a.description,
+  //               notes: a.notes,
+  //               photoUrls: a.photoUrls,
+  //               price: a.price,
+  //               status: 'Declined',
+  //             );
+  //           }
+  //           return a;
+  //         }).toList();
+  //       });
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(
+  //           content: Text(
+  //             'Solicitação recusada.',
+  //             style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+  //           ),
+  //           backgroundColor: AppColors.errorRed,
+  //         ),
+  //       );
+  //       _loadData();
+  //     }
+  //   }
+  // }
 
   Future<void> _handleCancelAppointment(String appointmentId) async {
     final confirm = await showDialog<bool>(
@@ -603,7 +603,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => _handleAcceptAppointment(apt.id),
+                    onPressed: () { 
+                      // _handleAcceptAppointment(apt.id)
+                    },
                     icon: const Icon(Icons.check_rounded, color: AppColors.textDark, size: 18),
                     label: Text(
                       'Aceitar',
@@ -620,7 +622,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => _handleDeclineAppointment(apt.id),
+                    onPressed: () {
+                      //  => _handleDeclineAppointment(apt.id)
+                    },
                     icon: const Icon(Icons.close_rounded, color: AppColors.errorRed, size: 18),
                     label: Text(
                       'Recusar',

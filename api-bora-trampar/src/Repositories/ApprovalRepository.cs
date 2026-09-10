@@ -26,8 +26,8 @@ namespace api_bora_trampar.src.Repositories
             {
                 id = a.Id,
                 _id = a.Id,
-                profissionalId = a.ProfissionalId,
-                profissional_id = a.ProfissionalId,
+                professionalId = a.ProfessionalId,
+                professional_id = a.ProfessionalId,
                 documentType = a.DocumentType,
                 document_type = a.DocumentType,
                 documentNumber = a.DocumentNumber,

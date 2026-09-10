@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
+import 'package:app_bora_trampar/pages/customer/customer_reviews_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -21,7 +22,7 @@ import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
 import '../categories/category_selection_screen.dart';
-import '../professionals/professional_profile_screen.dart';
+import '../professional/professional_profile_screen.dart';
 import '../services/service_selection_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -210,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     }
   }
-  
+
   Future<void> _finishService(String id) async {
     try {
       setState(() {
@@ -693,13 +694,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final pendingRequests = _appointments.where((a) {
       final isForMe =
           _user == null ||
-          a.profissionalId.isEmpty ||
-          a.profissionalId == 'prof_default' ||
-          a.profissionalId.trim().toLowerCase() ==
+          a.professionalId.isEmpty ||
+          a.professionalId == 'prof_default' ||
+          a.professionalId.trim().toLowerCase() ==
               _user!.id.trim().toLowerCase() ||
           (_profile != null &&
               _profile!.id != null &&
-              a.profissionalId.trim().toLowerCase() ==
+              a.professionalId.trim().toLowerCase() ==
                   _profile!.id!.trim().toLowerCase());
       if (!isForMe) return false;
 
@@ -1314,7 +1315,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (a.id == req.id) {
                                     return AppointmentModel(
                                       id: a.id,
-                                      profissionalId: a.profissionalId,
+                                      professionalId: a.professionalId,
                                       customerId: a.customerId,
                                       date: a.date,
                                       hour: a.hour,
@@ -1328,6 +1329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       photoUrls: a.photoUrls,
                                       price: a.price,
                                       status: 'Declined',
+                                      serviceId: ""
                                     );
                                   }
                                   return a;
@@ -1365,7 +1367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   if (a.id == req.id) {
                                     return AppointmentModel(
                                       id: a.id,
-                                      profissionalId: a.profissionalId,
+                                      professionalId: a.professionalId,
                                       customerId: a.customerId,
                                       date: a.date,
                                       hour: a.hour,
@@ -1379,6 +1381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       photoUrls: a.photoUrls,
                                       price: a.price,
                                       status: 'Accepted',
+                                      serviceId: ""
                                     );
                                   }
                                   return a;
@@ -1674,6 +1677,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: AppColors.textMuted,
                 size: 22,
               ),
+
               hintText:
                   'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
               hintStyle: GoogleFonts.inter(
@@ -1682,6 +1686,41 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          // padding: const EdgeInsets.symmetric(horizontal: 16),
+          // decoration: BoxDecoration(
+          //   color: AppColors.inputBackground,
+          //   borderRadius: BorderRadius.circular(16),
+          //   border: Border.all(color: AppColors.inputBorder),
+          // ),
+          child: ElevatedButton.icon(
+            onPressed: () {
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //     builder: (_) => const CustomerReviewsScreen(),
+              //   ),
+              // );
+            },
+            icon: const Icon(Icons.add_rounded, color: AppColors.textDark),
+            label: Text(
+              'Avaliar Profissional',
+              style: GoogleFonts.inter(
+                color: AppColors.textDark,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              elevation: 0,
             ),
           ),
         ),

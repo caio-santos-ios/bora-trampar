@@ -30,7 +30,7 @@ namespace api_bora_trampar.src.Services
                     }
 
                     var existing = await appDbContext.Approvals
-                        .Find(a => !a.Deleted && a.ProfissionalId == profile.UserId)
+                        .Find(a => !a.Deleted && a.ProfessionalId == profile.UserId)
                         .FirstOrDefaultAsync();
 
                     if (existing == null)
@@ -41,7 +41,7 @@ namespace api_bora_trampar.src.Services
 
                         var newApproval = new Approval
                         {
-                            ProfissionalId = profile.UserId,
+                            ProfessionalId = profile.UserId,
                             DocumentType = string.IsNullOrWhiteSpace(profile.IdentityDocumentType) ? "CNH" : profile.IdentityDocumentType,
                             DocumentNumber = profile.IdentityDocumentNumber,
                             RgFrontUrl = profile.IdentityDocumentFrontUrl,
@@ -88,7 +88,7 @@ namespace api_bora_trampar.src.Services
             {
                 Approval approval = new()
                 {
-                    ProfissionalId = request.ProfissionalId,
+                    ProfessionalId = request.ProfessionalId,
                     DocumentType = request.DocumentType,
                     DocumentNumber = request.DocumentNumber,
                     RgFrontUrl = request.RgFrontUrl,
@@ -127,10 +127,10 @@ namespace api_bora_trampar.src.Services
                     existing = await repository.GetByIdAsync(request.Id);
                 }
 
-                if (existing == null && !string.IsNullOrWhiteSpace(request.ProfissionalId))
+                if (existing == null && !string.IsNullOrWhiteSpace(request.ProfessionalId))
                 {
                     existing = await appDbContext.Approvals
-                        .Find(x => !x.Deleted && x.ProfissionalId == request.ProfissionalId)
+                        .Find(x => !x.Deleted && x.ProfessionalId == request.ProfessionalId)
                         .FirstOrDefaultAsync();
                 }
 
@@ -141,7 +141,7 @@ namespace api_bora_trampar.src.Services
                 var isRejected = statusNorm == "rejected" || statusNorm == "reject";
                 var isCorrection = statusNorm == "correction";
 
-                if (!string.IsNullOrEmpty(request.ProfissionalId)) existing.ProfissionalId = request.ProfissionalId;
+                if (!string.IsNullOrEmpty(request.ProfessionalId)) existing.ProfessionalId = request.ProfessionalId;
                 if (!string.IsNullOrEmpty(request.DocumentType)) existing.DocumentType = request.DocumentType;
                 if (!string.IsNullOrEmpty(request.DocumentNumber)) existing.DocumentNumber = request.DocumentNumber;
                 if (!string.IsNullOrEmpty(request.RgFrontUrl)) existing.RgFrontUrl = request.RgFrontUrl;
@@ -160,7 +160,7 @@ namespace api_bora_trampar.src.Services
                 if (approval is null) return new(null, 400, "Falha ao atualizar aprovação");
 
                 var profile = await appDbContext.ProfileProfessionals
-                    .Find(p => !p.Deleted && p.UserId == existing.ProfissionalId)
+                    .Find(p => !p.Deleted && p.UserId == existing.ProfessionalId)
                     .FirstOrDefaultAsync();
 
                 if (profile != null)

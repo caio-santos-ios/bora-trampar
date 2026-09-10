@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using api_bora_trampar.src.Configuration;
+using api_bora_trampar.src.SignalR;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ else
 builder.Services.AddEndpointsApiExplorer();
 builder.AddContext();
 builder.AddBuilderServices();
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -126,6 +128,7 @@ if (!app.Environment.IsDevelopment())
 var uploadPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
 if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
 
+app.MapHub<AppointmentHub>("/hubs/appointment");
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();

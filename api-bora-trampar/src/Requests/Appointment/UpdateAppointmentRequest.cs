@@ -9,9 +9,9 @@ namespace api_bora_trampar.src.Requests
         [Display(Order = 1)]
         public string Id { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "O ProfissionalId é obrigatório.")]
+        [Required(ErrorMessage = "O ProfessionalId é obrigatório.")]
         [Display(Order = 2)]
-        public string ProfissionalId { get; set; } = string.Empty;
+        public string ProfessionalId { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "O CustomerId é obrigatório.")]
         [Display(Order = 3)]
@@ -51,5 +51,7 @@ namespace api_bora_trampar.src.Requests
 
         [Display(Order = 14)]
         public string AsaasPaymentId { get; set; } = string.Empty;
+        public string ServiceId { get; set; } = string.Empty;
+        public string CategoryId { get; set; } = string.Empty;
     }
 }

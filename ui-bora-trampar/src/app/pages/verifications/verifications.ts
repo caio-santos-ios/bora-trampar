@@ -88,7 +88,7 @@ export class Verifications implements OnInit {
 
       if (approvalsList.length > 0) {
         this.verifications = approvalsList.map((appr: any) => {
-          const user = userMap.get(appr.profissional_id || appr.profissionalId) || {};
+          const user = userMap.get(appr.professional_id || appr.professionalId) || {};
           const rawStatus = (appr.status || (appr.approved ? 'approved' : 'analysis')).toString().toLowerCase().trim();
           const status = (rawStatus === 'approved' || rawStatus === 'approve')
             ? 'approved'
@@ -103,7 +103,7 @@ export class Verifications implements OnInit {
 
           return {
             id: cleanId,
-            professionalId: appr.profissional_id || appr.profissionalId || '',
+            professionalId: appr.professional_id || appr.professionalId || '',
             professionalName: user.name || 'Profissional',
             email: user.email || 'Não informado',
             phone: user.whatsApp || user.phone || 'Não informado',
@@ -230,7 +230,7 @@ export class Verifications implements OnInit {
         approved: this.actionType === 'approve',
         status: normalizedStatus,
         reviewNotes: this.actionJustification,
-        profissionalId: this.selectedItem.professionalId
+        professionalId: this.selectedItem.professionalId
       };
       if (this.selectedItem.id) {
         payload.id = this.selectedItem.id;

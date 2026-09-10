@@ -100,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
           if (role.toLowerCase() == "customer") {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const MainNavigationScreen(),
+                builder: (context) => const MainNavigationScreen(role: "Customer"),
               ),
               (route) => false,
             );
@@ -131,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen>
             } else {
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(
-                  builder: (context) => const MainNavigationScreen(),
+                  builder: (context) => const MainNavigationScreen(role: "Professional",),
                 ),
                 (route) => false,
               );
@@ -167,7 +167,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (userMap == null) return false;
 
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
+      MaterialPageRoute(builder: (context) => const MainNavigationScreen(role: "Customer")),
       (route) => false,
     );
     return true;

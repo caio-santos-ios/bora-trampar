@@ -5,9 +5,9 @@ namespace api_bora_trampar.src.Requests
 {
     public class CreateApprovalRequest : RequestBase
     {
-        [Required(ErrorMessage = "O ProfissionalId é obrigatório.")]
+        [Required(ErrorMessage = "O ProfessionalId é obrigatório.")]
         [Display(Order = 1)]
-        public string ProfissionalId { get; set; } = string.Empty;
+        public string ProfessionalId { get; set; } = string.Empty;
         public string DocumentType { get; set; } = "CNH";
         public string DocumentNumber { get; set; } = string.Empty;
         public string RgFrontUrl { get; set; } = string.Empty;

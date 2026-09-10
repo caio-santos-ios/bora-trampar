@@ -1,3 +1,4 @@
+import 'package:app_bora_trampar/pages/professional/professional_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
@@ -6,19 +7,18 @@ import '../../core/widgets/bora_trampa_logo.dart';
 import '../../models/order_request_model.dart';
 import '../../models/professional_model.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
-import '../professional/professional_profile_screen.dart';
 
-class ProfessionalsListScreen extends StatefulWidget {
+class CustomerOrderTab4Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
 
-  const ProfessionalsListScreen({super.key, required this.orderRequest});
+  const CustomerOrderTab4Screen({super.key, required this.orderRequest});
 
   @override
-  State<ProfessionalsListScreen> createState() =>
-      _ProfessionalsListScreenState();
+  State<CustomerOrderTab4Screen> createState() =>
+      _CustomerOrderTab4ScreenState();
 }
 
-class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
+class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
   final _profileRepository = ProfileProfessionalRepository();
 
   List<ProfessionalModel> _professionals = [];

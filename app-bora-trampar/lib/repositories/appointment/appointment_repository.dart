@@ -9,23 +9,31 @@ class AppointmentRepository {
     try {
       final response = await _api.client.get('/api/appointments');
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
         if (res is List) {
-          return res.map((item) {
-            if (item is Map) {
-              return AppointmentModel.fromJson(Map<String, dynamic>.from(item));
-            }
-            return null;
-          }).whereType<AppointmentModel>().toList();
+          return res
+              .map((item) {
+                if (item is Map) {
+                  return AppointmentModel.fromJson(
+                    Map<String, dynamic>.from(item),
+                  );
+                }
+                return null;
+              })
+              .whereType<AppointmentModel>()
+              .toList();
         }
       }
       return [];
-    } on DioException {
+    } on DioException catch (err) {
+      print(err);
       return [];
     } catch (e) {
+      print(e);
       return [];
     }
   }
@@ -35,7 +43,8 @@ class AppointmentRepository {
       final response = await _api.client.get('/api/appointments/$id');
 
       if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null) {
           res = res['data'];
         }
@@ -49,6 +58,12 @@ class AppointmentRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<AppointmentModel?> create(Object body) async {
+    final response = await _api.client.post('/api/appointments', data: body);
+    
+    return response.statusCode == 201 ? AppointmentModel.fromJson(response.data["result"]["data"]) : null;
   }
 
   Future<AppointmentModel?> createAppointment({
@@ -71,8 +86,8 @@ class AppointmentRepository {
       final response = await _api.client.post(
         '/api/appointments',
         data: {
-          'profissionalId': professionalId,
-          'profissional_id': professionalId,
+          'professionalId': professionalId,
+          'professional_id': professionalId,
           'customerId': customerId,
           'customer_id': customerId,
           'categoryId': categoryId,
@@ -96,9 +111,12 @@ class AppointmentRepository {
         },
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
+        dynamic res =
+            response.data['result'] ?? response.data['data'] ?? response.data;
         if (res is Map && res['data'] != null && res['data'] is Map) {
-          return AppointmentModel.fromJson(Map<String, dynamic>.from(res['data'] as Map));
+          return AppointmentModel.fromJson(
+            Map<String, dynamic>.from(res['data'] as Map),
+          );
         }
         if (res is Map<String, dynamic>) {
           return AppointmentModel.fromJson(res);
@@ -133,12 +151,12 @@ class AppointmentRepository {
       return false;
     }
   }
- 
+
   Future<bool> startAppointment(String id) async {
     final response = await _api.client.put('/api/appointments/$id/start');
     return response.statusCode == 200;
   }
-  
+
   Future<bool> finishAppointment(String id) async {
     final response = await _api.client.put('/api/appointments/$id/finish');
     return response.statusCode == 200;
@@ -157,7 +175,7 @@ class AppointmentRepository {
         '/api/appointments',
         data: {
           'id': id,
-          'profissional_id': professionalId,
+          'professional_id': professionalId,
           'customer_id': customerId,
           'date': date.toIso8601String(),
           'hour': hour,
@@ -185,7 +203,9 @@ class AppointmentRepository {
 
   Future<bool> cancelByCustomer(String id) async {
     try {
-      final response = await _api.client.put('/api/appointments/$id/cancel-by-customer');
+      final response = await _api.client.put(
+        '/api/appointments/$id/cancel-by-customer',
+      );
       return response.statusCode == 200;
     } on DioException {
       return false;

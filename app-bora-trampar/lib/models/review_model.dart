@@ -14,4 +14,14 @@ class ReviewModel {
     required this.timeAgo,
     required this.comment,
   });
+
+  factory ReviewModel.fromJson(Map<String, dynamic> json) {
+    return ReviewModel(
+      id: json['id'],
+      authorName: json['authorName'],
+      rating: json['rating'],
+      timeAgo: json['timeAgo'],
+      comment: json['comment'],
+    );
+  }
 }

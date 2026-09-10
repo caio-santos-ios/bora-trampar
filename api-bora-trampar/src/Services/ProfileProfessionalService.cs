@@ -20,7 +20,7 @@ namespace api_bora_trampar.src.Services
                 if (profile is null) return new(null, 404, "Perfil profissional não encontrado");
 
                 var approval = await appDbContext.Approvals
-                    .Find(a => !a.Deleted && a.ProfissionalId == userId)
+                    .Find(a => !a.Deleted && a.ProfessionalId == userId)
                     .FirstOrDefaultAsync();
 
                 if (approval != null)
@@ -60,7 +60,7 @@ namespace api_bora_trampar.src.Services
                 if (profile is null) return new(null, 404, "Perfil profissional não encontrado");
 
                 var approval = await appDbContext.Approvals
-                    .Find(a => !a.Deleted && a.ProfissionalId == profile.UserId)
+                    .Find(a => !a.Deleted && a.ProfessionalId == profile.UserId)
                     .FirstOrDefaultAsync();
 
                 if (approval != null)
@@ -103,7 +103,7 @@ namespace api_bora_trampar.src.Services
                     .ToListAsync();
 
                 var approvalMap = approvals
-                    .GroupBy(a => a.ProfissionalId)
+                    .GroupBy(a => a.ProfessionalId)
                     .ToDictionary(g => g.Key, g => g.OrderByDescending(x => x.UpdatedAt).First());
 
                 foreach (var profile in profiles)
@@ -564,6 +564,24 @@ namespace api_bora_trampar.src.Services
                 return new(false, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }
+        public async Task<ResponseApi<ProfileProfessional?>> UpdateRatingAsync(string userId, int rating)
+        {
+            try
+            {
+                ProfileProfessional? existing = await repository.GetByUserIdAsync(userId);
+                if (existing is null) return new(null, 404, "Agendamento não encontrado");
+
+                existing.ReviewCount += 1;
+                existing.Rating = (existing.Rating + rating) / existing.ReviewCount;
+                await repository.UpdateAsync(existing);
+
+                return new(existing, 200, "Atualização feita com sucesso!");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
+            }
+        }
 
         public async Task<ResponseApi<bool>> SaveIdentityVerificationAsync(
             string userId,
@@ -596,7 +614,7 @@ namespace api_bora_trampar.src.Services
             try
             {
                 var existingApproval = await appDbContext.Approvals
-                    .Find(x => !x.Deleted && x.ProfissionalId == userId)
+                    .Find(x => !x.Deleted && x.ProfessionalId == userId)
                     .FirstOrDefaultAsync();
 
                 if (existingApproval != null)
@@ -616,7 +634,7 @@ namespace api_bora_trampar.src.Services
                 {
                     var newApproval = new Approval
                     {
-                        ProfissionalId = userId,
+                        ProfessionalId = userId,
                         DocumentType = string.IsNullOrWhiteSpace(docType) ? "CNH" : docType,
                         DocumentNumber = docNumber ?? string.Empty,
                         RgFrontUrl = frontUrl ?? string.Empty,

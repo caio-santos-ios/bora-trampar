@@ -78,6 +78,24 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Erro ao atualizar notificação - {ex.Message}");
             }
         }
+        public async Task<ResponseApi<Notification?>> MarkAsReadAppointmentAsync(string appointmentId)
+        {
+            try
+            {
+                var existed = await repository.GetByAppointmentIdAsync(appointmentId);
+                if (existed == null) return new(null, 404, "Notificação não encontrada");
+
+                existed.Read = true;
+                existed.UpdatedAt = DateTime.UtcNow;
+
+                var updated = await repository.UpdateAsync(existed);
+                return new(updated, 200, "Notificação marcada como lida");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Erro ao atualizar notificação - {ex.Message}");
+            }
+        }
 
         public async Task<ResponseApi<Notification?>> DeleteAsync(DeleteRequest request)
         {

@@ -1,14 +1,7 @@
-public class MailHandler
+public class MailHandler(HttpClient http)
 {
-    private readonly HttpClient _http;
     private readonly string _apiKey = Environment.GetEnvironmentVariable("RESEND_API_KEY") ?? "";
     private readonly string _fromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? "";
-
-    public MailHandler(HttpClient http)
-    {
-        _http = http;
-    }
-
     public async Task<string> SendMailAsync(string recipient, string subject, string body)
     {
         try
@@ -27,7 +20,7 @@ public class MailHandler
             };
             req.Headers.Authorization = new("Bearer", _apiKey);
 
-            var res = await _http.SendAsync(req);
+            var res = await http.SendAsync(req);
             if (!res.IsSuccessStatusCode)
                 return await res.Content.ReadAsStringAsync();
 

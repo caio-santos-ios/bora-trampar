@@ -1,52 +1,104 @@
 import 'dart:async';
+import 'package:app_bora_trampar/api/http_client_api.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/order_request_model.dart';
-import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../main/main_navigation_screen.dart';
 import '../professionals/professionals_list_screen.dart';
+import 'package:signalr_netcore/signalr_client.dart';
 
 enum TrackingStatus { waiting, accepted, declined, expired }
 
-class OrderTrackingScreen extends StatefulWidget {
+class CustomerOrderTab7Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
   final String appointmentId;
 
-  const OrderTrackingScreen({
+  const CustomerOrderTab7Screen({
     super.key,
     required this.orderRequest,
     this.appointmentId = '',
   });
 
   @override
-  State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
+  State<CustomerOrderTab7Screen> createState() =>
+      _CustomerOrderTab7ScreenState();
 }
 
-class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
+class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   final AppointmentRepository _appointmentRepository = AppointmentRepository();
+
+  late HubConnection _connection;
+  final _httpClientApi = HttpClientApi();
 
   static const int _totalWaitSeconds = 900;
   int _remainingSeconds = _totalWaitSeconds;
   Timer? _countdownTimer;
-  Timer? _pollTimer;
   TrackingStatus _status = TrackingStatus.waiting;
 
   bool get _isToday {
     final date = widget.orderRequest.scheduledDate ?? DateTime.now();
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   @override
   void initState() {
     super.initState();
-    _startTracking();
+    _setupSignalR();
+    _startCountdown();
   }
 
-  void _startTracking() {
+  Future<void> _setupSignalR() async {
+    try {
+      _connection = HubConnectionBuilder()
+          .withUrl('${_httpClientApi.baseUrl}/hubs/appointment')
+          .withAutomaticReconnect()
+          .build();
+
+      _connection.on('AppointmentUpdated', (arguments) async {
+        final data = arguments![0] as Map;
+        final status = data['status']?.toString().toLowerCase() ?? '';
+        print(status);
+        if (!mounted) return;
+
+        if (status == 'accepted') {
+          _countdownTimer?.cancel();
+          setState(() {
+            _status = TrackingStatus.accepted;
+          });
+        } else if (status == 'declined') {
+          _countdownTimer?.cancel();
+          setState(() {
+            _status = TrackingStatus.declined;
+          });
+        }
+      });
+
+      _connection.onreconnected(({connectionId}) async {
+        await _connection.invoke(
+          'JoinAppointmentGroup',
+          args: [widget.appointmentId],
+        );
+      });
+
+      await _connection.start();
+      debugPrint('SignalR conectado! Confirmar Serviço: ${_connection.state}');
+
+      await _connection.invoke(
+        'JoinAppointmentGroup',
+        args: [widget.appointmentId],
+      );
+    } catch (e) {
+      debugPrint('ERRO ao conectar SignalR: $e');
+    }
+  }
+
+  void _startCountdown() {
     if (_isToday) {
       _countdownTimer?.cancel();
       _remainingSeconds = _totalWaitSeconds;
@@ -68,67 +120,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         }
       });
     }
-
-    _pollTimer?.cancel();
-    _checkAppointmentStatus();
-    _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      _checkAppointmentStatus();
-    });
-  }
-
-  Future<void> _checkAppointmentStatus() async {
-    AppointmentModel? apt;
-    if (widget.appointmentId.isNotEmpty) {
-      apt = await _appointmentRepository.getAppointmentById(widget.appointmentId);
-    }
-    if (apt == null) {
-      final all = await _appointmentRepository.getAppointments();
-      if (all.isNotEmpty) {
-        final profId = widget.orderRequest.selectedProfessional?.id;
-        final matches = all.where((a) {
-          if (widget.appointmentId.isNotEmpty && a.id == widget.appointmentId) return true;
-          if (profId != null && profId.isNotEmpty && a.professionalId == profId) return true;
-          return false;
-        }).toList();
-
-        if (matches.isNotEmpty) {
-          apt = matches.first;
-        }
-      }
-    }
-
-    if (!mounted || apt == null) return;
-
-    final s = apt.status.toLowerCase();
-    if (s == 'accepted' || s == 'aceito' || s == 'confirmed' || s == 'confirmado') {
-      _countdownTimer?.cancel();
-      _pollTimer?.cancel();
-      if (mounted) {
-        setState(() {
-          _status = TrackingStatus.accepted;
-        });
-      }
-    } else if (s == 'declined' || s == 'recusado' || s == 'cancelled' || s == 'cancelado') {
-      _countdownTimer?.cancel();
-      _pollTimer?.cancel();
-      if (mounted) {
-        setState(() {
-          _status = TrackingStatus.declined;
-        });
-      }
-    }
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _pollTimer?.cancel();
+    _connection.stop();
     super.dispose();
   }
 
   void _chooseAnotherProfessional() {
     _countdownTimer?.cancel();
-    _pollTimer?.cancel();
 
     final previouslyPaid = widget.orderRequest.creditApplied > 0
         ? (widget.orderRequest.creditApplied + widget.orderRequest.amountToPay)
@@ -144,7 +146,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => ProfessionalsListScreen(orderRequest: widget.orderRequest),
+        builder: (context) =>
+            ProfessionalsListScreen(orderRequest: widget.orderRequest),
       ),
     );
   }
@@ -154,12 +157,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       _status = TrackingStatus.waiting;
       _remainingSeconds = _totalWaitSeconds;
     });
-    _startTracking();
+    _startCountdown();
   }
 
   void _goToMyOrders() {
     _countdownTimer?.cancel();
-    _pollTimer?.cancel();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => const MainNavigationScreen(initialIndex: 1),
@@ -201,7 +203,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(
                 'Manter',
-                style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w600),
+                style: GoogleFonts.inter(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             ElevatedButton(
@@ -219,7 +224,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     if (confirmed == true && mounted) {
       _countdownTimer?.cancel();
-      _pollTimer?.cancel();
 
       if (widget.appointmentId.isNotEmpty) {
         await _appointmentRepository.cancelByCustomer(widget.appointmentId);
@@ -231,7 +235,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         SnackBar(
           content: Text(
             'Agendamento cancelado pelo cliente. O valor de R\$ ${paidValue.toStringAsFixed(2).replaceAll('.', ',')} ficou como saldo positivo na sua carteira!',
-            style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+            style: GoogleFonts.inter(
+              color: AppColors.textDark,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           backgroundColor: AppColors.primaryGold,
           duration: const Duration(seconds: 4),
@@ -252,7 +259,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final prof = widget.orderRequest.selectedProfessional;
     final serviceName = widget.orderRequest.serviceNamesDisplay;
     final dateDisplay = widget.orderRequest.scheduledDate != null
-        ? DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(widget.orderRequest.scheduledDate!)
+        ? DateFormat(
+            "dd 'de' MMMM 'de' yyyy",
+            'pt_BR',
+          ).format(widget.orderRequest.scheduledDate!)
         : 'Hoje, ${DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now())}';
 
     final progress = _remainingSeconds / _totalWaitSeconds.toDouble();
@@ -264,7 +274,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () {
             if (_status == TrackingStatus.accepted || !_isToday) {
               _goToMyOrders();
@@ -287,7 +300,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   _buildStatusHeaderCard(progress, formattedTime, dateDisplay),
                   const SizedBox(height: 14),
@@ -320,7 +336,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     );
   }
 
-  Widget _buildStatusHeaderCard(double progress, String formattedTime, String dateDisplay) {
+  Widget _buildStatusHeaderCard(
+    double progress,
+    String formattedTime,
+    String dateDisplay,
+  ) {
     Color cardBorderColor;
     Color iconBgColor;
     IconData icon;
@@ -334,7 +354,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         iconBgColor = AppColors.success.withValues(alpha: 0.15);
         icon = Icons.check_circle_rounded;
         title = 'Profissional Confirmado!';
-        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} aceitou o serviço e está confirmado!';
+        subtitle =
+            '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} aceitou o serviço e está confirmado!';
         trailingWidget = Container(
           width: 52,
           height: 52,
@@ -344,7 +365,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             border: Border.all(color: AppColors.success, width: 2),
           ),
           child: const Center(
-            child: Icon(Icons.check_rounded, color: AppColors.success, size: 28),
+            child: Icon(
+              Icons.check_rounded,
+              color: AppColors.success,
+              size: 28,
+            ),
           ),
         );
         break;
@@ -354,7 +379,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         iconBgColor = AppColors.errorRed.withValues(alpha: 0.15);
         icon = Icons.cancel_outlined;
         title = 'Solicitação não aceita';
-        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não pôde atender a este chamado no momento.';
+        subtitle =
+            '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não pôde atender a este chamado no momento.';
         trailingWidget = Container(
           width: 52,
           height: 52,
@@ -364,7 +390,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             border: Border.all(color: AppColors.errorRed, width: 2),
           ),
           child: const Center(
-            child: Icon(Icons.close_rounded, color: AppColors.errorRed, size: 28),
+            child: Icon(
+              Icons.close_rounded,
+              color: AppColors.errorRed,
+              size: 28,
+            ),
           ),
         );
         break;
@@ -374,7 +404,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         iconBgColor = const Color(0xFF1E1A10);
         icon = Icons.timer_off_outlined;
         title = 'Tempo de resposta esgotado';
-        subtitle = '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não respondeu à solicitação a tempo.';
+        subtitle =
+            '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} não respondeu à solicitação a tempo.';
         trailingWidget = Container(
           width: 52,
           height: 52,
@@ -399,8 +430,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       case TrackingStatus.waiting:
         cardBorderColor = AppColors.cardBorder;
         iconBgColor = const Color(0xFF1E1A10);
-        icon = _isToday ? Icons.access_time_rounded : Icons.event_available_rounded;
-        title = _isToday ? 'Aguardando confirmação' : 'Solicitação agendada enviada!';
+        icon = _isToday
+            ? Icons.access_time_rounded
+            : Icons.event_available_rounded;
+        title = _isToday
+            ? 'Aguardando confirmação'
+            : 'Solicitação agendada enviada!';
         subtitle = _isToday
             ? 'O profissional tem até 60 segundos para responder à sua solicitação imediata.'
             : 'Aguardando confirmação de ${widget.orderRequest.selectedProfessional?.name ?? 'profissional'} para $dateDisplay.';
@@ -415,7 +450,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       value: progress,
                       strokeWidth: 3.5,
                       backgroundColor: AppColors.cardBorder,
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryGold,
+                      ),
                     ),
                     Text(
                       formattedTime,
@@ -429,11 +466,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
               )
             : Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E1A10),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                  border: Border.all(
+                    color: AppColors.primaryGold.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Text(
                   'Agendado',
@@ -509,12 +551,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.verified_outlined, color: AppColors.success, size: 20),
+            const Icon(
+              Icons.verified_outlined,
+              color: AppColors.success,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Tudo pronto! O profissional entrará em contato ou comparecerá no horário agendado.',
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -522,22 +571,32 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       );
     }
 
-    if (_status == TrackingStatus.declined || _status == TrackingStatus.expired) {
+    if (_status == TrackingStatus.declined ||
+        _status == TrackingStatus.expired) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: const Color(0xFF1E190E),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: AppColors.primaryGold.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.info_outline_rounded, color: AppColors.primaryGold, size: 20),
+            const Icon(
+              Icons.info_outline_rounded,
+              color: AppColors.primaryGold,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Você pode escolher outro profissional agora mesmo sem perder os dados da solicitação.',
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -551,16 +610,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFF1E190E),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: AppColors.primaryGold.withValues(alpha: 0.3),
+          ),
         ),
         child: Row(
           children: [
-            const Icon(Icons.notifications_active_outlined, color: AppColors.primaryGold, size: 20),
+            const Icon(
+              Icons.notifications_active_outlined,
+              color: AppColors.primaryGold,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'O profissional tem até a véspera para confirmar. Você pode acompanhar o status em Meus Pedidos.',
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -577,12 +645,19 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.bolt_rounded, color: AppColors.primaryGold, size: 20),
+          const Icon(
+            Icons.bolt_rounded,
+            color: AppColors.primaryGold,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Assim que o profissional aceitar, seu pedido será confirmado imediatamente.',
-              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12),
+              style: GoogleFonts.inter(
+                color: AppColors.textPrimary,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -592,7 +667,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildTimelineStepper() {
     final isConfirmed = _status == TrackingStatus.accepted;
-    final isDeclinedOrExpired = _status == TrackingStatus.declined || _status == TrackingStatus.expired;
+    final isDeclinedOrExpired =
+        _status == TrackingStatus.declined || _status == TrackingStatus.expired;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -615,7 +691,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           _buildTimelineConnector(isCompleted: isConfirmed),
           _buildTimelineStep(
             icon: Icons.calendar_today_outlined,
-            title: isDeclinedOrExpired ? 'Não\nconfirmado' : 'Serviço\nconfirmado',
+            title: isDeclinedOrExpired
+                ? 'Não\nconfirmado'
+                : 'Serviço\nconfirmado',
             subtitle: '',
             isActive: false,
             isCompleted: isConfirmed,
@@ -652,11 +730,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           CircleAvatar(
             radius: 26,
             backgroundColor: AppColors.cardElevated,
-            backgroundImage: prof.avatarUrl.isNotEmpty ? NetworkImage(prof.avatarUrl) : null,
+            backgroundImage: prof.avatarUrl.isNotEmpty
+                ? NetworkImage(prof.avatarUrl)
+                : null,
             child: prof.avatarUrl.isEmpty
                 ? Text(
                     prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
-                    style: GoogleFonts.inter(color: AppColors.primaryGold, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w700,
+                    ),
                   )
                 : null,
           ),
@@ -680,17 +763,28 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.verified_rounded, color: AppColors.primaryGold, size: 15),
+                    const Icon(
+                      Icons.verified_rounded,
+                      color: AppColors.primaryGold,
+                      size: 15,
+                    ),
                   ],
                 ),
                 Text(
                   prof.role,
-                  style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 14),
+                    const Icon(
+                      Icons.star_rounded,
+                      color: AppColors.primaryGold,
+                      size: 14,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${prof.rating.toStringAsFixed(1)} (${prof.reviewCount} avaliações)',
@@ -710,7 +804,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             children: [
               Text(
                 'Valor do serviço',
-                style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 10),
+                style: GoogleFonts.inter(
+                  color: AppColors.textMuted,
+                  fontSize: 10,
+                ),
               ),
               Text(
                 'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
@@ -750,14 +847,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.build_outlined, color: AppColors.primaryGold, size: 18),
+              const Icon(
+                Icons.build_outlined,
+                color: AppColors.primaryGold,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Serviço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                    Text(serviceName, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Serviço',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      serviceName,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -767,14 +881,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.calendar_month_outlined, color: AppColors.primaryGold, size: 18),
+              const Icon(
+                Icons.calendar_month_outlined,
+                color: AppColors.primaryGold,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Data e Horário', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                    Text('$dateDisplay às ${widget.orderRequest.scheduledTimeSlot}', style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Data e Horário',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      '$dateDisplay às ${widget.orderRequest.scheduledTimeSlot}',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -784,14 +915,31 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 18),
+              const Icon(
+                Icons.location_on_outlined,
+                color: AppColors.primaryGold,
+                size: 18,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Endereço', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11)),
-                    Text(widget.orderRequest.address, style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Endereço',
+                      style: GoogleFonts.inter(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    Text(
+                      widget.orderRequest.address,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -815,7 +963,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           height: 50,
           child: ElevatedButton.icon(
             onPressed: _goToMyOrders,
-            icon: const Icon(Icons.assignment_turned_in_outlined, color: AppColors.textDark, size: 18),
+            icon: const Icon(
+              Icons.assignment_turned_in_outlined,
+              color: AppColors.textDark,
+              size: 18,
+            ),
             label: Text(
               'Acompanhar em Meus Pedidos',
               style: GoogleFonts.inter(
@@ -826,7 +978,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
           ),
@@ -849,7 +1003,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: _chooseAnotherProfessional,
-                icon: const Icon(Icons.replay_rounded, color: AppColors.textDark, size: 18),
+                icon: const Icon(
+                  Icons.replay_rounded,
+                  color: AppColors.textDark,
+                  size: 18,
+                ),
                 label: Text(
                   'Escolher outro profissional',
                   style: GoogleFonts.inter(
@@ -860,7 +1018,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -873,7 +1033,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     onPressed: _continueWaiting,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.primaryGold),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: Text(
                       'Continuar aguardando',
@@ -891,7 +1053,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     onPressed: _cancelAppointment,
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.errorRed),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: Text(
                       'Cancelar solicitação',
@@ -925,7 +1089,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: _chooseAnotherProfessional,
-                icon: const Icon(Icons.people_outline_rounded, color: AppColors.textDark, size: 18),
+                icon: const Icon(
+                  Icons.people_outline_rounded,
+                  color: AppColors.textDark,
+                  size: 18,
+                ),
                 label: Text(
                   'Escolher outro profissional disponível',
                   style: GoogleFonts.inter(
@@ -936,7 +1104,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -949,7 +1119,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 onPressed: _cancelAppointment,
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.cardBorder),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: Text(
                   'Cancelar e voltar ao início',
@@ -981,7 +1153,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: _goToMyOrders,
-                icon: const Icon(Icons.assignment_outlined, color: AppColors.textDark, size: 18),
+                icon: const Icon(
+                  Icons.assignment_outlined,
+                  color: AppColors.textDark,
+                  size: 18,
+                ),
                 label: Text(
                   'Acompanhar em Meus Pedidos',
                   style: GoogleFonts.inter(
@@ -992,7 +1168,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -1025,7 +1203,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         height: 48,
         child: OutlinedButton.icon(
           onPressed: _cancelAppointment,
-          icon: const Icon(Icons.close_rounded, color: AppColors.primaryGold, size: 18),
+          icon: const Icon(
+            Icons.close_rounded,
+            color: AppColors.primaryGold,
+            size: 18,
+          ),
           label: Text(
             'Cancelar solicitação',
             style: GoogleFonts.inter(
@@ -1036,7 +1218,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         ),
       ),
@@ -1057,9 +1241,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           height: 38,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isCompleted || isActive ? AppColors.primaryGold : AppColors.cardElevated,
+            color: isCompleted || isActive
+                ? AppColors.primaryGold
+                : AppColors.cardElevated,
             border: Border.all(
-              color: isCompleted || isActive ? AppColors.primaryGold : AppColors.cardBorder,
+              color: isCompleted || isActive
+                  ? AppColors.primaryGold
+                  : AppColors.cardBorder,
               width: 1.5,
             ),
           ),
@@ -1067,7 +1255,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             child: Icon(
               icon,
               size: 18,
-              color: isCompleted || isActive ? AppColors.textDark : AppColors.textMuted,
+              color: isCompleted || isActive
+                  ? AppColors.textDark
+                  : AppColors.textMuted,
             ),
           ),
         ),
@@ -1075,9 +1265,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         Text(
           title,
           style: GoogleFonts.inter(
-            color: isCompleted || isActive ? AppColors.primaryGold : AppColors.textMuted,
+            color: isCompleted || isActive
+                ? AppColors.primaryGold
+                : AppColors.textMuted,
             fontSize: 10,
-            fontWeight: isCompleted || isActive ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: isCompleted || isActive
+                ? FontWeight.w700
+                : FontWeight.w500,
           ),
           textAlign: TextAlign.center,
         ),

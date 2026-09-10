@@ -9,9 +9,9 @@ namespace api_bora_trampar.src.Requests
         [Display(Order = 1)]
         public string Id { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "O ProfissionalId é obrigatório.")]
+        [Required(ErrorMessage = "O ProfessionalId é obrigatório.")]
         [Display(Order = 2)]
-        public string ProfissionalId { get; set; } = string.Empty;
+        public string ProfessionalId { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "A Pontuação é obrigatória.")]
         [Range(1, 5, ErrorMessage = "A pontuação deve ser entre 1 e 5.")]

@@ -21,7 +21,7 @@ import 'package:app_bora_trampar/core/services/notification_service.dart';
 class LoginScreen extends StatefulWidget {
   final String initialRole;
 
-  const LoginScreen({super.key, this.initialRole = 'Profissional'});
+  const LoginScreen({super.key, required this.initialRole});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const MainNavigationScreen(),
+                builder: (context) => const MainNavigationScreen(role: "Professional",),
               ),
               (route) => false,
             );

@@ -3,14 +3,16 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.SignalR;
 using api_bora_trampar.src.Utils;
+using Microsoft.AspNetCore.SignalR;
 using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
     public class AppointmentService(
         IAppointmentRepository repository,
-        IUserRepository userRepository, IUserService userService) : IAppointmentService
+        IUserRepository userRepository, IUserService userService, INotificationService notificationService, IHubContext<AppointmentHub> hub) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -33,7 +35,7 @@ namespace api_bora_trampar.src.Services
                         })},
                         {"profissionalObjectId", new BsonDocument("$convert", new BsonDocument
                         {
-                            {"input", "$profissional_id"},
+                            {"input", "$professional_id"},
                             {"to", "objectId"},
                             {"onError", BsonNull.Value},
                             {"onNull", BsonNull.Value}
@@ -51,7 +53,8 @@ namespace api_bora_trampar.src.Services
                             {"to", "objectId"},
                             {"onError", BsonNull.Value},
                             {"onNull", BsonNull.Value}
-                        })}
+                        })},
+                        {"id", new BsonDocument("$toString", "$_id")}
                     }),
                     new("$lookup", new BsonDocument
                     {
@@ -81,12 +84,22 @@ namespace api_bora_trampar.src.Services
                         {"foreignField", "_id"},
                         {"as", "service_lookup"}
                     }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "reviews"},
+                        {"localField", "id"},
+                        {"foreignField", "appointment_id"},
+                        {"as", "reviews_lookup"}
+                    }),
+                    new ("$addFields", new BsonDocument {
+                        {"review", new BsonDocument ("$first", "$reviews_lookup")}
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
-                        {"id", new BsonDocument("$toString", "$_id")},
-                        {"profissional_id", 1},
-                        {"profissionalId", "$profissional_id"},
+                        {"id", 1},
+                        {"professional_id", 1},
+                        {"professionalId", "$professional_id"},
                         {"customer_id", 1},
                         {"customerId", "$customer_id"},
                         {"category_id", 1},
@@ -140,9 +153,10 @@ namespace api_bora_trampar.src.Services
                         {"description", 1},
                         {"notes", 1},
                         {"photo_urls", 1},
-                        {"total_price", 1},
+                        {"total_price", new BsonDocument("$toDouble", "$total_price")},
                         {"asaas_payment_id", 1},
-                        {"createdAt", 1}
+                        {"createdAt", 1},
+                        {"hasReviews", new BsonDocument ("$ifNull",  new BsonArray { "$review.professional_id", "" })},
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
                 ];
@@ -178,19 +192,12 @@ namespace api_bora_trampar.src.Services
             {
                 Appointment entity = ObjectMapper.Map<CreateAppointmentRequest, Appointment>(request);
 
-                string serviceText = !string.IsNullOrWhiteSpace(request.ServiceNames)
-                    ? request.ServiceNames
-                    : (!string.IsNullOrWhiteSpace(request.ServiceNamesSnake) ? request.ServiceNamesSnake : "");
-
-                entity.ServiceNames = !string.IsNullOrWhiteSpace(serviceText) ? serviceText : null;
-                entity.CategoryName = !string.IsNullOrWhiteSpace(request.CategoryName)
-                    ? request.CategoryName
-                    : (!string.IsNullOrWhiteSpace(request.CategoryNameSnake) ? request.CategoryNameSnake : null);
-
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
                 Appointment? appointment = await repository.CreateAsync(entity);
                 if (appointment is null) return new(null, 400, "Falha ao criar agendamento");
+
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentCreated", new { appointment.Id, status = "Created" });
 
                 return new(appointment, 201, "Agendamento criado com sucesso");
             }
@@ -229,10 +236,15 @@ namespace api_bora_trampar.src.Services
                 if (appointment is null) return new(null, 404, "Agendamento não encontrado");
 
                 appointment.Status = "Accepted";
-                appointment.UpdatedBy = string.IsNullOrEmpty(userId) ? (appointment.ProfissionalId ?? "") : userId;
+                appointment.UpdatedBy = userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
                 Appointment? updated = await repository.UpdateAsync(appointment);
+                if (updated is null) return new(null, 404, "Agendamento não encontrado");
+
+                await notificationService.MarkAsReadAppointmentAsync(appointment.Id);
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Accepted" });
+
                 return new(updated, 200, "Agendamento aceito com sucesso");
             }
             catch (Exception ex)
@@ -249,10 +261,14 @@ namespace api_bora_trampar.src.Services
                 if (appointment is null) return new(null, 404, "Agendamento não encontrado");
 
                 appointment.Status = "Declined";
-                appointment.UpdatedBy = string.IsNullOrEmpty(userId) ? (appointment.ProfissionalId ?? "") : userId;
+                appointment.UpdatedBy = string.IsNullOrEmpty(userId) ? (appointment.ProfessionalId ?? "") : userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
                 Appointment? updated = await repository.UpdateAsync(appointment);
+                await notificationService.MarkAsReadAppointmentAsync(appointment.Id);
+
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Declined" });
+
                 return new(updated, 200, "Agendamento recusado");
             }
             catch (Exception ex)
@@ -275,6 +291,8 @@ namespace api_bora_trampar.src.Services
                 Appointment? updated = await repository.UpdateAsync(appointment);
                 if (updated is null) return new(null, 404, "Agendamento não encontrado");
 
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "StartService" });
+
                 return new(updated, 200, "Agendamento iniciado");
             }
             catch (Exception ex)
@@ -282,6 +300,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+
         public async Task<ResponseApi<Appointment?>> FinishAsync(string id, string userId)
         {
             try
@@ -296,10 +315,12 @@ namespace api_bora_trampar.src.Services
                 Appointment? updated = await repository.UpdateAsync(appointment);
                 if (updated is null) return new(null, 404, "Agendamento não encontrado");
 
-                ResponseApi<User?> user = await userService.GetByIdAsync(appointment.ProfissionalId);
+                ResponseApi<User?> user = await userService.GetByIdAsync(appointment.ProfessionalId);
                 if (user.Data is null) return new(null, 404, "Agendamento não encontrado");
 
-                await userService.UpdateWalletBalanceAsync(appointment.ProfissionalId, appointment.TotalPrice);
+                await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
+                System.Console.WriteLine(appointment.Id);
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
 
                 return new(updated, 200, "Agendamento finalizado");
             }
@@ -332,6 +353,8 @@ namespace api_bora_trampar.src.Services
                         await userRepository.UpdateAsync(customer);
                     }
                 }
+
+                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "CancelledByCustomer" });
 
                 return new(updated, 200, "Agendamento cancelado pelo cliente e saldo creditado");
             }

@@ -1,12 +1,9 @@
-// import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
-import 'package:app_bora_trampar/pages/auth/login_screen.dart';
+import 'package:app_bora_trampar/pages/onboarding/welcome_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 
 class UtilService {
-  // final _storage = StorageService();
-  
   static void normalizeError(BuildContext context, DioException err) {
     if (err.response == null) {
       Toastfy.show(context, "Falha interna", "error");
@@ -15,7 +12,7 @@ class UtilService {
       if (status == 401) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => LoginScreen()),
+          MaterialPageRoute(builder: (context) => WelcomeScreen()),
         );
       }
 

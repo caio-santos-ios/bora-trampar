@@ -8,7 +8,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class ReviewsService(IReviewsRepository repository) : IReviewsService
+    public class ReviewsService(IReviewsRepository repository, IProfileProfessionalService profileProfessionalService) : IReviewsService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
@@ -25,7 +25,7 @@ namespace api_bora_trampar.src.Services
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
-                        {"profissional_id", 1},
+                        {"professional_id", 1},
                         {"point", 1},
                         {"notes", 1},
                         {"createdAt", 1}
@@ -70,6 +70,9 @@ namespace api_bora_trampar.src.Services
                 entity.UpdatedAt = DateTime.UtcNow;
                 Reviews? review = await repository.CreateAsync(entity);
                 if (review is null) return new(null, 400, "Falha ao criar avaliação");
+
+                ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.UpdateRatingAsync(entity.ProfessionalId, request.Point);
+                if (profile.Data is null) return new(null, 404, "Perfil não encontrado");
 
                 return new(review, 201, "Avaliação criada com sucesso");
             }

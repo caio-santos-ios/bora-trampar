@@ -19,6 +19,10 @@ namespace api_bora_trampar.src.Repositories
         {
             return await appDbContext.Payments.Find(x => !x.Deleted && (x.Id.Equals(id) || (x.AsaasId != null && x.AsaasId.Equals(id)))).FirstOrDefaultAsync();
         }
+        public async Task<Payment?> GetByAssasIdAsync(string asaasId)
+        {
+            return await appDbContext.Payments.Find(x => !x.Deleted && (x.AsaasId.Equals(asaasId))).FirstOrDefaultAsync();
+        }
 
         public async Task<Payment?> CreateAsync(Payment entity)
         {

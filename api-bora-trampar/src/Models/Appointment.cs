@@ -4,8 +4,8 @@ namespace api_bora_trampar.src.Models
 {
     public class Appointment : ModelBase
     {
-        [BsonElement("profissional_id")]
-        public string ProfissionalId { get; set; } = string.Empty;
+        [BsonElement("professional_id")]
+        public string ProfessionalId { get; set; } = string.Empty;
 
         [BsonElement("customer_id")]
         public string CustomerId { get; set; } = string.Empty;

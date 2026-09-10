@@ -5,9 +5,8 @@ import 'package:app_bora_trampar/core/services/storage_service.dart';
 class HttpClientApi {
   static const String _prodUrl = 'https://bora-trampar.onrender.com';
   static const String _devUrl = 'http://192.168.18.72:5067';
-  // static const String _devUrl = 'http://192.168.1.110:5067';
 
-  static String get baseUrl {
+  static String get _baseUrl {
     const customUrl = String.fromEnvironment('BASE_URL');
     if (customUrl.isNotEmpty) {
       return customUrl;
@@ -18,7 +17,7 @@ class HttpClientApi {
   final Dio _dio = Dio();
 
   HttpClientApi() {
-    _dio.options.baseUrl = baseUrl;
+    _dio.options.baseUrl = _baseUrl;
     _dio.options.connectTimeout = const Duration(seconds: 90);
     _dio.options.receiveTimeout = const Duration(seconds: 90);
     _dio.options.sendTimeout = const Duration(seconds: 90);
@@ -52,4 +51,5 @@ class HttpClientApi {
   }
 
   Dio get client => _dio;
+  String get baseUrl => _baseUrl;
 }

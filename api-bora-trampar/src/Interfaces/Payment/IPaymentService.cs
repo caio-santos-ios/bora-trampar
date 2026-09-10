@@ -2,6 +2,7 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Payment;
 
 namespace api_bora_trampar.src.Interfaces
 {
@@ -12,6 +13,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request);
         Task<ResponseApi<Payment?>> UpdateAsync(UpdatePaymentRequest request);
         Task<ResponseApi<Payment?>> ConfirmPaymentAsync(string paymentId, string userId);
+        Task<ResponseApi<Payment?>> CheckPaymentAsync(CheckPaymentRequest request);
         Task<ResponseApi<Payment?>> DeleteAsync(DeleteRequest request);
     }
 }

@@ -71,7 +71,7 @@ export class Payments implements OnInit {
 
         this.transactions = appts.map((a: any, idx: number) => {
           const customer = userMap.get(a.customer_id || a.customerId) || {};
-          const pro = userMap.get(a.profissional_id || a.profissionalId) || {};
+          const pro = userMap.get(a.professional_id || a.professionalId) || {};
           const gross = Number(a.price || a.value || 150.0);
           const fee = gross * 0.10;
           const net = gross - fee;

@@ -88,7 +88,7 @@ export class Professionals implements OnInit {
       const approvalMap: { [key: string]: any } = {};
       if (Array.isArray(rawApprovals)) {
         for (const a of rawApprovals) {
-          const pId = (a.profissional_id || a.profissionalId || a.userId || '').toString();
+          const pId = (a.professional_id || a.professionalId || a.userId || '').toString();
           if (pId) approvalMap[pId] = a;
         }
       }
@@ -106,7 +106,7 @@ export class Professionals implements OnInit {
       const apptCountByPro: { [key: string]: number } = {};
       if (Array.isArray(rawAppointments)) {
         for (const a of rawAppointments) {
-          const pId = a.profissional_id || a.profissionalId;
+          const pId = a.professional_id || a.professionalId;
           if (pId) {
             apptCountByPro[pId] = (apptCountByPro[pId] || 0) + 1;
           }
@@ -367,8 +367,8 @@ export class Professionals implements OnInit {
       const all = res.data.result?.data || res.data.result || [];
       if (Array.isArray(all)) {
         this.proAppointments = all.filter((a: any) =>
-          (a.profissional_id || a.profissionalId) === pro.userId ||
-          (a.profissional_id || a.profissionalId) === pro.id
+          (a.professional_id || a.professionalId) === pro.userId ||
+          (a.professional_id || a.professionalId) === pro.id
         );
       }
     } catch {

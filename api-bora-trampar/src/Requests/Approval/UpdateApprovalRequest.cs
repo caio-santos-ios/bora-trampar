@@ -9,8 +9,8 @@ namespace api_bora_trampar.src.Requests
         [JsonPropertyName("id")]
         public string? Id { get; set; } = string.Empty;
 
-        [JsonPropertyName("profissionalId")]
-        public string? ProfissionalId { get; set; } = string.Empty;
+        [JsonPropertyName("professionalId")]
+        public string? ProfessionalId { get; set; } = string.Empty;
 
         [JsonPropertyName("documentType")]
         public string DocumentType { get; set; } = "CNH";

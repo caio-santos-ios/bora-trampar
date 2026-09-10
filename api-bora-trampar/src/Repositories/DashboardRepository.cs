@@ -30,7 +30,7 @@ namespace api_bora_trampar.src.Repositories
                     }
 
                     var existing = await db.Approvals
-                        .Find(a => !a.Deleted && a.ProfissionalId == profile.UserId)
+                        .Find(a => !a.Deleted && a.ProfessionalId == profile.UserId)
                         .FirstOrDefaultAsync();
 
                     if (existing == null)
@@ -41,7 +41,7 @@ namespace api_bora_trampar.src.Repositories
 
                         var newApproval = new Approval
                         {
-                            ProfissionalId = profile.UserId,
+                            ProfessionalId = profile.UserId,
                             DocumentType = string.IsNullOrWhiteSpace(profile.IdentityDocumentType) ? "CNH" : profile.IdentityDocumentType,
                             DocumentNumber = profile.IdentityDocumentNumber,
                             RgFrontUrl = profile.IdentityDocumentFrontUrl,
@@ -110,8 +110,8 @@ namespace api_bora_trampar.src.Repositories
                 {
                     if (d.Contains("customer_id") && !d["customer_id"].IsBsonNull && !string.IsNullOrWhiteSpace(d["customer_id"].AsString))
                         userIds.Add(d["customer_id"].AsString);
-                    if (d.Contains("profissional_id") && !d["profissional_id"].IsBsonNull && !string.IsNullOrWhiteSpace(d["profissional_id"].AsString))
-                        userIds.Add(d["profissional_id"].AsString);
+                    if (d.Contains("professional_id") && !d["professional_id"].IsBsonNull && !string.IsNullOrWhiteSpace(d["professional_id"].AsString))
+                        userIds.Add(d["professional_id"].AsString);
                 }
                 userIds = userIds.Distinct().ToList();
 
@@ -142,7 +142,7 @@ namespace api_bora_trampar.src.Repositories
                     if (recent.Count < 6)
                     {
                         var cId = a.Contains("customer_id") && !a["customer_id"].IsBsonNull ? a["customer_id"].AsString : "";
-                        var pId = a.Contains("profissional_id") && !a["profissional_id"].IsBsonNull ? a["profissional_id"].AsString : "";
+                        var pId = a.Contains("professional_id") && !a["professional_id"].IsBsonNull ? a["professional_id"].AsString : "";
                         var customerName = !string.IsNullOrEmpty(cId) && userMap.TryGetValue(cId, out var cName) ? cName : "Cliente";
                         var proName = !string.IsNullOrEmpty(pId) && userMap.TryGetValue(pId, out var pName) ? pName : "Profissional";
 

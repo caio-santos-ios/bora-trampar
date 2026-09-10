@@ -1,7 +1,8 @@
 class AppointmentModel {
   final String id;
-  final String profissionalId;
+  final String professionalId;
   final String customerId;
+  final String serviceId;
   final DateTime date;
   final String hour;
   final String? serviceName;
@@ -14,11 +15,13 @@ class AppointmentModel {
   final List<String> photoUrls;
   final double? price;
   final String status;
+  final String hasReviews;
 
   AppointmentModel({
     required this.id,
-    required this.profissionalId,
+    required this.professionalId,
     required this.customerId,
+    required this.serviceId,
     required this.date,
     required this.hour,
     this.serviceName,
@@ -31,6 +34,7 @@ class AppointmentModel {
     this.photoUrls = const [],
     this.price,
     this.status = 'PendingPayment',
+    this.hasReviews = ""
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
@@ -89,8 +93,9 @@ class AppointmentModel {
 
     return AppointmentModel(
       id: parseString(json['id'] ?? json['_id']),
-      profissionalId: parseString(json['profissional_id'] ?? json['profissionalId'] ?? json['ProfissionalId']),
+      professionalId: parseString(json['professional_id'] ?? json['professionalId'] ?? json['ProfessionalId']),
       customerId: parseString(json['customer_id'] ?? json['customerId'] ?? json['CustomerId']),
+      serviceId: json["serviceId"],
       date: parsedDate,
       hour: json['hour']?.toString() ?? json['Hour']?.toString() ?? '',
       serviceName: json['service_names']?.toString() ?? json['serviceName']?.toString() ?? json['service']?.toString() ?? json['Service']?.toString(),
@@ -103,13 +108,14 @@ class AppointmentModel {
       photoUrls: photosList,
       price: parsePrice(rawPrice),
       status: json['status']?.toString() ?? json['Status']?.toString() ?? 'PendingPayment',
+      hasReviews: json.containsKey("hasReviews") ? json["hasReviews"] : ""
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'profissional_id': profissionalId,
+      'professional_id': professionalId,
       'customer_id': customerId,
       'date': date.toIso8601String(),
       'hour': hour,

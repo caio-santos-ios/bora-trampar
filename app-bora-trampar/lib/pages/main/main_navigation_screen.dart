@@ -1,3 +1,6 @@
+import 'package:app_bora_trampar/pages/customer/customer_financial_scrren.dart';
+import 'package:app_bora_trampar/pages/customer/customer_home_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_service.dart';
@@ -13,10 +16,12 @@ import '../schedule/schedule_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
+  final String role;
 
   const MainNavigationScreen({
     super.key,
     this.initialIndex = 0,
+    this.role = "Customer",
   });
 
   @override
@@ -51,7 +56,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
       if (profile == null || !profile.isProfileCompleted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const ProfessionalOnboardingScreen()),
+          MaterialPageRoute(
+            builder: (context) => const ProfessionalOnboardingScreen(),
+          ),
           (route) => false,
         );
         return;
@@ -60,7 +67,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       final status = profile.identityVerificationStatus.toLowerCase();
       if (status != 'approved') {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => IdentityVerificationPendingScreen(initialProfile: profile)),
+          MaterialPageRoute(
+            builder: (context) =>
+                IdentityVerificationPendingScreen(initialProfile: profile),
+          ),
           (route) => false,
         );
         return;
@@ -91,16 +101,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     }
 
     final pages = [
-      HomeScreen(
-        onNavigateToSchedule: () => _onTabSelected(1),
-        onNavigateToProfile: () => _onTabSelected(3),
-      ),
-      ScheduleScreen(
-        onNavigateToProfile: () => _onTabSelected(3),
-      ),
-      FinancialHistoryScreen(
-        onNavigateToProfile: () => _onTabSelected(3),
-      ),
+      widget.role == "Customer"
+          ? CustomerHomeScreen()
+          : HomeScreen(
+              onNavigateToSchedule: () => _onTabSelected(1),
+              onNavigateToProfile: () => _onTabSelected(3),
+            ),
+      widget.role == "Customer"
+          ? CustomerOrderScreen()
+          : ScheduleScreen(onNavigateToProfile: () => _onTabSelected(3)),
+      widget.role == "Customer"
+          ? CustomerFinancialScrren()
+          : FinancialHistoryScreen(
+              onNavigateToProfile: () => _onTabSelected(3),
+            ),
       const ProfileScreen(),
     ];
 
@@ -152,10 +166,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.cardBackground,
@@ -173,8 +184,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             type: BottomNavigationBarType.fixed,
             selectedItemColor: AppColors.primaryGold,
             unselectedItemColor: AppColors.textMuted,
-            selectedLabelStyle: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
-            unselectedLabelStyle: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500),
+            selectedLabelStyle: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+            unselectedLabelStyle: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
             items: _isProfessional ? proNavItems : customerNavItems,
           ),
         ),

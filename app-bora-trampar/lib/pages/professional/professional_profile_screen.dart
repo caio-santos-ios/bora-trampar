@@ -1,10 +1,11 @@
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_5_screen.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/rating_stars.dart';
 import '../../models/order_request_model.dart';
 import '../../models/professional_model.dart';
-import '../order_confirmation/order_confirmation_screen.dart';
 
 class ProfessionalProfileScreen extends StatelessWidget {
   final OrderRequestModel orderRequest;
@@ -20,7 +21,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
     orderRequest.selectedProfessional = professional;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => OrderConfirmationScreen(orderRequest: orderRequest),
+        builder: (context) => CustomerOrderTab5Screen(orderRequest: orderRequest),
       ),
     );
   }
@@ -587,7 +588,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Solicitar Profissional • R\$ ${effectivePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                    'Solicitar Profissional • ${UtilBrasilFields.obterReal(effectivePrice)}',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,

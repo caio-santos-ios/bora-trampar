@@ -116,7 +116,7 @@ class AvailabilityHelper {
     final slotMinutes = _parseTimeToMinutes(timeSlot);
 
     for (final apt in appointments) {
-      if (apt.profissionalId != professionalId) continue;
+      if (apt.professionalId != professionalId) continue;
 
       final s = apt.status.toLowerCase();
       if (s == 'cancelled' ||

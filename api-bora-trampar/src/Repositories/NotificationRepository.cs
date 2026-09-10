@@ -41,36 +41,40 @@ namespace api_bora_trampar.src.Repositories
             return results.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
         }
 
- public async Task<Notification?> GetByIdAsync(string id)
- {
- return await appDbContext.Notifications.Find(x => !x.Deleted && x.Id.Equals(id)).FirstOrDefaultAsync();
- }
+        public async Task<Notification?> GetByIdAsync(string id)
+        {
+            return await appDbContext.Notifications.Find(x => !x.Deleted && x.Id.Equals(id)).FirstOrDefaultAsync();
+        }
+        public async Task<Notification?> GetByAppointmentIdAsync(string appointmentId)
+        {
+            return await appDbContext.Notifications.Find(x => !x.Deleted && x.AppointmentId!.Equals(appointmentId)).FirstOrDefaultAsync();
+        }
 
- public async Task<Notification> CreateAsync(Notification entity)
- {
- await appDbContext.Notifications.InsertOneAsync(entity);
- return entity;
- }
+        public async Task<Notification> CreateAsync(Notification entity)
+        {
+            await appDbContext.Notifications.InsertOneAsync(entity);
+            return entity;
+        }
 
- public async Task<List<Notification>> CreateManyAsync(List<Notification> entities)
- {
- if (entities.Count > 0)
- {
- await appDbContext.Notifications.InsertManyAsync(entities);
- }
- return entities;
- }
+        public async Task<List<Notification>> CreateManyAsync(List<Notification> entities)
+        {
+            if (entities.Count > 0)
+            {
+                await appDbContext.Notifications.InsertManyAsync(entities);
+            }
+            return entities;
+        }
 
- public async Task<Notification> UpdateAsync(Notification entity)
- {
- await appDbContext.Notifications.ReplaceOneAsync(x => x.Id.Equals(entity.Id), entity);
- return entity;
- }
+        public async Task<Notification> UpdateAsync(Notification entity)
+        {
+            await appDbContext.Notifications.ReplaceOneAsync(x => x.Id.Equals(entity.Id), entity);
+            return entity;
+        }
 
- public async Task<Notification> DeleteAsync(Notification entity)
- {
- await appDbContext.Notifications.ReplaceOneAsync(x => x.Id.Equals(entity.Id), entity);
- return entity;
- }
- }
+        public async Task<Notification> DeleteAsync(Notification entity)
+        {
+            await appDbContext.Notifications.ReplaceOneAsync(x => x.Id.Equals(entity.Id), entity);
+            return entity;
+        }
+    }
 }
