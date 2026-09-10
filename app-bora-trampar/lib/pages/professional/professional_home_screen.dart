@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
-import 'package:app_bora_trampar/pages/customer/customer_reviews_screen.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,32 +13,28 @@ import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../models/user_model.dart';
 import '../../models/category_model.dart';
-import '../../models/order_request_model.dart';
 import '../../models/professional_model.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
-import '../categories/category_selection_screen.dart';
-import '../professional/professional_profile_screen.dart';
-import '../services/service_selection_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class ProfessionalHomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSchedule;
   final VoidCallback? onNavigateToProfile;
 
-  const HomeScreen({
+  const ProfessionalHomeScreen({
     super.key,
     this.onNavigateToSchedule,
     this.onNavigateToProfile,
   });
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<ProfessionalHomeScreen> createState() => _ProfessionalHomeScreen();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   final _categoryRepo = CategoryRepository();
   final _profileRepo = ProfileProfessionalRepository();
   final _appointmentRepo = AppointmentRepository();
@@ -138,35 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
         duration: const Duration(seconds: 2),
       ),
     );
-  }
-
-  Future<void> _openWhatsApp(String? phone, String? customerName) async {
-    if (phone == null || phone.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Telefone do cliente não informado.'),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
-      return;
-    }
-
-    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    final name = customerName ?? 'Cliente';
-    final uri = Uri.parse(
-      'https://wa.me/55$cleanPhone?text=Olá%20$name,%20sou%20o%20profissional%20do%20Bora%20Trampar!',
-    );
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível abrir o WhatsApp.'),
-          backgroundColor: AppColors.errorRed,
-        ),
-      );
-    }
   }
 
   Future<void> _openMaps(String? address) async {
@@ -445,8 +411,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final role = (_user?.role ?? '').toLowerCase();
-    final isCustomer = role == 'customer' || role == 'cliente';
     final userName = _user?.name.split(' ').first ?? 'Usuário';
 
     return Scaffold(
@@ -463,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
-              _buildHeaderSection(isCustomer, userName),
+              _buildHeaderSection(userName),
               const SizedBox(height: 20),
               if (_isLoading)
                 const Center(
@@ -474,8 +438,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 )
-              else if (isCustomer)
-                _buildCustomerView()
               else
                 _buildProfessionalView(),
               const SizedBox(height: 20),
@@ -486,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeaderSection(bool isCustomer, String userName) {
+  Widget _buildHeaderSection(String userName) {
     final radius = _profile?.address.serviceRadiusKm ?? 25;
     final city = _profile?.address.city ?? '';
     final state = _profile?.address.state ?? '';
@@ -526,32 +488,32 @@ class _HomeScreenState extends State<HomeScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (!isCustomer &&
-                            (_profile?.identityVerificationStatus
-                                    .toLowerCase() ==
-                                'approved')) ...[
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified_rounded,
-                            color: AppColors.primaryGold,
-                            size: 20,
-                          ),
-                        ],
+                        // if (!isCustomer &&
+                        //     (_profile?.identityVerificationStatus
+                        //             .toLowerCase() ==
+                        //         'approved')) ...[
+                        //   const SizedBox(width: 6),
+                        //   const Icon(
+                        //     Icons.verified_rounded,
+                        //     color: AppColors.primaryGold,
+                        //     size: 20,
+                        //   ),
+                        // ],
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      isCustomer
-                          ? 'Encontre profissionais de confiança para sua diária'
-                          : (_profile?.profession.isNotEmpty == true
-                                ? _profile!.profession
-                                : 'Profissional'),
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    // Text(
+                    //   isCustomer
+                    //       ? 'Encontre profissionais de confiança para sua diária'
+                    //       : (_profile?.profession.isNotEmpty == true
+                    //             ? _profile!.profession
+                    //             : 'Profissional'),
+                    //   style: GoogleFonts.inter(
+                    //     fontSize: 13,
+                    //     color: AppColors.textSecondary,
+                    //     fontWeight: FontWeight.w500,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -568,7 +530,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: Text(
-                  isCustomer ? 'Cliente' : 'Profissional',
+                  'Profissional',
                   style: GoogleFonts.inter(
                     color: AppColors.primaryGold,
                     fontSize: 11,
@@ -578,83 +540,79 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          if (!isCustomer) ...[
-            const SizedBox(height: 16),
-            const Divider(color: AppColors.cardBorder),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _isAvailable
-                            ? AppColors.success
-                            : AppColors.textMuted,
-                        shape: BoxShape.circle,
-                        boxShadow: _isAvailable
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.success.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ]
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _isAvailable
-                          ? 'Disponível para novos trampos'
-                          : 'Em Pausa / Ocupado',
-                      style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: _isAvailable
-                            ? AppColors.success
-                            : AppColors.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-                Switch(
-                  value: _isAvailable,
-                  activeThumbColor: AppColors.textDark,
-                  activeTrackColor: AppColors.primaryGold,
-                  inactiveTrackColor: AppColors.cardElevated,
-                  onChanged: _toggleAvailability,
-                ),
-              ],
-            ),
-            if (hasLocation) ...[
-              const SizedBox(height: 6),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.cardBorder),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.location_on_outlined,
-                    size: 14,
-                    color: AppColors.primaryGold,
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _isAvailable
+                          ? AppColors.success
+                          : AppColors.textMuted,
+                      shape: BoxShape.circle,
+                      boxShadow: _isAvailable
+                          ? [
+                              BoxShadow(
+                                color: AppColors.success.withValues(alpha: 0.6),
+                                blurRadius: 6,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
                   ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      'Atendendo em até $radius km • $city, $state',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
+                  const SizedBox(width: 8),
+                  Text(
+                    _isAvailable
+                        ? 'Disponível para novos trampos'
+                        : 'Em Pausa / Ocupado',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _isAvailable
+                          ? AppColors.success
+                          : AppColors.textMuted,
                     ),
                   ),
                 ],
               ),
+              Switch(
+                value: _isAvailable,
+                activeThumbColor: AppColors.textDark,
+                activeTrackColor: AppColors.primaryGold,
+                inactiveTrackColor: AppColors.cardElevated,
+                onChanged: _toggleAvailability,
+              ),
             ],
+          ),
+          if (hasLocation) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 14,
+                  color: AppColors.primaryGold,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'Atendendo em até $radius km • $city, $state',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
@@ -663,12 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProfessionalView() {
     final now = DateTime.now();
+
     final completedAppointments = _appointments.where((a) {
-      final s = a.status.toLowerCase();
-      return s == 'completed' ||
-          s == 'finished' ||
-          s == 'confirmed' ||
-          s == 'paid';
+      return a.status == "Finish";
     }).toList();
 
     final monthAppointments = completedAppointments.where((a) {
@@ -704,17 +659,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _profile!.id!.trim().toLowerCase());
       if (!isForMe) return false;
 
-      final s = a.status.toLowerCase();
-      return (s.contains('pending') ||
-              s.contains('request') ||
-              s.contains('analysis') ||
-              s.contains('aguardando') ||
-              s == 'paid') &&
-          s != 'accepted' &&
-          s != 'confirmed' &&
-          s != 'declined' &&
-          s != 'cancelled' &&
-          !s.contains('cancelledbycustomer');
+      return a.status == "PendingAcceptance";
     }).toList();
 
     final activeAppointments = _appointments.where((a) {
@@ -1329,7 +1274,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       photoUrls: a.photoUrls,
                                       price: a.price,
                                       status: 'Declined',
-                                      serviceId: ""
+                                      serviceId: "",
                                     );
                                   }
                                   return a;
@@ -1381,7 +1326,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       photoUrls: a.photoUrls,
                                       price: a.price,
                                       status: 'Accepted',
-                                      serviceId: ""
+                                      serviceId: "",
                                     );
                                   }
                                   return a;
@@ -1641,399 +1586,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCustomerView() {
-    final filteredCategories = _customerSearchQuery.isEmpty
-        ? _categories
-        : _categories
-              .where(
-                (c) => c.title.toLowerCase().contains(
-                  _customerSearchQuery.toLowerCase(),
-                ),
-              )
-              .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.inputBorder),
-          ),
-          child: TextField(
-            style: GoogleFonts.inter(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-            ),
-            onChanged: (v) => setState(() => _customerSearchQuery = v),
-            decoration: InputDecoration(
-              icon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.textMuted,
-                size: 22,
-              ),
-
-              hintText:
-                  'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
-              hintStyle: GoogleFonts.inter(
-                color: AppColors.textMuted,
-                fontSize: 13,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          // padding: const EdgeInsets.symmetric(horizontal: 16),
-          // decoration: BoxDecoration(
-          //   color: AppColors.inputBackground,
-          //   borderRadius: BorderRadius.circular(16),
-          //   border: Border.all(color: AppColors.inputBorder),
-          // ),
-          child: ElevatedButton.icon(
-            onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //     builder: (_) => const CustomerReviewsScreen(),
-              //   ),
-              // );
-            },
-            icon: const Icon(Icons.add_rounded, color: AppColors.textDark),
-            label: Text(
-              'Avaliar Profissional',
-              style: GoogleFonts.inter(
-                color: AppColors.textDark,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGold,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: 0,
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Categorias de Serviços',
-              style: GoogleFonts.inter(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            if (_categories.length > 4)
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CategorySelectionScreen(),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Ver todas',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryGold,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        if (filteredCategories.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.cardBorder),
-            ),
-            child: Center(
-              child: Text(
-                'Nenhuma categoria encontrada.',
-                style: GoogleFonts.inter(
-                  color: AppColors.textSecondary,
-                  fontSize: 13,
-                ),
-              ),
-            ),
-          )
-        else
-          GridView.count(
-            crossAxisCount: filteredCategories.length == 1 ? 1 : 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: filteredCategories.length == 1 ? 2.6 : 1.35,
-            children: filteredCategories.take(4).map((cat) {
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ServiceSelectionScreen(
-                        orderRequest: OrderRequestModel(selectedCategory: cat),
-                        category: cat,
-                      ),
-                    ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBackground,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cardBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1F1C12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          cat.icon,
-                          color: AppColors.primaryGold,
-                          size: 22,
-                        ),
-                      ),
-                      Text(
-                        cat.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: AppColors.cardElevated,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.cardBorder),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Color(0xFF1E1A10),
-                ),
-                child: const Icon(
-                  Icons.add_task_rounded,
-                  color: AppColors.primaryGold,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Solicitar Novo Profissional',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Escolha data, horário e receba propostas em minutos.',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: AppColors.primaryGold,
-                  size: 18,
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CategorySelectionScreen(),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-        if (_nearbyPros.isNotEmpty) ...[
-          const SizedBox(height: 28),
-          Text(
-            'Profissionais na sua Região',
-            style: GoogleFonts.inter(
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 14),
-          ..._nearbyPros.take(3).map((pro) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.cardBackground,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.cardBorder),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.cardElevated,
-                    backgroundImage: pro.avatarUrl.isNotEmpty
-                        ? NetworkImage(pro.avatarUrl)
-                        : null,
-                    child: pro.avatarUrl.isEmpty
-                        ? Text(
-                            pro.name.isNotEmpty ? pro.name[0] : 'P',
-                            style: GoogleFonts.inter(
-                              color: AppColors.primaryGold,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          )
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pro.name,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          pro.role,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              color: AppColors.primaryGold,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              pro.rating > 0
-                                  ? pro.rating.toStringAsFixed(1)
-                                  : '--',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${pro.completedServicesCount} diárias',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ProfessionalProfileScreen(
-                            professional: pro,
-                            orderRequest: OrderRequestModel(
-                              selectedCategory: _categories.isNotEmpty
-                                  ? _categories.first
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.textDark,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      minimumSize: Size.zero,
-                    ),
-                    child: Text(
-                      'Ver Perfil',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ],
     );
   }
 }

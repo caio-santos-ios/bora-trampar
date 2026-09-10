@@ -13,7 +13,7 @@ using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class PaymentService(IPaymentRepository repository, IAppointmentService appointmentService, IUserService userService, IAsaasService asaasService, INotificationService notificationService, IHubContext<AppointmentHub> hub) : IPaymentService
+    public class PaymentService(IPaymentRepository repository, IAppointmentRepository appointmentRepository, IUserService userService, IAsaasService asaasService, INotificationService notificationService, IHubContext<AppointmentHub> hub) : IPaymentService
     {
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
@@ -84,10 +84,10 @@ namespace api_bora_trampar.src.Services
                 string userId = request.CreatedBy;
                 if (string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(request.AppointmentId))
                 {
-                    ResponseApi<Appointment?> appointment = await appointmentService.GetByIdAsync(request.AppointmentId);
-                    if (appointment?.Data is not null && !string.IsNullOrEmpty(appointment.Data.CustomerId))
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(request.AppointmentId);
+                    if (appointment is not null && !string.IsNullOrEmpty(appointment.CustomerId))
                     {
-                        userId = appointment.Data.CustomerId;
+                        userId = appointment.CustomerId;
                     }
                 }
 
@@ -194,39 +194,19 @@ namespace api_bora_trampar.src.Services
 
                 if (!string.IsNullOrEmpty(payment.AppointmentId))
                 {
-                    ResponseApi<Appointment?> appointment = await appointmentService.GetByIdAsync(payment.AppointmentId);
-                    if (appointment.Data is not null)
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(payment.AppointmentId);
+                    if (appointment is not null)
                     {
-                        await appointmentService.UpdateAsync(new()
-                        {
-                            Id = appointment.Data.Id,
-                            Address = appointment.Data.Address,
-                            AsaasPaymentId = payment.AsaasId,
-                            CustomerId = appointment.Data.CustomerId,
-                            Date = appointment.Data.Date,
-                            CategoryName = appointment.Data.CategoryName!,
-                            ServiceNames = appointment.Data.ServiceNames!,
-                            Description = appointment.Data.Description,
-                            Hour = appointment.Data.Hour,
-                            Notes = appointment.Data.Notes,
-                            CreatedBy = appointment.Data.CreatedBy,
-                            DeletedBy = appointment.Data.DeletedBy,
-                            PhotoUrls = appointment.Data.PhotoUrls,
-                            ProfessionalId = appointment.Data.ProfessionalId,
-                            Status = "PendingAcceptance",
-                            TotalPrice = appointment.Data.TotalPrice,
-                            UpdatedBy = userId,
-                            CategoryId = appointment.Data.CategoryId,
-                            ServiceId = appointment.Data.ServiceId
-                        });
+                        appointment.Status = "PendingAcceptance";
+                        await appointmentRepository.UpdateAsync(appointment);
 
-                        if (!string.IsNullOrWhiteSpace(appointment.Data.ProfessionalId))
+                        if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
                         {
                             string message = "Você recebeu uma nova solicitação de agendamento.";
 
                             CreateNotificationRequest notification = new()
                             {
-                                UserId = appointment.Data.ProfessionalId,
+                                UserId = appointment.ProfessionalId,
                                 Title = "Novo Agendamento Recebido!",
                                 Message = message,
                                 Type = Models.Enums.NotificationTypeEnum.Service,
@@ -256,14 +236,6 @@ namespace api_bora_trampar.src.Services
                 Payment? payment = await repository.GetByAssasIdAsync(request.Payment.Id);
                 if (payment is null) return new(null, 404, "Pagamento não encontrado");
 
-                // string? asaasPaymentId = !string.IsNullOrEmpty(payment.AsaasId) ? payment.AsaasId : payment.Id;
-                // bool isReceived = await asaasService.IsPaymentReceivedAsync(asaasPaymentId ?? "");
-
-                // if (!isReceived)
-                // {
-                //     return new(payment, 400, "O pagamento via PIX ainda não foi identificado. Se você já realizou o pagamento, aguarde alguns segundos e tente novamente.");
-                // }
-
                 payment.Status = "RECEIVED";
                 payment.UpdatedAt = DateTime.UtcNow;
 
@@ -271,39 +243,20 @@ namespace api_bora_trampar.src.Services
 
                 if (!string.IsNullOrEmpty(payment.AppointmentId))
                 {
-                    ResponseApi<Appointment?> appointment = await appointmentService.GetByIdAsync(payment.AppointmentId);
-                    if (appointment.Data is not null)
-                    {
-                        await appointmentService.UpdateAsync(new()
-                        {
-                            Id = appointment.Data.Id,
-                            Address = appointment.Data.Address,
-                            AsaasPaymentId = payment.AsaasId,
-                            CustomerId = appointment.Data.CustomerId,
-                            Date = appointment.Data.Date,
-                            CategoryName = appointment.Data.CategoryName!,
-                            ServiceNames = appointment.Data.ServiceNames!,
-                            Description = appointment.Data.Description,
-                            Hour = appointment.Data.Hour,
-                            Notes = appointment.Data.Notes,
-                            CreatedBy = appointment.Data.CreatedBy,
-                            DeletedBy = appointment.Data.DeletedBy,
-                            PhotoUrls = appointment.Data.PhotoUrls,
-                            ProfessionalId = appointment.Data.ProfessionalId,
-                            Status = "PendingAcceptance",
-                            TotalPrice = appointment.Data.TotalPrice,
-                            UpdatedBy = appointment.Data.CreatedBy,
-                            CategoryId = appointment.Data.CategoryId,
-                            ServiceId = appointment.Data.ServiceId
-                        });
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(payment.AppointmentId);
 
-                        if (!string.IsNullOrWhiteSpace(appointment.Data.ProfessionalId))
+                    if (appointment is not null)
+                    {
+                        appointment.Status = "PendingAcceptance";
+                        await appointmentRepository.UpdateAsync(appointment);
+
+                        if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
                         {
                             string message = "Você recebeu uma nova solicitação de agendamento.";
 
                             CreateNotificationRequest notification = new()
                             {
-                                UserId = appointment.Data.ProfessionalId,
+                                UserId = appointment.ProfessionalId,
                                 Title = "Novo Agendamento Recebido!",
                                 Message = message,
                                 Type = Models.Enums.NotificationTypeEnum.Service,
@@ -326,7 +279,33 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+        public async Task<ResponseApi<Payment?>> UpdateRefundCustomerAsync(string appointmentId)
+        {
+            try
+            {
+                Payment? payment = await repository.GetByAppointmentIdAsync(appointmentId);
+                if (payment is null) return new(null, 404, "Pagamento não encontrado");
 
+                payment.Status = "EXPENSE";
+                payment.UpdatedAt = DateTime.UtcNow;
+
+                Payment? updatedPayment = await repository.UpdateAsync(payment);
+                if (updatedPayment is null) return new(null, 400, "Falha ao fazer reembolso");
+
+                Appointment? appointment = await appointmentRepository.GetByIdAsync(appointmentId);
+                if (appointment is not null)
+                {
+                    await userService.UpdateWalletBalanceAsync(appointment.CustomerId, payment.Value);
+                }
+
+
+                return new(updatedPayment, 200, "Reembolso feito com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
         public async Task<ResponseApi<Payment?>> DeleteAsync(DeleteRequest request)
         {
             try

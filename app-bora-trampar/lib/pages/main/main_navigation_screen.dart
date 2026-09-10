@@ -1,6 +1,7 @@
 import 'package:app_bora_trampar/pages/customer/customer_financial_scrren.dart';
 import 'package:app_bora_trampar/pages/customer/customer_home_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
+import 'package:app_bora_trampar/pages/professional/professional_schedule_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_service.dart';
@@ -8,7 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../financial/financial_history_screen.dart';
-import '../home/home_screen.dart';
+import '../professional/professional_home_screen.dart';
 import '../onboarding/identity_verification_pending_screen.dart';
 import '../onboarding/professional_onboarding_screen.dart';
 import '../profile/profile_screen.dart';
@@ -103,13 +104,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final pages = [
       widget.role == "Customer"
           ? CustomerHomeScreen()
-          : HomeScreen(
+          : ProfessionalHomeScreen(
               onNavigateToSchedule: () => _onTabSelected(1),
               onNavigateToProfile: () => _onTabSelected(3),
             ),
       widget.role == "Customer"
           ? CustomerOrderScreen()
-          : ScheduleScreen(onNavigateToProfile: () => _onTabSelected(3)),
+          : ProfessionalScheduleScreen(),
       widget.role == "Customer"
           ? CustomerFinancialScrren()
           : FinancialHistoryScreen(

@@ -573,6 +573,7 @@ namespace api_bora_trampar.src.Services
 
                 existing.ReviewCount += 1;
                 existing.Rating = (existing.Rating + rating) / existing.ReviewCount;
+                existing.CompletedServicesCount += 1;
                 await repository.UpdateAsync(existing);
 
                 return new(existing, 200, "Atualização feita com sucesso!");

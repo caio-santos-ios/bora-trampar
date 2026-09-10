@@ -12,7 +12,7 @@ namespace api_bora_trampar.src.Services
 {
     public class AppointmentService(
         IAppointmentRepository repository,
-        IUserRepository userRepository, IUserService userService, INotificationService notificationService, IHubContext<AppointmentHub> hub) : IAppointmentService
+        IUserRepository userRepository, IUserService userService, INotificationService notificationService, IPaymentService paymentService, IHubContext<AppointmentHub> hub) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -269,6 +269,8 @@ namespace api_bora_trampar.src.Services
 
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Declined" });
 
+                await paymentService.UpdateRefundCustomerAsync(appointment.Id);
+
                 return new(updated, 200, "Agendamento recusado");
             }
             catch (Exception ex)
@@ -319,7 +321,6 @@ namespace api_bora_trampar.src.Services
                 if (user.Data is null) return new(null, 404, "Agendamento não encontrado");
 
                 await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
-                System.Console.WriteLine(appointment.Id);
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
 
                 return new(updated, 200, "Agendamento finalizado");

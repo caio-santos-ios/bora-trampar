@@ -1,9 +1,8 @@
 import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/main_app_bar.dart';
-import 'package:app_bora_trampar/models/appointment_model.dart';
 import 'package:app_bora_trampar/models/payment_model.dart';
-import 'package:app_bora_trampar/repositories/appointment/appointment_repository.dart';
 import 'package:app_bora_trampar/repositories/payment/payment_repository.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -18,14 +17,11 @@ class CustomerFinancialScrren extends StatefulWidget {
 
 class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
   final _paymentRepo = PaymentRepository();
-  final _appointmentRepo = AppointmentRepository();
 
   bool _isLoading = true;
-  bool _isProfessional = false;
   bool _hideBalance = false;
   List<PaymentModel> _payments = [];
   List<PaymentModel> _paymentsFilted = [];
-  List<AppointmentModel> _appointments = [];
   int _selectedFilterIndex = 0;
 
   @override
@@ -37,13 +33,11 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final payments = await _paymentRepo.getPayments();
-    final appointments = await _appointmentRepo.getAppointments();
 
     if (mounted) {
       setState(() {
         _payments = payments;
         _paymentsFilted = payments;
-        _appointments = appointments;
         _isLoading = false;
       });
     }
@@ -53,6 +47,10 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
     switch (status.toUpperCase()) {
       case "RECEIVED":
         return "Pago";
+      case "PENDING":
+        return "Pendente";
+      case "EXPENSE":
+        return "Reembolso";
       default:
         return "";
     }
@@ -61,6 +59,10 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
   Color _normalizeStatusColor(String status) {
     switch (status.toUpperCase()) {
       case "RECEIVED":
+        return AppColors.primaryGold;
+      case "PENDING":
+        return Colors.yellowAccent;
+      case "EXPENSE":
         return Colors.green;
       default:
         return Colors.grey;
@@ -68,72 +70,22 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
   }
 
   double get _totalRevenue {
-    if (_isProfessional) {
-      return _appointments
-          .where((a) {
-            final s = a.status.toLowerCase();
-            return s == 'completed' ||
-                s == 'finished' ||
-                s == 'concluido' ||
-                s == 'accepted' ||
-                s == 'confirmed';
-          })
-          .fold(0.0, (sum, a) => sum + (a.price ?? 0.0));
-    }
-    return _payments.fold(0.0, (sum, p) => sum + p.value);
+    return _payments.where((p) => p.status == "RECEIVED").fold(0.0, (sum, p) => sum + p.value);
   }
 
   double get _monthRevenue {
     final now = DateTime.now();
-    if (_isProfessional) {
-      return _appointments
-          .where((a) {
-            final s = a.status.toLowerCase();
-            final isThisMonth =
-                a.date.year == now.year && a.date.month == now.month;
-            return isThisMonth &&
-                (s == 'completed' ||
-                    s == 'finished' ||
-                    s == 'concluido' ||
-                    s == 'accepted' ||
-                    s == 'confirmed');
-          })
-          .fold(0.0, (sum, a) => sum + (a.price ?? 0.0));
-    }
     return _payments
-        .where((p) => p.date.year == now.year && p.date.month == now.month)
+        .where((p) => p.date.year == now.year && p.date.month == now.month && p.status == "RECEIVED")
         .fold(0.0, (sum, p) => sum + p.value);
   }
 
   int get _completedCount {
-    if (_isProfessional) {
-      return _appointments.where((a) {
-        final s = a.status.toLowerCase();
-        return s == 'completed' || s == 'finished' || s == 'concluido';
-      }).length;
-    }
-    return _payments.length;
+    return _payments.where((p) => p.status == "RECEIVED").length;
   }
 
   double get _pendingRevenue {
-    if (_isProfessional) {
-      return _appointments
-          .where((a) {
-            final s = a.status.toLowerCase();
-            return s == 'pending' ||
-                s == 'paid' ||
-                s == 'requested' ||
-                s == 'pendingpayment';
-          })
-          .fold(0.0, (sum, a) => sum + (a.price ?? 0.0));
-    }
-    return _payments
-        .where((p) => (p.status ?? '').toLowerCase().contains('pend'))
-        .fold(0.0, (sum, p) => sum + p.value);
-  }
-
-  String _formatCurrency(double value) {
-    return 'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
+    return _payments.where((p) => p.status == "PENDING").fold(0.0, (sum, p) => sum + p.value);
   }
 
   @override
@@ -208,7 +160,7 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _hideBalance ? '••••••' : _formatCurrency(_totalRevenue),
+                      _hideBalance ? '••••••' : UtilBrasilFields.obterReal(_totalRevenue),
                       style: GoogleFonts.inter(
                         fontSize: 30,
                         fontWeight: FontWeight.w900,
@@ -225,14 +177,14 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
                           label: 'Este Mês',
                           value: _hideBalance
                               ? '••••'
-                              : _formatCurrency(_monthRevenue),
+                              : UtilBrasilFields.obterReal(_monthRevenue),
                           valueColor: AppColors.primaryGold,
                         ),
                         _buildSummaryStat(
                           label: 'Pendente',
                           value: _hideBalance
                               ? '••••'
-                              : _formatCurrency(_pendingRevenue),
+                              : UtilBrasilFields.obterReal(_pendingRevenue),
                           valueColor: AppColors.textMuted,
                         ),
                         _buildSummaryStat(
@@ -329,9 +281,9 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
                         'pt_BR',
                       ).format(p.date),
                       paymentMethod: p.methodPayment,
-                      amount: _formatCurrency(p.value),
+                      amount: UtilBrasilFields.obterReal(p.value),
                       status: p.status ?? "",
-                      isIncome: false,
+                      isIncome: p.status == "EXPENSE",
                     );
                   },
                 ),
@@ -441,9 +393,7 @@ class _CustomerFinancialScrrenState extends State<CustomerFinancialScrren> {
               ),
             ),
             child: Icon(
-              isIncome
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
+              Icons.currency_exchange,
               color: isIncome ? AppColors.success : AppColors.primaryGold,
               size: 20,
             ),
