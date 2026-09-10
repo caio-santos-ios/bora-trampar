@@ -60,14 +60,6 @@ namespace api_bora_trampar.src.Utils
                                     {code}
                                 </div>
                             </div>
-                            <div style=""border-top: 1px solid #334155; padding-top: 20px;"">
-                                <p style=""margin: 0 0 6px 0; color: #64748b; font-size: 12px;"">
-                                    Se o botão acima não funcionar, copie e cole o link abaixo em seu navegador:
-                                </p>
-                                <p style=""margin: 0; word-break: break-all;"">
-                                    <a href=""{link}"" style=""color: #38bdf8; font-size: 12px; text-decoration: underline;"">{link}</a>
-                                </p>
-                            </div>
                         </td>
                     </tr>
                     <tr>
