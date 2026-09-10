@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:app_bora_trampar/api/http_client_api.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -10,7 +11,14 @@ import '../main/main_navigation_screen.dart';
 import '../professionals/professionals_list_screen.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
-enum TrackingStatus { waiting, accepted, declined, expired }
+enum TrackingStatus {
+  waiting,
+  accepted,
+  declined,
+  expired,
+  finish,
+  startService,
+}
 
 class CustomerOrderTab7Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
@@ -62,19 +70,27 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
 
       _connection.on('AppointmentUpdated', (arguments) async {
         final data = arguments![0] as Map;
-        final status = data['status']?.toString().toLowerCase() ?? '';
+        final status = data['status'];
         print(status);
         if (!mounted) return;
 
-        if (status == 'accepted') {
+        if (status == 'Accepted') {
           _countdownTimer?.cancel();
           setState(() {
             _status = TrackingStatus.accepted;
           });
-        } else if (status == 'declined') {
+        } else if (status == 'Declined') {
           _countdownTimer?.cancel();
           setState(() {
             _status = TrackingStatus.declined;
+          });
+        } else if (status == "StartService") {
+          setState(() {
+            _status = TrackingStatus.startService;
+          });
+        } else if (status == "Finish") {
+          setState(() {
+            _status = TrackingStatus.finish;
           });
         }
       });
@@ -356,6 +372,56 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
         title = 'Profissional Confirmado!';
         subtitle =
             '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} aceitou o serviço e está confirmado!';
+        trailingWidget = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.success.withValues(alpha: 0.15),
+            border: Border.all(color: AppColors.success, width: 2),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.check_rounded,
+              color: AppColors.success,
+              size: 28,
+            ),
+          ),
+        );
+        break;
+
+      case TrackingStatus.finish:
+        cardBorderColor = AppColors.success.withValues(alpha: 0.5);
+        iconBgColor = AppColors.success.withValues(alpha: 0.15);
+        icon = Icons.check_circle_rounded;
+        title = 'Serviço concluido!';
+        subtitle =
+            '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} concluiu o serviço!';
+        trailingWidget = Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.success.withValues(alpha: 0.15),
+            border: Border.all(color: AppColors.success, width: 2),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.check_rounded,
+              color: AppColors.success,
+              size: 28,
+            ),
+          ),
+        );
+        break;
+
+      case TrackingStatus.startService:
+        cardBorderColor = AppColors.success.withValues(alpha: 0.5);
+        iconBgColor = AppColors.success.withValues(alpha: 0.15);
+        icon = Icons.check_circle_rounded;
+        title = 'Serviço em andamento!';
+        subtitle =
+            '${widget.orderRequest.selectedProfessional?.name ?? 'O profissional'} iniciou o serviço!';
         trailingWidget = Container(
           width: 52,
           height: 52,
@@ -666,9 +732,16 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   }
 
   Widget _buildTimelineStepper() {
-    final isConfirmed = _status == TrackingStatus.accepted;
+    final isConfirmed =
+        _status == TrackingStatus.accepted ||
+        _status == TrackingStatus.startService ||
+        _status == TrackingStatus.finish;
     final isDeclinedOrExpired =
         _status == TrackingStatus.declined || _status == TrackingStatus.expired;
+    final isStartService =
+        _status == TrackingStatus.startService ||
+        _status == TrackingStatus.finish;
+    final isFinish = _status == TrackingStatus.finish;
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -685,7 +758,12 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
             icon: Icons.access_time_rounded,
             title: 'Aguardando\nresposta',
             subtitle: '',
-            isActive: _status == TrackingStatus.waiting,
+            isActive:
+                _status == TrackingStatus.waiting ||
+                _status == TrackingStatus.accepted ||
+                _status == TrackingStatus.startService ||
+                _status == TrackingStatus.startService ||
+                _status == TrackingStatus.finish,
             isCompleted: isConfirmed,
           ),
           _buildTimelineConnector(isCompleted: isConfirmed),
@@ -695,22 +773,30 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
                 ? 'Não\nconfirmado'
                 : 'Serviço\nconfirmado',
             subtitle: '',
-            isActive: false,
+            isActive:
+                _status == TrackingStatus.accepted ||
+                _status == TrackingStatus.startService ||
+                _status == TrackingStatus.startService ||
+                _status == TrackingStatus.finish,
             isCompleted: isConfirmed,
           ),
-          _buildTimelineConnector(isCompleted: false),
+          _buildTimelineConnector(isCompleted: isStartService),
           _buildTimelineStep(
             icon: Icons.handyman_outlined,
             title: 'Serviço\nem andamento',
             subtitle: '',
-            isCompleted: false,
+            isActive:
+                _status == TrackingStatus.startService ||
+                _status == TrackingStatus.finish,
+            isCompleted: isStartService,
           ),
-          _buildTimelineConnector(isCompleted: false),
+          _buildTimelineConnector(isCompleted: isFinish),
           _buildTimelineStep(
             icon: Icons.check_circle_outline_rounded,
             title: 'Serviço\nconcluído',
             subtitle: '',
-            isCompleted: false,
+            isActive: _status == TrackingStatus.finish,
+            isCompleted: isFinish,
           ),
         ],
       ),
@@ -1048,25 +1134,28 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _cancelAppointment,
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.errorRed),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+
+                if (_status != TrackingStatus.finish) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _cancelAppointment,
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.errorRed),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      'Cancelar solicitação',
-                      style: GoogleFonts.inter(
-                        color: AppColors.errorRed,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      child: Text(
+                        'Cancelar solicitação',
+                        style: GoogleFonts.inter(
+                          color: AppColors.errorRed,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ],
@@ -1112,27 +1201,29 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
               ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              height: 42,
-              child: OutlinedButton(
-                onPressed: _cancelAppointment,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.cardBorder),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+            if (_status != TrackingStatus.finish) ...[
+              SizedBox(
+                width: double.infinity,
+                height: 42,
+                child: OutlinedButton(
+                  onPressed: _cancelAppointment,
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.cardBorder),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                ),
-                child: Text(
-                  'Cancelar e voltar ao início',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                  child: Text(
+                    'Cancelar e voltar ao início',
+                    style: GoogleFonts.inter(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -1176,55 +1267,95 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
               ),
             ),
             const SizedBox(height: 8),
-            TextButton(
-              onPressed: _cancelAppointment,
-              child: Text(
-                'Cancelar solicitação',
-                style: GoogleFonts.inter(
-                  color: AppColors.errorRed,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+            if (_status != TrackingStatus.finish) ...[
+              TextButton(
+                onPressed: _cancelAppointment,
+                child: Text(
+                  'Cancelar solicitação',
+                  style: GoogleFonts.inter(
+                    color: AppColors.errorRed,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-      decoration: const BoxDecoration(
-        color: AppColors.background,
-        border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 48,
-        child: OutlinedButton.icon(
-          onPressed: _cancelAppointment,
-          icon: const Icon(
-            Icons.close_rounded,
-            color: AppColors.primaryGold,
-            size: 18,
-          ),
-          label: Text(
-            'Cancelar solicitação',
-            style: GoogleFonts.inter(
+    if (_status != TrackingStatus.finish) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: _cancelAppointment,
+            icon: const Icon(
+              Icons.close_rounded,
               color: AppColors.primaryGold,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+              size: 18,
             ),
-          ),
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            label: Text(
+              'Cancelar solicitação',
+              style: GoogleFonts.inter(
+                color: AppColors.primaryGold,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(top: BorderSide(color: AppColors.divider, width: 1)),
+        ),
+        child: SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => CustomerOrderScreen()));
+            },
+            icon: const Icon(
+              Icons.check,
+              color: AppColors.primaryGold,
+              size: 18,
+            ),
+            label: Text(
+              'Meus Agdendamentos',
+              style: GoogleFonts.inter(
+                color: AppColors.primaryGold,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: AppColors.primaryGold, width: 1.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildTimelineStep({

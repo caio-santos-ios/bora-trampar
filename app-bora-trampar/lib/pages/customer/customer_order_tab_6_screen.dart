@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:app_bora_trampar/api/http_client_api.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_7_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,7 +8,6 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../models/order_request_model.dart';
-import '../order_tracking/order_tracking_screen.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 class CustomerOrderTab6Screen extends StatefulWidget {
@@ -56,7 +56,6 @@ class _CustomerOrderTab6ScreenState extends State<CustomerOrderTab6Screen> {
 
       _connection.on('AppointmentUpdated', (arguments) async {
         final data = arguments![0] as Map;
-        print(data);
         if (data['status'] == 'Received' && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -75,7 +74,7 @@ class _CustomerOrderTab6ScreenState extends State<CustomerOrderTab6Screen> {
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => OrderTrackingScreen(
+                builder: (context) => CustomerOrderTab7Screen(
                   orderRequest: widget.orderRequest,
                   appointmentId: widget.appointmentId,
                 ),

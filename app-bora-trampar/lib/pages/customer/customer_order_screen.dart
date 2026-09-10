@@ -9,7 +9,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
-import '../categories/category_selection_screen.dart';
 
 class CustomerOrderScreen extends StatefulWidget {
   const CustomerOrderScreen({super.key});
@@ -24,7 +23,6 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   List<AppointmentModel> _appointments = [];
   bool _isLoading = true;
   bool _isProfessional = false;
-  DateTime _selectedDay = DateTime.now();
   int _selectedFilterIndex = 0;
   Timer? _pollTimer;
 
