@@ -193,7 +193,8 @@ namespace api_bora_trampar.src.Services
                 string link = $"{uriUi}/confirmation/{code}/app";
                 string html = EmailTemplates.AccountConfirmation(user.Name, code, link, false);
                 string res = await mailHandler.SendMailAsync(user.Email, "Confirmação de conta", html);
-                if (!string.IsNullOrEmpty(res)) return new(null, 400, "Falha ao criar conta");
+
+                if (!string.IsNullOrEmpty(res)) return new(null, 400, $"Falha ao enviar e-mail de confirmação - {res}");
 
                 return new(null, 201, "Conta criada com sucesso");
             }
