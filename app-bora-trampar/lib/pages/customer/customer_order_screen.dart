@@ -10,6 +10,7 @@ import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/contestation/contestation_repository.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 
 class CustomerOrderScreen extends StatefulWidget {
   const CustomerOrderScreen({super.key});
@@ -718,7 +719,7 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                               ),
                               if (apt.price != null && apt.price! > 0)
                                 Text(
-                                  'R\$ ${apt.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                                  UtilBrasilFields.obterReal(apt.price!),
                                   style: GoogleFonts.inter(
                                     color: AppColors.primaryGold,
                                     fontSize: 15,

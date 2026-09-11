@@ -783,7 +783,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                                 ),
                               ),
                               Text(
-                                '- R\$ ${creditApplied.toStringAsFixed(2).replaceAll('.', ',')}',
+                                '- ${UtilBrasilFields.obterReal(creditApplied)}',
                                 style: GoogleFonts.inter(
                                   color: AppColors.success,
                                   fontSize: 13,
@@ -807,7 +807,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                                 ),
                               ),
                               Text(
-                                '+ R\$ ${remainingCredit.toStringAsFixed(2).replaceAll('.', ',')}',
+                                '+ ${UtilBrasilFields.obterReal(remainingCredit)}',
                                 style: GoogleFonts.inter(
                                   color: AppColors.primaryGold,
                                   fontSize: 13,
@@ -836,8 +836,8 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    'Seu saldo (R\$ ${_walletBalance.toStringAsFixed(2).replaceAll('.', ',')}) não é suficiente. '
-                                    'O restante de R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')} será cobrado via PIX.',
+                                    'Seu saldo (${UtilBrasilFields.obterReal(_walletBalance)}) não é suficiente. '
+                                    'O restante de ${UtilBrasilFields.obterReal(amountToPay)} será cobrado via PIX.',
                                     style: GoogleFonts.inter(
                                       color: Colors.orange.shade800,
                                       fontSize: 12,
@@ -863,7 +863,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                               ),
                             ),
                             Text(
-                              'R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')}',
+                              UtilBrasilFields.obterReal(amountToPay),
                               style: GoogleFonts.inter(
                                 color: amountToPay > 0
                                     ? AppColors.primaryGold
@@ -972,7 +972,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                         : (amountToPay <= 0
                               ? 'Confirmar solicitação (Sem custo)'
                               : (creditApplied > 0
-                                    ? '🔒 Pagar diferença (R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')})'
+                                    ? '🔒 Pagar diferença (${UtilBrasilFields.obterReal(amountToPay)})'
                                     : '🔒 Confirmar e solicitar profissional')),
                     isLoading: _isSubmitting,
                     onPressed: _isSubmitting ? null : _onConfirmOrder,

@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/bora_trampa_logo.dart';
 import '../../models/order_request_model.dart';
 import 'package:signalr_netcore/signalr_client.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 
 class CustomerOrderTab6Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
@@ -282,7 +283,7 @@ class _CustomerOrderTab6ScreenState extends State<CustomerOrderTab6Screen> {
                         ),
                       ),
                       Text(
-                        'R\$ ${total.toStringAsFixed(2).replaceAll('.', ',')}',
+                        UtilBrasilFields.obterReal(total),
                         style: GoogleFonts.inter(
                           color: AppColors.primaryGold,
                           fontSize: 16,

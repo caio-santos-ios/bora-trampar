@@ -21,6 +21,7 @@ import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
 import 'package:moment_dart/moment_dart.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 
 class ProfessionalHomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSchedule;
@@ -285,7 +286,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                             ),
                           ),
                           Text(
-                            'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')} / ${s.priceType}',
+                            '${UtilBrasilFields.obterReal(s.price)} / ${s.priceType}',
                             style: GoogleFonts.inter(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -811,7 +812,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       _showBalance
-                          ? 'R\$ ${monthRevenue.toStringAsFixed(2).replaceAll('.', ',')}'
+                          ? UtilBrasilFields.obterReal(monthRevenue)
                           : '••••••••',
                       style: GoogleFonts.inter(
                         fontSize: 20,
@@ -838,7 +839,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       _showBalance
-                          ? 'R\$ ${todayRevenue.toStringAsFixed(2).replaceAll('.', ',')}'
+                          ? UtilBrasilFields.obterReal(todayRevenue)
                           : '••••••••',
                       style: GoogleFonts.inter(
                         fontSize: 20,
@@ -997,7 +998,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                     ),
                     if (nextJob.price != null && nextJob.price! > 0)
                       Text(
-                        'R\$ ${nextJob.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                        UtilBrasilFields.obterReal(nextJob.price!),
                         style: GoogleFonts.inter(
                           color: AppColors.primaryGold,
                           fontSize: 16,
@@ -1265,7 +1266,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                       ),
                       if (req.price != null && req.price! > 0)
                         Text(
-                          'R\$ ${req.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                          UtilBrasilFields.obterReal(req.price!),
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
@@ -1468,7 +1469,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                     ),
                     if (req.price != null && req.price! > 0)
                       Text(
-                        'R\$ ${req.price!.toStringAsFixed(2).replaceAll('.', ',')}',
+                        UtilBrasilFields.obterReal(req.price!),
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,

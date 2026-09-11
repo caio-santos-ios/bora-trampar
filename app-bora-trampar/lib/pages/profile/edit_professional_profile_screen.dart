@@ -173,15 +173,22 @@ class _EditProfessionalProfileScreenState
       return;
     }
 
-    final price =
-        double.tryParse(
-          _servicePriceController.text
-              .replaceAll("R\$", "")
-              .replaceAll(".", "")
-              .replaceAll(",", ".")
-              .trim(),
-        ) ??
-        0;
+    double price = 0.0;
+    try {
+      price = UtilBrasilFields.converterMoedaParaDouble(
+        _servicePriceController.text,
+      );
+    } catch (_) {
+      price =
+          double.tryParse(
+            _servicePriceController.text
+                .replaceAll("R\$", "")
+                .replaceAll(".", "")
+                .replaceAll(",", ".")
+                .trim(),
+          ) ??
+          0.0;
+    }
     final item = ProfessionalServiceItemModel(
       categoryId: _selectedCategoryForAdd?.id ?? '',
       categoryName: _selectedCategoryForAdd?.title ?? 'Serviço',
@@ -922,7 +929,7 @@ class _EditProfessionalProfileScreenState
                       ),
                     ),
                     Text(
-                      'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')}',
+                      UtilBrasilFields.obterReal(s.price),
                       style: GoogleFonts.inter(
                         color: AppColors.primaryGold,
                         fontWeight: FontWeight.w700,

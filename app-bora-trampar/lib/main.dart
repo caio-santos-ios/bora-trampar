@@ -19,14 +19,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {}
 
   final appointmentId = message.data['appointmentId']?.toString() ?? '';
+  final action = message.data['action']?.toString() ?? '';
   final title = message.data['title']?.toString() ??
       message.notification?.title ??
       'Novo Agendamento Recebido!';
   final body = message.data['body']?.toString() ??
       message.notification?.body ??
       '';
-  final isAppointment =
-      appointmentId.isNotEmpty || message.data['type']?.toString().toLowerCase() == 'service';
+  final isNewAppointmentRequest = appointmentId.isNotEmpty &&
+      (action == 'new_appointment_request' ||
+          title.toLowerCase().contains('novo agendamento'));
 
   final localNotifications = FlutterLocalNotificationsPlugin();
 
@@ -53,7 +55,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     'Notificacoes Importantes',
     importance: Importance.high,
     priority: Priority.high,
-    actions: isAppointment
+    actions: isNewAppointmentRequest
         ? const <AndroidNotificationAction>[
             AndroidNotificationAction(
               'decline_appointment',

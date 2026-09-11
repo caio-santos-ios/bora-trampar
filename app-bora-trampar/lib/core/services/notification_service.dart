@@ -66,16 +66,19 @@ class NotificationService {
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         final notification = message.notification;
         final appointmentId = message.data['appointmentId']?.toString() ?? '';
+        final action = message.data['action']?.toString() ?? '';
         final title = notification?.title ?? message.data['title']?.toString() ?? 'Novo Agendamento Recebido!';
         final body = notification?.body ?? message.data['body']?.toString() ?? '';
-        final isAppointment = appointmentId.isNotEmpty || (message.data['type']?.toString().toLowerCase() == 'service');
+        final isNewAppointmentRequest = appointmentId.isNotEmpty &&
+            (action == 'new_appointment_request' ||
+                title.toLowerCase().contains('novo agendamento'));
 
         final androidDetails = AndroidNotificationDetails(
           'high_importance_channel',
-          'NotificaÃ§Ãµes Importantes',
+          'Notificações Importantes',
           importance: Importance.high,
           priority: Priority.high,
-          actions: isAppointment
+          actions: isNewAppointmentRequest
               ? const <AndroidNotificationAction>[
                   AndroidNotificationAction(
                     'decline_appointment',
@@ -103,7 +106,7 @@ class NotificationService {
           ),
         );
 
-        if (isAppointment) {
+        if (isNewAppointmentRequest) {
           _showInAppAppointmentBanner(
             appointmentId: appointmentId,
             title: title,

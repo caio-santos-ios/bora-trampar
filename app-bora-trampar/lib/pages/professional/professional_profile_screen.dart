@@ -62,7 +62,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
         ? professional.servicesList
               .map(
                 (s) => s.price > 0
-                    ? '${s.serviceName} (R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')})'
+                    ? '${s.serviceName} (${UtilBrasilFields.obterReal(s.price)})'
                     : s.serviceName,
               )
               .toList()

@@ -72,7 +72,7 @@ class _ProfessionalOnboardingScreenState
   CategoryModel? _selectedCategoryForAdd;
   ServiceItemModel? _selectedServiceForAdd;
   final TextEditingController _servicePriceController = TextEditingController(
-    text: '200',
+    text: 'R\$ 200,00',
   );
   String _servicePriceType = 'Diária';
 
@@ -300,9 +300,13 @@ class _ProfessionalOnboardingScreenState
       return;
     }
 
-    final price =
-        double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ??
-        200.0;
+    double price = 0.0;
+    try {
+      price = UtilBrasilFields.converterMoedaParaDouble(_servicePriceController.text);
+    } catch (_) {
+      price = double.tryParse(_servicePriceController.text.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    }
+    if (price <= 0) price = 200.0;
     final item = ProfessionalServiceItemModel(
       categoryId: _selectedCategoryForAdd?.id ?? '',
       categoryName: _selectedCategoryForAdd?.title ?? 'Serviço',
@@ -1206,6 +1210,10 @@ class _ProfessionalOnboardingScreenState
                     child: TextField(
                       controller: _servicePriceController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        CentavosInputFormatter(moeda: true),
+                      ],
                       style: GoogleFonts.inter(color: AppColors.textPrimary),
                       decoration: const InputDecoration(
                         labelText: 'Valor (R\$)',
@@ -1323,7 +1331,7 @@ class _ProfessionalOnboardingScreenState
                       ),
                     ),
                     Text(
-                      'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')}',
+                      UtilBrasilFields.obterReal(s.price),
                       style: GoogleFonts.inter(
                         color: AppColors.primaryGold,
                         fontWeight: FontWeight.w700,

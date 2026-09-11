@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../core/theme/app_colors.dart';
@@ -686,10 +688,20 @@ class _DocumentsVerificationScreenState
             const SizedBox(height: 8),
             TextFormField(
               controller: _docNumberController,
-              keyboardType: TextInputType.text,
+              keyboardType: _docType == 'CNH'
+                  ? TextInputType.number
+                  : TextInputType.text,
+              inputFormatters: _docType == 'CNH'
+                  ? [
+                      FilteringTextInputFormatter.digitsOnly,
+                      CpfInputFormatter(),
+                    ]
+                  : null,
               style: GoogleFonts.inter(color: AppColors.textPrimary),
               decoration: InputDecoration(
-                hintText: 'Digite o número do documento',
+                hintText: _docType == 'CNH'
+                    ? '000.000.000-00'
+                    : 'Digite o número do documento',
                 hintStyle: GoogleFonts.inter(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.background,
@@ -783,7 +795,12 @@ class _DocumentsVerificationScreenState
   Widget _buildDocTypeOption(String value, String label) {
     final isSelected = _docType == value;
     return GestureDetector(
-      onTap: () => setState(() => _docType = value),
+      onTap: () => setState(() {
+        if (_docType != value) {
+          _docType = value;
+          _docNumberController.clear();
+        }
+      }),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(

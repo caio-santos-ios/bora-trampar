@@ -1202,7 +1202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       Text(
-                        s.price > 0 ? 'R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')} / ${s.priceType}' : s.priceType,
+                        s.price > 0 ? '${UtilBrasilFields.obterReal(s.price)} / ${s.priceType}' : s.priceType,
                         style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.primaryGold),
                       ),
                     ],

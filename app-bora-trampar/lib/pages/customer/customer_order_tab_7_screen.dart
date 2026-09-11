@@ -10,6 +10,7 @@ import '../../models/order_request_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../main/main_navigation_screen.dart';
 import 'package:signalr_netcore/signalr_client.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 
 enum TrackingStatus {
   waiting,
@@ -202,7 +203,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
             ),
           ),
           content: Text(
-            'Seu agendamento será cancelado e o valor de R\$ ${paidValue.toStringAsFixed(2).replaceAll('.', ',')} ficará como saldo positivo na sua conta para novos chamados.',
+            'Seu agendamento será cancelado e o valor de ${UtilBrasilFields.obterReal(paidValue)} ficará como saldo positivo na sua conta para novos chamados.',
             style: GoogleFonts.inter(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -244,7 +245,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Agendamento cancelado pelo cliente. O valor de R\$ ${paidValue.toStringAsFixed(2).replaceAll('.', ',')} ficou como saldo positivo na sua carteira!',
+            'Agendamento cancelado pelo cliente. O valor de ${UtilBrasilFields.obterReal(paidValue)} ficou como saldo positivo na sua carteira!',
             style: GoogleFonts.inter(
               color: AppColors.textDark,
               fontWeight: FontWeight.w700,
@@ -890,7 +891,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
                 ),
               ),
               Text(
-                'R\$ ${prof.basePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                UtilBrasilFields.obterReal(prof.basePrice),
                 style: GoogleFonts.inter(
                   color: AppColors.textPrimary,
                   fontSize: 14,
