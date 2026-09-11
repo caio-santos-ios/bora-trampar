@@ -25,17 +25,8 @@ namespace api_bora_trampar.src.Requests
         [JsonPropertyName("customerId")]
         public string CustomerId { get; set; } = string.Empty;
 
-        [JsonPropertyName("customerName")]
-        public string CustomerName { get; set; } = string.Empty;
-
         [JsonPropertyName("professionalId")]
         public string ProfessionalId { get; set; } = string.Empty;
-
-        [JsonPropertyName("professionalName")]
-        public string ProfessionalName { get; set; } = string.Empty;
-
-        [JsonPropertyName("serviceName")]
-        public string ServiceName { get; set; } = string.Empty;
 
         [JsonPropertyName("value")]
         public decimal Value { get; set; }

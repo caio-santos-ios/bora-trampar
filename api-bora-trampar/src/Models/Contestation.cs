@@ -2,6 +2,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace api_bora_trampar.src.Models
 {
+    [BsonIgnoreExtraElements]
     public class Contestation : ModelBase
     {
         [BsonElement("appointment_id")]
@@ -10,26 +11,14 @@ namespace api_bora_trampar.src.Models
         [BsonElement("customer_id")]
         public string CustomerId { get; set; } = string.Empty;
 
-        [BsonElement("customer_name")]
-        public string CustomerName { get; set; } = string.Empty;
-
         [BsonElement("professional_id")]
         public string ProfessionalId { get; set; } = string.Empty;
-
-        [BsonElement("professional_name")]
-        public string ProfessionalName { get; set; } = string.Empty;
-
-        [BsonElement("service_name")]
-        public string ServiceName { get; set; } = string.Empty;
 
         [BsonElement("value")]
         public decimal Value { get; set; }
 
         [BsonElement("reason")]
         public string Reason { get; set; } = string.Empty;
-
-        [BsonElement("description")]
-        public string Description { get; set; } = string.Empty;
 
         [BsonElement("customer_evidence_url")]
         public string CustomerEvidenceUrl { get; set; } = string.Empty;
@@ -51,5 +40,16 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("decided_at")]
         public DateTime? DecidedAt { get; set; }
+
+        // Campos não persistidos na collection (preenchidos via lookup no GET)
+        [BsonIgnore]
+        public string CustomerName { get; set; } = string.Empty;
+
+        [BsonIgnore]
+        public string ProfessionalName { get; set; } = string.Empty;
+
+        [BsonIgnore]
+        public string ServiceName { get; set; } = string.Empty;
     }
 }
+

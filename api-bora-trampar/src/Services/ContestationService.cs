@@ -31,9 +31,52 @@ namespace api_bora_trampar.src.Services
                 List<BsonDocument> pipeline =
                 [
                     new("$match", pagination.PipelineFilter),
-                    new("$sort", pagination.PipelineSort),
-                    new("$skip", pagination.Skip),
-                    new("$limit", pagination.Limit),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"customerObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$customer_id"},
+                            {"to", "objectId"},
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
+                        })},
+                        {"professionalObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$professional_id"},
+                            {"to", "objectId"},
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
+                        })},
+                        {"appointmentObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$appointment_id"},
+                            {"to", "objectId"},
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
+                        })},
+                        {"id", new BsonDocument("$toString", "$_id")}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "customerObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "customer_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "professionalObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "professional_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "appointments"},
+                        {"localField", "appointmentObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "appointment_lookup"}
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
@@ -41,25 +84,70 @@ namespace api_bora_trampar.src.Services
                         {"appointmentId", "$appointment_id"},
                         {"appointment_id", 1},
                         {"customerId", "$customer_id"},
-                        {"customerName", "$customer_name"},
+                        {"customer_id", 1},
+                        {"customerName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"customer_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
+                            ""
+                        })},
                         {"professionalId", "$professional_id"},
-                        {"professionalName", "$professional_name"},
-                        {"serviceName", "$service_name"},
+                        {"professional_id", 1},
+                        {"professionalName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"professional_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"serviceName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$appointment_lookup.service_names", 0 }),
+                            new BsonDocument("$ifNull", new BsonArray
+                            {
+                                new BsonDocument("$arrayElemAt", new BsonArray { "$appointment_lookup.category_name", 0 }),
+                                "Serviço Prestado"
+                            })
+                        })},
+                        {"service_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$appointment_lookup.service_names", 0 }),
+                            new BsonDocument("$ifNull", new BsonArray
+                            {
+                                new BsonDocument("$arrayElemAt", new BsonArray { "$appointment_lookup.category_name", 0 }),
+                                "Serviço Prestado"
+                            })
+                        })},
                         {"value", 1},
                         {"totalValue", "$value"},
                         {"reason", 1},
-                        {"description", 1},
                         {"customerEvidenceUrl", "$customer_evidence_url"},
+                        {"customer_evidence_url", 1},
                         {"proNotes", "$pro_notes"},
+                        {"pro_notes", 1},
                         {"status", 1},
                         {"statusLabel", "$status_label"},
+                        {"status_label", 1},
                         {"adminDecision", "$admin_decision"},
+                        {"admin_decision", 1},
                         {"decidedBy", "$decided_by"},
+                        {"decided_by", 1},
                         {"decidedAt", "$decided_at"},
+                        {"decided_at", 1},
                         {"createdAt", "$created_at"},
-                        {"openedAt", "$created_at"},
-                        {"created_at", 1}
-                    })
+                        {"created_at", 1},
+                        {"openedAt", "$created_at"}
+                    }),
+                    new("$sort", pagination.PipelineSort),
+                    new("$skip", pagination.Skip),
+                    new("$limit", pagination.Limit)
                 ];
 
                 long count = await repository.GetCountAsync(countPipeline);
@@ -84,18 +172,68 @@ namespace api_bora_trampar.src.Services
                 List<BsonDocument> pipeline =
                 [
                     new("$match", pagination.PipelineFilter),
-                    new("$sort", pagination.PipelineSort),
+                    new("$addFields", new BsonDocument
+                    {
+                        {"customerObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$customer_id"},
+                            {"to", "objectId"},
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
+                        })},
+                        {"professionalObjectId", new BsonDocument("$convert", new BsonDocument
+                        {
+                            {"input", "$professional_id"},
+                            {"to", "objectId"},
+                            {"onError", BsonNull.Value},
+                            {"onNull", BsonNull.Value}
+                        })},
+                        {"id", new BsonDocument("$toString", "$_id")}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "customerObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "customer_lookup"}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"localField", "professionalObjectId"},
+                        {"foreignField", "_id"},
+                        {"as", "professional_lookup"}
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
-                        {"id", new BsonDocument("$toString", "$_id")},
+                        {"id", 1},
                         {"appointmentId", "$appointment_id"},
-                        {"customerName", "$customer_name"},
-                        {"professionalName", "$professional_name"},
+                        {"customerName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"customer_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$customer_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"professionalName", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
+                            ""
+                        })},
+                        {"professional_name", new BsonDocument("$ifNull", new BsonArray
+                        {
+                            new BsonDocument("$arrayElemAt", new BsonArray { "$professional_lookup.name", 0 }),
+                            ""
+                        })},
                         {"reason", 1},
                         {"status", 1},
                         {"created_at", 1}
-                    })
+                    }),
+                    new("$sort", pagination.PipelineSort)
                 ];
 
                 List<dynamic> contestations = await repository.GetAllAsync(pipeline);
@@ -114,6 +252,24 @@ namespace api_bora_trampar.src.Services
             {
                 Contestation? contestation = await repository.GetByIdAsync(id);
                 if (contestation is null) return new(null, 404, "Contestação não encontrada");
+
+                if (!string.IsNullOrEmpty(contestation.CustomerId))
+                {
+                    User? customer = await userRepository.GetByIdAsync(contestation.CustomerId);
+                    if (customer != null) contestation.CustomerName = customer.Name;
+                }
+
+                if (!string.IsNullOrEmpty(contestation.ProfessionalId))
+                {
+                    User? pro = await userRepository.GetByIdAsync(contestation.ProfessionalId);
+                    if (pro != null) contestation.ProfessionalName = pro.Name;
+                }
+
+                if (!string.IsNullOrEmpty(contestation.AppointmentId))
+                {
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(contestation.AppointmentId);
+                    if (appointment != null) contestation.ServiceName = appointment.ServiceNames ?? appointment.CategoryName ?? "Serviço Prestado";
+                }
 
                 return new(contestation, 200, "Contestação buscada com sucesso");
             }
@@ -138,25 +294,12 @@ namespace api_bora_trampar.src.Services
                     {
                         if (string.IsNullOrEmpty(entity.CustomerId)) entity.CustomerId = appointment.CustomerId;
                         if (string.IsNullOrEmpty(entity.ProfessionalId)) entity.ProfessionalId = appointment.ProfessionalId;
-                        if (string.IsNullOrEmpty(entity.ServiceName)) entity.ServiceName = appointment.ServiceNames ?? appointment.CategoryName ?? "Serviço Prestado";
                         if (entity.Value <= 0) entity.Value = appointment.TotalPrice;
 
                         appointment.Status = "Disputed";
                         appointment.UpdatedAt = DateTime.UtcNow;
                         await appointmentRepository.UpdateAsync(appointment);
                     }
-                }
-
-                if (!string.IsNullOrEmpty(entity.CustomerId) && string.IsNullOrEmpty(entity.CustomerName))
-                {
-                    User? customer = await userRepository.GetByIdAsync(entity.CustomerId);
-                    if (customer != null) entity.CustomerName = customer.Name;
-                }
-
-                if (!string.IsNullOrEmpty(entity.ProfessionalId) && string.IsNullOrEmpty(entity.ProfessionalName))
-                {
-                    User? pro = await userRepository.GetByIdAsync(entity.ProfessionalId);
-                    if (pro != null) entity.ProfessionalName = pro.Name;
                 }
 
                 entity.Status = "under_review";

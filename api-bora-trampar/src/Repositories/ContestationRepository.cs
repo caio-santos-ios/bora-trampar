@@ -11,34 +11,8 @@ namespace api_bora_trampar.src.Repositories
     {
         public async Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline)
         {
-            var list = await appDbContext.Contestations
-                .Find(x => !x.Deleted)
-                .SortByDescending(x => x.CreatedAt)
-                .ToListAsync();
-
-            return list.Select(c => (dynamic)new
-            {
-                id = c.Id,
-                appointmentId = c.AppointmentId,
-                customerId = c.CustomerId,
-                customerName = c.CustomerName,
-                professionalId = c.ProfessionalId,
-                professionalName = c.ProfessionalName,
-                serviceName = c.ServiceName,
-                totalValue = c.Value,
-                value = c.Value,
-                reason = c.Reason,
-                description = c.Description,
-                customerEvidenceUrl = c.CustomerEvidenceUrl,
-                proNotes = c.ProNotes,
-                status = c.Status,
-                statusLabel = c.StatusLabel,
-                adminDecision = c.AdminDecision,
-                decidedBy = c.DecidedBy,
-                decidedAt = c.DecidedAt,
-                createdAt = c.CreatedAt,
-                openedAt = c.CreatedAt
-            }).ToList();
+            List<BsonDocument> list = await appDbContext.Contestations.Aggregate<BsonDocument>(pipeline).ToListAsync();
+            return list.Select(doc => BsonSerializer.Deserialize<dynamic>(doc)).ToList();
         }
 
         public async Task<long> GetCountAsync(List<BsonDocument> pipeline)
