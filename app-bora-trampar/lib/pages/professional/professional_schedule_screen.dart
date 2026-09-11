@@ -210,6 +210,8 @@ class _ProfessionalScheduleScreenState
         return "Você Iniciou Serviço";
       case "CancelledByCustomer":
         return "Cliente Cancelou";
+      case "Disputed":
+        return "Cliente Contestou";
       default:
         return "";
     }
@@ -229,6 +231,7 @@ class _ProfessionalScheduleScreenState
         return Colors.purpleAccent;
       case "Declined":
       case "CancelledByCustomer":
+      case "Disputed":
         return Colors.redAccent;
       default:
         return Colors.grey;

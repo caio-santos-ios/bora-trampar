@@ -165,6 +165,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
             builder: (context) => CustomerOrderTab7Screen(
               orderRequest: widget.orderRequest,
               appointmentId: appointmentId,
+              price: widget.price,
             ),
           ),
         );
@@ -218,6 +219,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
             paymentId: paymentId,
             qrCodeImage: qrCodeImage,
             qrCodePayload: qrCodePayload,
+            price: widget.price,
           ),
         ),
       );
@@ -540,7 +542,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                                     ),
                                     Text(
                                       UtilBrasilFields.obterReal(
-                                        prof.basePrice,
+                                        widget.price,
                                       ),
                                       style: GoogleFonts.inter(
                                         color: AppColors.textPrimary,
@@ -756,7 +758,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                               ),
                             ),
                             Text(
-                              'R\$ ${servicePrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                              UtilBrasilFields.obterReal(widget.price),
                               style: GoogleFonts.inter(
                                 color: AppColors.textPrimary,
                                 fontSize: 13,

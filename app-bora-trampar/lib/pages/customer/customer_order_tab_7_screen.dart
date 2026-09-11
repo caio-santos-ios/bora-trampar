@@ -23,11 +23,13 @@ enum TrackingStatus {
 class CustomerOrderTab7Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
   final String appointmentId;
+  final double price;
 
   const CustomerOrderTab7Screen({
     super.key,
     required this.orderRequest,
     this.appointmentId = '',
+    required this.price,
   });
 
   @override
@@ -148,8 +150,6 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   void _chooseAnotherProfessional() {
     _countdownTimer?.cancel();
 
-    // O saldo já foi creditado de volta ao wallet_balance pelo backend.
-    // Portanto, zeramos o creditApplied para que a Tab 5 leia o wallet_balance real da API.
     widget.orderRequest.creditApplied = 0;
     widget.orderRequest.previousAppointmentId = widget.appointmentId;
     widget.orderRequest.selectedProfessional = null;
@@ -1325,7 +1325,10 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
           height: 48,
           child: OutlinedButton.icon(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => CustomerOrderScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CustomerOrderScreen()),
+              );
             },
             icon: const Icon(
               Icons.check,

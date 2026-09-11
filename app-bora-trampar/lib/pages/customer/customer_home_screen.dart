@@ -78,13 +78,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             padding: EdgeInsets.all(14),
             children: [
               if (_isLoading) ...[
-                SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.primaryGold,
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.primaryGold,
+                        ),
+                      ),
                     ),
                   ),
                 ),

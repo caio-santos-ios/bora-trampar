@@ -289,29 +289,31 @@ class NotificationService {
   }
 
   Future<void> _handleAcceptAppointment(String appointmentId) async {
-    try {
-      final success = await _appointmentRepo.acceptAppointment(appointmentId);
-      _showActionSnackBar(
-        success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
-        success ? AppColors.primaryGold : AppColors.errorRed,
-        success ? AppColors.textDark : Colors.white,
-      );
-    } catch (e) {
-      debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
-    }
+    print(appointmentId);
+    // try {
+    //   final success = await _appointmentRepo.acceptAppointment(appointmentId);
+    //   _showActionSnackBar(
+    //     success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
+    //     success ? AppColors.primaryGold : AppColors.errorRed,
+    //     success ? AppColors.textDark : Colors.white,
+    //   );
+    // } catch (e) {
+    //   debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
+    // }
   }
 
   Future<void> _handleDeclineAppointment(String appointmentId) async {
-    try {
-      final success = await _appointmentRepo.declineAppointment(appointmentId);
-      _showActionSnackBar(
-        success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
-        AppColors.errorRed,
-        Colors.white,
-      );
-    } catch (e) {
-      debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
-    }
+    print(appointmentId);
+    // try {
+    //   final success = await _appointmentRepo.declineAppointment(appointmentId);
+    //   _showActionSnackBar(
+    //     success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
+    //     AppColors.errorRed,
+    //     Colors.white,
+    //   );
+    // } catch (e) {
+    //   debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
+    // }
   }
 
   void _showActionSnackBar(String message, Color background, Color textColor) {

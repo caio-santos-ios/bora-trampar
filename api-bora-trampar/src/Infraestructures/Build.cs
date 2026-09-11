@@ -29,6 +29,9 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<ICategoryService, CategoryService>();
             builder.Services.AddTransient<ICategoryRepository, CategoryRepository>();
 
+            builder.Services.AddTransient<IContestationService, ContestationService>();
+            builder.Services.AddTransient<IContestationRepository, ContestationRepository>();
+
             builder.Services.AddTransient<IServicesService, ServicesService>();
             builder.Services.AddTransient<IServicesRepository, ServicesRepository>();
 

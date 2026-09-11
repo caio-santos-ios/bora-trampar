@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
+import '../../repositories/contestation/contestation_repository.dart';
 
 class CustomerOrderScreen extends StatefulWidget {
   const CustomerOrderScreen({super.key});
@@ -245,6 +246,8 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
         return "Profissional Iniciou Serviço";
       case "CancelledByCustomer":
         return "Cancelado";
+      case "Disputed":
+        return "Em Contestação";
       default:
         return "";
     }
@@ -262,12 +265,222 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
         return Colors.blueAccent;
       case "StartService":
         return Colors.purpleAccent;
+      case "Disputed":
+        return Colors.orange;
       case "Declined":
       case "CancelledByCustomer":
         return Colors.redAccent;
       default:
         return Colors.grey;
     }
+  }
+
+  Future<void> _showDisputeDialog(String appointmentId) async {
+    final reasonController = TextEditingController();
+    String selectedReason = 'Serviço incompleto';
+    final reasons = [
+      'Serviço incompleto',
+      'Serviço não realizado',
+      'Qualidade insatisfatória',
+      'Cobrança indevida',
+      'Outro motivo',
+    ];
+    bool isSubmitting = false;
+
+    await showDialog(
+      context: context,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppColors.cardBorder),
+          ),
+          title: Row(
+            children: [
+              const Icon(Icons.gavel_rounded, color: AppColors.primaryGold, size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Contestar Serviço',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Informe o motivo da contestação. O valor permanecerá retido no sistema até a análise do suporte para reembolso.',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Motivo principal *',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.inputBorder),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedReason,
+                      isExpanded: true,
+                      dropdownColor: AppColors.cardBackground,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 13,
+                      ),
+                      items: reasons
+                          .map((r) => DropdownMenuItem(
+                                value: r,
+                                child: Text(r),
+                              ))
+                          .toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setDialogState(() => selectedReason = val);
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Descrição detalhada *',
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 3,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Explique o que aconteceu com detalhes...',
+                    hintStyle: GoogleFonts.inter(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.background,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: AppColors.primaryGold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.inter(color: AppColors.textSecondary),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      final desc = reasonController.text.trim();
+                      if (desc.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Por favor, informe uma descrição detalhada.'),
+                            backgroundColor: AppColors.errorRed,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() => isSubmitting = true);
+
+                      final success = await ContestationRepository().createContestation(
+                        appointmentId: appointmentId,
+                        reason: selectedReason,
+                        description: desc,
+                      );
+
+                      if (!mounted) return;
+                      Navigator.of(ctx).pop();
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            success
+                                ? 'Contestação registrada com sucesso! O caso foi encaminhado para análise.'
+                                : 'Falha ao registrar contestação. Tente novamente.',
+                          ),
+                          backgroundColor:
+                              success ? AppColors.primaryGold : AppColors.errorRed,
+                        ),
+                      );
+
+                      if (success) _loadData();
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorRed,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      'Confirmar Contestação',
+                      style: GoogleFonts.inter(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -586,34 +799,62 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                               height: 1,
                             ),
                             const SizedBox(height: 8),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () =>
-                                    _handleFinishAppointment(apt.id),
-                                icon: const Icon(
-                                  Icons.check,
-                                  color: AppColors.success,
-                                  size: 16,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () => _showDisputeDialog(apt.id),
+                                  icon: const Icon(
+                                    Icons.report_problem_outlined,
+                                    color: AppColors.errorRed,
+                                    size: 15,
+                                  ),
+                                  label: Text(
+                                    'Contestar',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.errorRed,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
                                 ),
-                                label: Text(
-                                  'Serviço foi finalizado',
-                                  style: GoogleFonts.inter(
+                                const SizedBox(width: 8),
+                                TextButton.icon(
+                                  onPressed: () =>
+                                      _handleFinishAppointment(apt.id),
+                                  icon: const Icon(
+                                    Icons.check,
                                     color: AppColors.success,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                                    size: 16,
+                                  ),
+                                  label: Text(
+                                    'Serviço foi finalizado',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.success,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
                                 ),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  minimumSize: Size.zero,
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ),
+                              ],
                             ),
                           ],
 

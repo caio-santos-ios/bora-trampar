@@ -16,6 +16,7 @@ class CustomerOrderTab6Screen extends StatefulWidget {
   final String paymentId;
   final String qrCodeImage;
   final String qrCodePayload;
+  final double price;
 
   const CustomerOrderTab6Screen({
     super.key,
@@ -24,6 +25,7 @@ class CustomerOrderTab6Screen extends StatefulWidget {
     required this.paymentId,
     required this.qrCodeImage,
     required this.qrCodePayload,
+    required this.price,
   });
 
   @override
@@ -77,6 +79,7 @@ class _CustomerOrderTab6ScreenState extends State<CustomerOrderTab6Screen> {
                 builder: (context) => CustomerOrderTab7Screen(
                   orderRequest: widget.orderRequest,
                   appointmentId: widget.appointmentId,
+                  price: widget.price,
                 ),
               ),
             );
