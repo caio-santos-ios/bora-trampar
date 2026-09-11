@@ -226,6 +226,8 @@ namespace api_bora_trampar.src.Services
                             CreateNotificationRequest notification = new()
                             {
                                 UserId = appointment.ProfessionalId,
+                                AppointmentId = appointment.Id,
+                                Action = "new_appointment_request",
                                 Title = "Novo Agendamento Recebido!",
                                 Message = message,
                                 Type = Models.Enums.NotificationTypeEnum.Service,
@@ -284,6 +286,8 @@ namespace api_bora_trampar.src.Services
                             CreateNotificationRequest notification = new()
                             {
                                 UserId = appointment.ProfessionalId,
+                                AppointmentId = appointment.Id,
+                                Action = "new_appointment_request",
                                 Title = "Novo Agendamento Recebido!",
                                 Message = message,
                                 Type = Models.Enums.NotificationTypeEnum.Service,

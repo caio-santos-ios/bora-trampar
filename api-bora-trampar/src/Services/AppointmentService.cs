@@ -211,6 +211,8 @@ namespace api_bora_trampar.src.Services
                     await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
                     {
                         UserId = entity.ProfessionalId,
+                        AppointmentId = appointment.Id,
+                        Action = "new_appointment_request",
                         Title = "Novo Agendamento Recebido!",
                         Message = "Você recebeu uma nova solicitação de agendamento.",
                         Type = Models.Enums.NotificationTypeEnum.Service,
@@ -293,6 +295,22 @@ namespace api_bora_trampar.src.Services
 
                 await paymentService.UpdateRefundCustomerAsync(appointment.Id);
 
+                if (!string.IsNullOrWhiteSpace(appointment.CustomerId))
+                {
+                    await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                    {
+                        UserId = appointment.CustomerId,
+                        AppointmentId = appointment.Id,
+                        Action = "appointment_declined",
+                        Title = "Agendamento Recusado",
+                        Message = "O profissional não pôde aceitar sua solicitação. O valor foi estornado para sua carteira.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
+
                 return new(updated, 200, "Agendamento recusado");
             }
             catch (Exception ex)
@@ -316,6 +334,22 @@ namespace api_bora_trampar.src.Services
                 if (updated is null) return new(null, 404, "Agendamento não encontrado");
 
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "StartService" });
+
+                if (!string.IsNullOrWhiteSpace(appointment.CustomerId))
+                {
+                    await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                    {
+                        UserId = appointment.CustomerId,
+                        AppointmentId = appointment.Id,
+                        Action = "service_started",
+                        Title = "Serviço Iniciado",
+                        Message = "O profissional iniciou a execução do seu serviço.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
 
                 return new(updated, 200, "Agendamento iniciado");
             }
@@ -353,6 +387,37 @@ namespace api_bora_trampar.src.Services
                 {
                     await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
                     await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
+
+                    if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
+                    {
+                        await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                        {
+                            UserId = appointment.ProfessionalId,
+                            AppointmentId = appointment.Id,
+                            Action = "service_confirmed",
+                            Title = "Serviço Concluído!",
+                            Message = "O cliente confirmou a finalização do serviço. O valor foi creditado em sua conta.",
+                            Type = Models.Enums.NotificationTypeEnum.Service,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.UtcNow
+                        });
+                    }
+                }
+                else if (appointment.Status == "FinishProfessional" && !string.IsNullOrWhiteSpace(appointment.CustomerId))
+                {
+                    await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                    {
+                        UserId = appointment.CustomerId,
+                        AppointmentId = appointment.Id,
+                        Action = "service_finished",
+                        Title = "Serviço Finalizado",
+                        Message = "O profissional concluiu o serviço. Por favor, confirme a finalização no app.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
                 }
 
                 return new(updated, 200, "Agendamento finalizado");

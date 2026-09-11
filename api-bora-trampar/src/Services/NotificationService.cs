@@ -42,6 +42,8 @@ namespace api_bora_trampar.src.Services
                 Notification entity = new()
                 {
                     UserId = request.UserId,
+                    AppointmentId = request.AppointmentId,
+                    Action = request.Action,
                     Title = request.Title,
                     Message = request.Message,
                     Type = request.Type,

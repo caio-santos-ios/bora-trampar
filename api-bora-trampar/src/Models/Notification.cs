@@ -25,6 +25,10 @@ namespace api_bora_trampar.src.Models
         [BsonIgnoreIfNull]
         public string? AppointmentId { get; set; }
 
+        [BsonElement("action")]
+        [BsonIgnoreIfNull]
+        public string? Action { get; set; }
+
         [BsonElement("user_id")]
         public string UserId { get; set; } = string.Empty;
 

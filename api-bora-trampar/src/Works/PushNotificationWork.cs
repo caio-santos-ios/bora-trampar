@@ -1,4 +1,4 @@
-﻿using api_bora_trampar.src.Configuration;
+using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Models;
 using FirebaseAdmin.Messaging;
 using MongoDB.Driver;
@@ -66,10 +66,16 @@ namespace api_bora_trampar.src.Works
                         var message = new Message
                         {
                             Token = token,
+                            Notification = new FirebaseAdmin.Messaging.Notification
+                            {
+                                Title = notification.Title ?? "",
+                                Body = notification.Message ?? ""
+                            },
                             Data = new Dictionary<string, string>
                             {
                                 { "notificationId", notification.Id ?? "" },
                                 { "appointmentId", notification.AppointmentId ?? "" },
+                                { "action", notification.Action ?? "" },
                                 { "type", notification.Type.ToString() },
                                 { "title", notification.Title ?? "" },
                                 { "body", notification.Message ?? "" },
@@ -78,6 +84,13 @@ namespace api_bora_trampar.src.Works
                             Android = new AndroidConfig
                             {
                                 Priority = Priority.High,
+                                Notification = new AndroidNotification
+                                {
+                                    Title = notification.Title ?? "",
+                                    Body = notification.Message ?? "",
+                                    ChannelId = "high_importance_channel",
+                                    Sound = "default"
+                                }
                             },
                             Apns = new ApnsConfig
                             {
@@ -90,7 +103,7 @@ namespace api_bora_trampar.src.Works
                         };
 
                         await FirebaseMessaging.DefaultInstance.SendAsync(message);
-                        _logger.LogInformation("NotificaÃ§Ã£o push FCM enviada para usuÃ¡rio {UserId}: {Title}", notification.UserId, notification.Title);
+                        _logger.LogInformation("Notificação push FCM enviada para usuário {UserId}: {Title}", notification.UserId, notification.Title);
                     }
 
                     await MarkAsSentAsync(context, notification.Id);

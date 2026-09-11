@@ -1,4 +1,4 @@
-﻿using api_bora_trampar.src.Models.Enums;
+using api_bora_trampar.src.Models.Enums;
 using api_bora_trampar.src.Requests.Base;
 
 namespace api_bora_trampar.src.Requests.Notification
@@ -6,6 +6,8 @@ namespace api_bora_trampar.src.Requests.Notification
     public class CreateNotificationRequest : RequestBase
     {
         public string UserId { get; set; } = string.Empty;
+        public string? AppointmentId { get; set; }
+        public string? Action { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public NotificationTypeEnum Type { get; set; } = NotificationTypeEnum.General;
