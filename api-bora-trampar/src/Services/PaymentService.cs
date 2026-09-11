@@ -26,12 +26,23 @@ namespace api_bora_trampar.src.Services
                     {
                         {"deleted", false},
                     }),
+                    new("$addFields", new BsonDocument {
+                        {"appointmentId", new BsonDocument("$toObjectId", "$appointment_id")}
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "appointments"},
+                        {"localField", "appointmentId"},
+                        {"foreignField", "_id"},
+                        {"as", "appointments"}
+                    }),
                     new("$project", new BsonDocument
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
                         {"appointment_id", 1},
                         {"method_payment", 1},
+                        {"appointmentStatus", new BsonDocument("$first", "$appointments.status")},
                         {"date", 1},
                         {"value", new BsonDocument("$toDouble", "$value")},
                         {"status", 1},

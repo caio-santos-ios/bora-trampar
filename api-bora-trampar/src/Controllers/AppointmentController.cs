@@ -3,6 +3,7 @@ using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using api_bora_trampar.src.Requests._Base;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +17,8 @@ namespace api_bora_trampar.src.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            ResponseApi<List<dynamic>> response = await service.GetAllAsync();
+            GetAllRequest request = new(Request.Query);
+            ResponseApi<List<dynamic>> response = await service.GetAllAsync(request);
             return StatusCode(response.StatusCode, new { response.Result });
         }
 

@@ -8,7 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/order_request_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../main/main_navigation_screen.dart';
-import '../professionals/professionals_list_screen.dart';
+import '../_old/professionals/professionals_list_screen.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 enum TrackingStatus {
@@ -71,7 +71,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
       _connection.on('AppointmentUpdated', (arguments) async {
         final data = arguments![0] as Map;
         final status = data['status'];
-        print(status);
+
         if (!mounted) return;
 
         if (status == 'Accepted') {

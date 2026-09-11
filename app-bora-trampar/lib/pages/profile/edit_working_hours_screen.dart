@@ -37,14 +37,12 @@ class _EditWorkingHoursScreenState extends State<EditWorkingHoursScreen> {
   bool _hasSavedSuccessfully = false;
   bool _showCustomPerDay = false;
 
-  // Mapa de controle por dia: índice -> dados do dia
   late final Map<int, bool> _activeDays;
   late final Map<int, TextEditingController> _startHourControllers;
   late final Map<int, TextEditingController> _endHourControllers;
   late final Map<int, TextEditingController> _breakStartControllers;
   late final Map<int, TextEditingController> _breakEndControllers;
 
-  // Controladores padrão gerais
   late final TextEditingController _generalStartHourController;
   late final TextEditingController _generalEndHourController;
   late final TextEditingController _generalBreakStartController;
@@ -63,7 +61,6 @@ class _EditWorkingHoursScreenState extends State<EditWorkingHoursScreen> {
 
     final existingHours = widget.proProfile.workingHours;
 
-    // Tentar carregar valores padrão a partir dos existentes
     String initialStart = '08:00';
     String initialEnd = '18:00';
     String initialBreakStart = '12:00';
@@ -95,7 +92,7 @@ class _EditWorkingHoursScreenState extends State<EditWorkingHoursScreen> {
         dayModel = null;
       }
 
-      final isActive = dayModel?.isActive ?? (i < 5); // Segunda a Sexta ativo por padrão
+      final isActive = dayModel?.isActive ?? (i < 5); 
       _activeDays[i] = isActive;
 
       _startHourControllers[i] = TextEditingController(

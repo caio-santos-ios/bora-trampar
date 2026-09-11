@@ -1,7 +1,10 @@
+import 'package:app_bora_trampar/core/services/storage_service.dart';
+import 'package:app_bora_trampar/core/services/util_service.dart';
+import 'package:app_bora_trampar/repositories/notification/notification_repository.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../pages/notifications/notifications_screen.dart';
-import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import 'bora_trampa_logo.dart';
 
@@ -25,22 +28,41 @@ class MainAppBar extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _MainAppBarState extends State<MainAppBar> {
+  final NotificationRepository _notificationRepository =
+      NotificationRepository();
+
   String _userName = '';
   String _userPhoto = '';
+  int totalNewNotification = 0;
+  final _storageService = StorageService();
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _onInit();
   }
 
-  Future<void> _loadUser() async {
-    final user = await AuthService().getCurrentUser();
-    if (mounted && user != null) {
-      setState(() {
-        _userName = user.name;
-        _userPhoto = user.photo ?? '';
-      });
+  Future<void> _onInit() async {
+    setState(() {
+      _userName = _storageService.getCurrentUser().name;
+      _userPhoto = _storageService.getCurrentUser().photo ?? '';
+    });
+    await _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final list = await _notificationRepository.getNotifications(
+        _storageService.getCurrentUser().id,
+      );
+
+      if (mounted) {
+        setState(() {
+          totalNewNotification = list.where((e) => !e.read).length;
+        });
+      }
+    } on DioException catch (err) {
+      if (mounted) UtilService.normalizeError(context, err);
     }
   }
 
@@ -93,27 +115,37 @@ class _MainAppBarState extends State<MainAppBar> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: AppColors.textPrimary, size: 24),
-                onPressed: widget.onNotificationTap ??
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: AppColors.textPrimary,
+                  size: 24,
+                ),
+                onPressed:
+                    widget.onNotificationTap ??
                     () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationsScreen(),
+                        ),
                       );
                     },
               ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryGold,
-                    shape: BoxShape.circle,
+
+              if (totalNewNotification > 0) ...[
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primaryGold,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

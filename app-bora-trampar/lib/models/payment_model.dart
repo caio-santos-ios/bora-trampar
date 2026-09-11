@@ -6,6 +6,7 @@ class PaymentModel {
   final String? title;
   final String? partyName;
   final String? status;
+  final String? appointmentStatus;
 
   PaymentModel({
     required this.id,
@@ -15,6 +16,7 @@ class PaymentModel {
     this.title,
     this.partyName,
     this.status,
+    this.appointmentStatus,
   });
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class PaymentModel {
       title: json['title'] ?? json['Title'] ?? 'Diária de Serviço',
       partyName: json['partyName'] ?? json['PartyName'],
       status: json['status'] ?? json['Status'] ?? 'Aprovado',
+      appointmentStatus: json['appointmentStatus'] ?? '',
     );
   }
 

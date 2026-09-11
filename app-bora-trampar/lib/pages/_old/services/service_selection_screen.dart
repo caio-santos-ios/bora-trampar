@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/app_stepper.dart';
-import '../../core/widgets/bora_trampa_logo.dart';
-import '../../core/widgets/primary_button.dart';
-import '../../models/category_model.dart';
-import '../../models/order_request_model.dart';
-import '../../models/service_item_model.dart';
-import '../../repositories/services/services_repository.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_stepper.dart';
+import '../../../core/widgets/bora_trampa_logo.dart';
+import '../../../core/widgets/primary_button.dart';
+import '../../../models/category_model.dart';
+import '../../../models/order_request_model.dart';
+import '../../../models/service_item_model.dart';
+import '../../../repositories/services/services_repository.dart';
 import '../order_details/order_details_screen.dart';
 
 class ServiceSelectionScreen extends StatefulWidget {

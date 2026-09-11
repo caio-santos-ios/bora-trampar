@@ -40,11 +40,8 @@ class CategoryRepository {
       }
       return [];
     } on DioException catch (e) {
-      print(e.message);
-      print(e.response);
       return [];
     } catch (_) {
-      print("TESTE");
       return [];
     }
   }

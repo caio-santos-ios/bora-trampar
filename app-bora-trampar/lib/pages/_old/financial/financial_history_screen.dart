@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/services/auth_service.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/main_app_bar.dart';
-import '../../models/appointment_model.dart';
-import '../../models/payment_model.dart';
-import '../../repositories/appointment/appointment_repository.dart';
-import '../../repositories/payment/payment_repository.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/main_app_bar.dart';
+import '../../../models/appointment_model.dart';
+import '../../../models/payment_model.dart';
+import '../../../repositories/appointment/appointment_repository.dart';
+import '../../../repositories/payment/payment_repository.dart';
 
 class FinancialHistoryScreen extends StatefulWidget {
   final VoidCallback? onNavigateToProfile;
@@ -56,7 +56,6 @@ class _FinancialHistoryScreenState extends State<FinancialHistoryScreen> {
 
   double get _totalRevenue {
     if (_isProfessional) {
-      print(_appointments[0].status);
       return _appointments
           .where((a) {
             final s = a.status.toLowerCase();

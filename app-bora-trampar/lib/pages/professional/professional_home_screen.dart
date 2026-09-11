@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
 import 'package:dio/dio.dart';
@@ -19,6 +20,7 @@ import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
+import 'package:moment_dart/moment_dart.dart';
 
 class ProfessionalHomeScreen extends StatefulWidget {
   final VoidCallback? onNavigateToSchedule;
@@ -39,6 +41,8 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   final _profileRepo = ProfileProfessionalRepository();
   final _appointmentRepo = AppointmentRepository();
   final _userRepo = UserRepository();
+
+  final _storageService = StorageService();
 
   UserModel? _user;
   ProfileProfessionalModel? _profile;
@@ -70,11 +74,8 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    final role = (_user?.role ?? '').toLowerCase();
-    final isPro = role.contains('prof') || role.contains('prestador');
-    if (!isPro) return;
-
-    final fresh = await _appointmentRepo.getAppointments();
+    String query = "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
         _appointments = fresh;
@@ -407,6 +408,46 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
         );
       },
     );
+  }
+
+  bool _hasPermissionStartService(DateTime date, String hour) {
+    final List<String> parts = hour.split(':');
+    final int hourPart = int.parse(parts[0]);
+    final int minutePart = int.parse(parts[1]);
+
+    final DateTime appointmentDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      hourPart,
+      minutePart,
+    );
+
+    final Moment startDate = Moment(appointmentDateTime);
+    final Moment end = Moment.now();
+    final int hours = startDate.difference(end).inMinutes;
+
+    return hours <= 60;
+  }
+
+  bool _hasPermissionFinish(DateTime date, String hour) {
+    final List<String> parts = hour.split(':');
+    final int hourPart = int.parse(parts[0]);
+    final int minutePart = int.parse(parts[1]);
+
+    final DateTime appointmentDateTime = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      hourPart,
+      minutePart,
+    );
+
+    final Moment startDate = Moment(appointmentDateTime);
+    final Moment end = Moment.now();
+    final int hours = startDate.difference(end).inMinutes;
+
+    return hours <= 0;
   }
 
   @override
@@ -1054,31 +1095,36 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                         ),
                       ),
                     if (nextJob.status == "Accepted") const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _startService(nextJob.id),
-                        icon: const Icon(
-                          Icons.play_arrow,
-                          color: AppColors.textDark,
-                          size: 16,
-                        ),
-                        label: Text(
-                          'Inciar Serviço',
-                          style: GoogleFonts.inter(
+                    if (_hasPermissionStartService(
+                      nextJob.date,
+                      nextJob.hour,
+                    )) ...[
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _startService(nextJob.id),
+                          icon: const Icon(
+                            Icons.play_arrow,
                             color: AppColors.textDark,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
+                            size: 16,
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          label: Text(
+                            'Iniciar Serviço',
+                            style: GoogleFonts.inter(
+                              color: AppColors.textDark,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -1449,33 +1495,35 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await _finishService(req.id);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.textDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                if (_hasPermissionFinish(req.date, req.hour)) ...[
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await _finishService(req.id);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: AppColors.textDark,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                        child: Text(
-                          'Finalizar Trampo',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                          child: Text(
+                            'Finalizar Trampo',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ),
           );

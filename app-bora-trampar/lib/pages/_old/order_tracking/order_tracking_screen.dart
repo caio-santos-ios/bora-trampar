@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/order_request_model.dart';
-import '../../models/appointment_model.dart';
-import '../../repositories/appointment/appointment_repository.dart';
-import '../main/main_navigation_screen.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../models/order_request_model.dart';
+import '../../../models/appointment_model.dart';
+import '../../../repositories/appointment/appointment_repository.dart';
+import '../../main/main_navigation_screen.dart';
 import '../professionals/professionals_list_screen.dart';
 
 enum TrackingStatus { waiting, accepted, declined, expired }

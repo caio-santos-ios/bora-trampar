@@ -58,7 +58,6 @@ class _SplashScreenState extends State<SplashScreen>
 
     try {
       String refreshToken = StorageService.getRefreshToken();
-
       if (refreshToken.isEmpty) {
         _goToWelcome();
         return;

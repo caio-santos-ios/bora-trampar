@@ -5,37 +5,9 @@ import '../../models/appointment_model.dart';
 class AppointmentRepository {
   final HttpClientApi _api = HttpClientApi();
 
-  Future<List<AppointmentModel>> getAppointments() async {
-    try {
-      final response = await _api.client.get('/api/appointments');
-      if (response.statusCode == 200 && response.data != null) {
-        dynamic res =
-            response.data['result'] ?? response.data['data'] ?? response.data;
-        if (res is Map && res['data'] != null) {
-          res = res['data'];
-        }
-        if (res is List) {
-          return res
-              .map((item) {
-                if (item is Map) {
-                  return AppointmentModel.fromJson(
-                    Map<String, dynamic>.from(item),
-                  );
-                }
-                return null;
-              })
-              .whereType<AppointmentModel>()
-              .toList();
-        }
-      }
-      return [];
-    } on DioException catch (err) {
-      print(err);
-      return [];
-    } catch (e) {
-      print(e);
-      return [];
-    }
+  Future<List<AppointmentModel>> getAppointments({String query = ""}) async {
+    final response = await _api.client.get('/api/appointments?$query');
+    return response.statusCode == 200 ? (response.data["result"]["data"] as List).map((e) => AppointmentModel.fromJson(e)).toList() : [];
   }
 
   Future<AppointmentModel?> getAppointmentById(String id) async {

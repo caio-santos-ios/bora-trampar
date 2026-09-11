@@ -52,8 +52,9 @@ class _EditProfessionalProfileScreenState
   CategoryModel? _selectedCategoryForAdd;
   List<ServiceItemModel> _availableServices = [];
   ServiceItemModel? _selectedServiceForAdd;
-  final TextEditingController _servicePriceController =
-      TextEditingController(text: '150');
+  final TextEditingController _servicePriceController = TextEditingController(
+    text: '150',
+  );
   String _servicePriceType = 'Diária';
 
   @override
@@ -61,16 +62,20 @@ class _EditProfessionalProfileScreenState
     super.initState();
     _nameController = TextEditingController(text: widget.user.name);
     _emailController = TextEditingController(text: widget.user.email);
-    _whatsappController = TextEditingController(text: widget.user.whatsapp ?? '');
-    _professionController =
-        TextEditingController(text: widget.proProfile?.profession ?? '');
+    _whatsappController = TextEditingController(
+      text: widget.user.whatsapp ?? '',
+    );
+    _professionController = TextEditingController(
+      text: widget.proProfile?.profession ?? '',
+    );
     _bioController = TextEditingController(text: widget.proProfile?.bio ?? '');
     _experienceYears = widget.proProfile?.experienceYears ?? 0;
     _isAvailableNow = widget.proProfile?.isAvailableNow ?? true;
     _services = List<ProfessionalServiceItemModel>.from(
       widget.proProfile?.services ?? [],
     );
-    _currentAddress = widget.proProfile?.address ??
+    _currentAddress =
+        widget.proProfile?.address ??
         ProfessionalAddressModel(
           location: ProfessionalAddressLocationModel.empty(),
         );
@@ -118,8 +123,8 @@ class _EditProfessionalProfileScreenState
           _availableServices = sList;
           if (_availableServices.isNotEmpty) {
             _selectedServiceForAdd = _availableServices.first;
-            _servicePriceController.text =
-                _selectedServiceForAdd!.basePrice.toStringAsFixed(0);
+            _servicePriceController.text = _selectedServiceForAdd!.basePrice
+                .toStringAsFixed(0);
           } else {
             _selectedServiceForAdd = null;
           }
@@ -147,7 +152,8 @@ class _EditProfessionalProfileScreenState
 
     final isAlreadyAdded = _services.any(
       (s) =>
-          (s.serviceId.isNotEmpty && s.serviceId == _selectedServiceForAdd!.id) ||
+          (s.serviceId.isNotEmpty &&
+              s.serviceId == _selectedServiceForAdd!.id) ||
           s.serviceName.trim().toLowerCase() ==
               _selectedServiceForAdd!.name.trim().toLowerCase(),
     );
@@ -168,8 +174,14 @@ class _EditProfessionalProfileScreenState
     }
 
     final price =
-        double.tryParse(_servicePriceController.text.replaceAll(',', '.')) ??
-        150.0;
+        double.tryParse(
+          _servicePriceController.text
+              .replaceAll("R\$", "")
+              .replaceAll(".", "")
+              .replaceAll(",", ".")
+              .trim(),
+        ) ??
+        0;
     final item = ProfessionalServiceItemModel(
       categoryId: _selectedCategoryForAdd?.id ?? '',
       categoryName: _selectedCategoryForAdd?.title ?? 'Serviço',
@@ -239,7 +251,8 @@ class _EditProfessionalProfileScreenState
       );
 
       // 2. Atualizar dados do ProfileProfessional
-      final baseProfile = widget.proProfile ??
+      final baseProfile =
+          widget.proProfile ??
           ProfileProfessionalModel(
             userId: widget.user.id,
             profession: profession,
@@ -341,7 +354,10 @@ class _EditProfessionalProfileScreenState
           child: ListView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
-              _buildSectionTitle('Dados da Conta', Icons.person_outline_rounded),
+              _buildSectionTitle(
+                'Dados da Conta',
+                Icons.person_outline_rounded,
+              ),
               const SizedBox(height: 12),
               _buildTextField(
                 controller: _nameController,
@@ -406,7 +422,8 @@ class _EditProfessionalProfileScreenState
                 controller: _bioController,
                 label: 'Biografia / Apresentação',
                 icon: Icons.description_outlined,
-                hint: 'Conte aos clientes sobre sua experiência e diferenciais...',
+                hint:
+                    'Conte aos clientes sobre sua experiência e diferenciais...',
                 maxLines: 4,
               ),
               const SizedBox(height: 14),
@@ -431,7 +448,9 @@ class _EditProfessionalProfileScreenState
               PrimaryButton(
                 text: 'Salvar Alterações',
                 isLoading: _isSaving,
-                onPressed: (_isSaving || _hasSavedSuccessfully) ? null : _handleSave,
+                onPressed: (_isSaving || _hasSavedSuccessfully)
+                    ? null
+                    : _handleSave,
               ),
               const SizedBox(height: 24),
             ],
@@ -443,7 +462,8 @@ class _EditProfessionalProfileScreenState
 
   Widget _buildAddressSection() {
     final addr = _currentAddress;
-    final hasAddress = addr.street.isNotEmpty ||
+    final hasAddress =
+        addr.street.isNotEmpty ||
         addr.city.isNotEmpty ||
         addr.neighborhood.isNotEmpty;
     final addressText = hasAddress
@@ -512,7 +532,8 @@ class _EditProfessionalProfileScreenState
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () async {
-                final baseProfile = widget.proProfile ??
+                final baseProfile =
+                    widget.proProfile ??
                     ProfileProfessionalModel(
                       userId: widget.user.id,
                       profession: _professionController.text.trim(),
@@ -522,8 +543,9 @@ class _EditProfessionalProfileScreenState
                 final updated = await Navigator.of(context).push<dynamic>(
                   MaterialPageRoute(
                     builder: (_) => EditProfessionalAddressScreen(
-                      proProfile:
-                          baseProfile.copyWith(address: _currentAddress),
+                      proProfile: baseProfile.copyWith(
+                        address: _currentAddress,
+                      ),
                     ),
                   ),
                 );
@@ -593,17 +615,11 @@ class _EditProfessionalProfileScreenState
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       validator: validator,
-      style: GoogleFonts.inter(
-        color: AppColors.textPrimary,
-        fontSize: 14,
-      ),
+      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: GoogleFonts.inter(
-          color: AppColors.textMuted,
-          fontSize: 13,
-        ),
+        hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
         prefixIcon: Icon(icon, color: AppColors.textMuted, size: 20),
         filled: true,
         fillColor: AppColors.inputBackground,
@@ -765,7 +781,9 @@ class _EditProfessionalProfileScreenState
           const SizedBox(height: 10),
           if (_availableServices.isNotEmpty)
             DropdownButtonFormField<ServiceItemModel>(
-              key: ValueKey('serv_${_selectedCategoryForAdd?.id}_${_availableServices.length}'),
+              key: ValueKey(
+                'serv_${_selectedCategoryForAdd?.id}_${_availableServices.length}',
+              ),
               initialValue: _selectedServiceForAdd,
               dropdownColor: AppColors.cardBackground,
               decoration: const InputDecoration(labelText: 'Serviço'),
@@ -776,8 +794,8 @@ class _EditProfessionalProfileScreenState
                 setState(() {
                   _selectedServiceForAdd = val;
                   if (val != null) {
-                    _servicePriceController.text =
-                        val.basePrice.toStringAsFixed(0);
+                    _servicePriceController.text = val.basePrice
+                        .toStringAsFixed(0);
                   }
                 });
               },
@@ -790,9 +808,11 @@ class _EditProfessionalProfileScreenState
                   controller: _servicePriceController,
                   keyboardType: TextInputType.number,
                   style: GoogleFonts.inter(color: AppColors.textPrimary),
-                  decoration: const InputDecoration(
-                    labelText: 'Valor (R\$)',
-                  ),
+                  decoration: const InputDecoration(labelText: 'Valor (R\$)'),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CentavosInputFormatter(moeda: true),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
@@ -802,18 +822,12 @@ class _EditProfessionalProfileScreenState
                   dropdownColor: AppColors.cardBackground,
                   decoration: const InputDecoration(labelText: 'Cobrança'),
                   items: const [
-                    DropdownMenuItem(
-                      value: 'Diária',
-                      child: Text('Diária'),
-                    ),
+                    DropdownMenuItem(value: 'Diária', child: Text('Diária')),
                     DropdownMenuItem(
                       value: 'Por Hora',
                       child: Text('Por Hora'),
                     ),
-                    DropdownMenuItem(
-                      value: 'Fixo',
-                      child: Text('Valor Fixo'),
-                    ),
+                    DropdownMenuItem(value: 'Fixo', child: Text('Valor Fixo')),
                   ],
                   onChanged: (val) =>
                       setState(() => _servicePriceType = val ?? 'Diária'),
@@ -827,10 +841,7 @@ class _EditProfessionalProfileScreenState
             height: 42,
             child: ElevatedButton.icon(
               onPressed: _addService,
-              icon: const Icon(
-                Icons.add_rounded,
-                color: AppColors.textDark,
-              ),
+              icon: const Icon(Icons.add_rounded, color: AppColors.textDark),
               label: Text(
                 'Adicionar à Minha Lista',
                 style: GoogleFonts.inter(fontWeight: FontWeight.w700),

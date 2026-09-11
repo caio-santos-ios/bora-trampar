@@ -621,6 +621,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  moment_dart:
+    dependency: "direct main"
+    description:
+      name: moment_dart
+      sha256: "93c3cd05b69b1a5435d62bff2efc0cec19896a9a431a4a98263c8d870e5c52f0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.3.4"
   objective_c:
     dependency: transitive
     description:

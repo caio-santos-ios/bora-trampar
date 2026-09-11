@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/services/auth_service.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/main_app_bar.dart';
-import '../../models/appointment_model.dart';
-import '../../repositories/appointment/appointment_repository.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/main_app_bar.dart';
+import '../../../models/appointment_model.dart';
+import '../../../repositories/appointment/appointment_repository.dart';
 import '../categories/category_selection_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {

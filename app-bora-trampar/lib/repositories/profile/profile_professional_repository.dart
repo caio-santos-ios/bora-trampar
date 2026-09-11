@@ -160,10 +160,8 @@ class ProfileProfessionalRepository {
       }
       return null;
     } on DioException catch (err) {
-      print(err);
       return null;
     } catch (e) {
-      print(e);
       return null;
     }
   }

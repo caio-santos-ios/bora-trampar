@@ -131,30 +131,6 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-        #endregion
-        #region DELETE
-        public async Task<ResponseApi<User?>> DeleteAsync(DeleteRequest request)
-        {
-            try
-            {
-                User? existedUser = await repository.GetByIdAsync(request.Id);
-                if (existedUser is null) return new(null, 404, "Usuário não encontrado");
-
-                existedUser.Deleted = true;
-                existedUser.DeletedAt = DateTime.Now;
-
-                User user = await repository.DeleteAsync(existedUser);
-                if (user is null) return new(null, 400, "Falha ao excluir usuário");
-
-                return new(user, 204, "Usuário excluido com sucesso");
-            }
-            catch (Exception ex)
-            {
-                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
-            }
-        }
-        #endregion
-
         public async Task<ResponseApi<decimal>> UpdateWalletBalanceAsync(string userId, decimal amountDelta)
         {
             try
@@ -192,5 +168,28 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Erro ao atualizar token FCM: {ex.Message}");
             }
         }
+        #endregion
+        #region DELETE
+        public async Task<ResponseApi<User?>> DeleteAsync(DeleteRequest request)
+        {
+            try
+            {
+                User? existedUser = await repository.GetByIdAsync(request.Id);
+                if (existedUser is null) return new(null, 404, "Usuário não encontrado");
+
+                existedUser.Deleted = true;
+                existedUser.DeletedAt = DateTime.Now;
+
+                User user = await repository.DeleteAsync(existedUser);
+                if (user is null) return new(null, 400, "Falha ao excluir usuário");
+
+                return new(user, 204, "Usuário excluido com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        #endregion
     }
 }

@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_reviews_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
@@ -20,9 +20,10 @@ class CustomerOrderScreen extends StatefulWidget {
 class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   final AppointmentRepository _appointmentRepo = AppointmentRepository();
 
+  final _storageService = StorageService();
+
   List<AppointmentModel> _appointments = [];
   bool _isLoading = true;
-  bool _isProfessional = false;
   int _selectedFilterIndex = 0;
   Timer? _pollTimer;
 
@@ -44,8 +45,8 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    if (!_isProfessional) return;
-    final fresh = await _appointmentRepo.getAppointments();
+    String query = "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
         _appointments = fresh;
@@ -55,15 +56,12 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final user = await AuthService().getCurrentUser();
-    final appointments = await _appointmentRepo.getAppointments();
-    final role = (user?.role ?? '').toLowerCase();
-    final isPro = role.contains('prof') || role.contains('prestador');
+    String query = "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    final appointments = await _appointmentRepo.getAppointments(query: query);
 
     if (mounted) {
       setState(() {
         _appointments = appointments;
-        _isProfessional = isPro;
         _isLoading = false;
       });
     }
@@ -148,11 +146,93 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
       }
     }
   }
+  
+  Future<void> _handleFinishAppointment(String appointmentId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Serviço finalizado',
+            style: GoogleFonts.inter(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+          content: Text(
+            'Esse serviço será finalizado!',
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Não',
+                style: GoogleFonts.inter(
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGoldDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Sim, Confirmar',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      final success = await _appointmentRepo.finishAppointment(appointmentId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Agendamento finalizado.'
+                  : 'Não foi possível finalizar o agendamento.',
+              style: GoogleFonts.inter(
+                color: success ? AppColors.textDark : Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor: success
+                ? AppColors.primaryGold
+                : AppColors.errorRed,
+          ),
+        );
+        if (success) _loadData();
+      }
+    }
+  }
 
   String _normalizeStatusName(String status) {
     switch (status) {
       case "Finish":
         return "Finalizado";
+      case "FinishProfessional":
+        return "Profissional Finalizou Serviço";
       case "PendingPayment":
         return "Pagamento Pendente";
       case "PendingAcceptance":
@@ -175,6 +255,7 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
       case "Finish":
       case "Accepted":
         return Colors.green;
+      case "FinishProfessional":
       case "PendingPayment":
         return Colors.orangeAccent;
       case "PendingAcceptance":
@@ -208,7 +289,7 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
               : _buildCustomerView(),
         ),
       ),
-      bottomNavigationBar: (!_isLoading && !_isProfessional)
+      bottomNavigationBar: (!_isLoading)
           ? Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: SizedBox(
@@ -273,24 +354,27 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   }
 
   Widget _buildCustomerView() {
-    final filters = ['Todos', 'Pendentes', 'Confirmados', 'Concluídos'];
+    final filters = ['Todos', 'Pendentes', 'Você Cancelou', 'Profissional Recusou', 'Confirmados', 'Concluídos'];
 
     final filteredAppointments = _appointments.where((apt) {
       if (_selectedFilterIndex == 0) return true;
-      final filter = filters[_selectedFilterIndex].toLowerCase();
-      final status = apt.status.toLowerCase();
-      if (filter == 'pendentes') {
-        return status.contains('pending') ||
-            status.contains('paid') ||
-            status.contains('requested');
+      final filter = filters[_selectedFilterIndex];
+      final status = apt.status;
+
+      if (filter == 'Pendentes') {
+        return status == "PendingAcceptance";
       }
-      if (filter == 'confirmados') {
-        return status.contains('accept') || status.contains('confirm');
+      if (filter == 'Você Cancelou') {
+        return status == "CancelledByCustomer";
       }
-      if (filter == 'concluídos') {
-        return status.contains('complet') ||
-            status.contains('finaliz') ||
-            status.contains('conclu');
+      if (filter == 'Profissional Recusou') {
+        return status == "Declined";
+      }
+      if (filter == 'Confirmados') {
+        return status == "Accepted";
+      }
+      if (filter == 'Concluídos') {
+        return status == "Finish";
       }
       return true;
     }).toList();
@@ -455,7 +539,9 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                           if (apt.address != null && apt.address!.isNotEmpty)
                             _infoRow(Icons.location_on_outlined, apt.address!),
 
-                          if (st != "Finish" && st != "Declined" && st != "CancelledByCustomer") ...[
+                          if (st != "Finish" &&
+                              st != "Declined" &&
+                              st != "CancelledByCustomer" && st != "FinishProfessional") ...[
                             const SizedBox(height: 12),
                             const Divider(
                               color: AppColors.cardBorder,
@@ -476,6 +562,44 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                                   'Cancelar Diária',
                                   style: GoogleFonts.inter(
                                     color: AppColors.errorRed,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ),
+                            ),
+                          ],
+                          
+                          if (st == "FinishProfessional") ...[
+                            const SizedBox(height: 12),
+                            const Divider(
+                              color: AppColors.cardBorder,
+                              height: 1,
+                            ),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () =>
+                                    _handleFinishAppointment(apt.id),
+                                icon: const Icon(
+                                  Icons.check,
+                                  color: AppColors.success,
+                                  size: 16,
+                                ),
+                                label: Text(
+                                  'Serviço foi finalizado',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.success,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                   ),

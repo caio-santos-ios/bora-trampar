@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
 import 'package:brasil_fields/brasil_fields.dart';
@@ -11,7 +12,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
-import '../categories/category_selection_screen.dart';
+import '../_old/categories/category_selection_screen.dart';
 
 class ProfessionalScheduleScreen extends StatefulWidget {
   final VoidCallback? onNavigateToProfile;
@@ -26,6 +27,8 @@ class ProfessionalScheduleScreen extends StatefulWidget {
 class _ProfessionalScheduleScreenState
     extends State<ProfessionalScheduleScreen> {
   final AppointmentRepository _appointmentRepo = AppointmentRepository();
+
+  final _storageService = StorageService();
 
   List<AppointmentModel> _appointments = [];
   bool _isLoading = true;
@@ -51,8 +54,8 @@ class _ProfessionalScheduleScreenState
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    if (!_isProfessional) return;
-    final fresh = await _appointmentRepo.getAppointments();
+    String query = "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
         _appointments = fresh;
@@ -79,16 +82,18 @@ class _ProfessionalScheduleScreenState
   Future<void> _handleAcceptAppointment(String appointmentId) async {
     try {
       await _appointmentRepo.acceptAppointment(appointmentId);
-      if (mounted) Toastfy.show(context, "Serviço aceito com sucesso!", "success");
+      if (mounted)
+        Toastfy.show(context, "Serviço aceito com sucesso!", "success");
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
     } finally {}
   }
-  
+
   Future<void> _handleDeclineAppointment(String appointmentId) async {
     try {
       await _appointmentRepo.declineAppointment(appointmentId);
-      if (mounted) Toastfy.show(context, "Serviço recusado com sucesso!", "success");
+      if (mounted)
+        Toastfy.show(context, "Serviço recusado com sucesso!", "success");
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
     } finally {}
@@ -191,18 +196,20 @@ class _ProfessionalScheduleScreenState
     switch (status) {
       case "Finish":
         return "Finalizado";
+      case "FinishProfessional":
+        return "Aguardando Pagamento";
       case "PendingPayment":
         return "Pagamento Pendente";
       case "PendingAcceptance":
         return "Aguardando Profissional Aceitar";
       case "Accepted":
-        return "Profissional Confirmou";
+        return "Você Confirmou";
       case "Declined":
-        return "Profissional Recusou";
+        return "Você Recusou";
       case "StartService":
-        return "Profissional Iniciou Serviço";
+        return "Você Iniciou Serviço";
       case "CancelledByCustomer":
-        return "Cancelado";
+        return "Cliente Cancelou";
       default:
         return "";
     }
@@ -214,6 +221,7 @@ class _ProfessionalScheduleScreenState
       case "Accepted":
         return Colors.green;
       case "PendingPayment":
+      case "FinishProfessional":
         return Colors.orangeAccent;
       case "PendingAcceptance":
         return Colors.blueAccent;

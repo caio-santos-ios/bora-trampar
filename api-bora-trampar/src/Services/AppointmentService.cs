@@ -2,6 +2,7 @@ using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
+using api_bora_trampar.src.Requests._Base;
 using api_bora_trampar.src.Requests.Base;
 using api_bora_trampar.src.SignalR;
 using api_bora_trampar.src.Utils;
@@ -14,16 +15,15 @@ namespace api_bora_trampar.src.Services
         IAppointmentRepository repository,
         IUserRepository userRepository, IUserService userService, INotificationService notificationService, IPaymentService paymentService, IHubContext<AppointmentHub> hub) : IAppointmentService
     {
-        public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
+        public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllRequest request)
         {
             try
             {
+                Pagination<Category> pagination = new(request.QueryParams);
+
                 List<BsonDocument> pipeline =
                 [
-                    new("$match", new BsonDocument
-                    {
-                        {"deleted", false}
-                    }),
+                    new("$match", pagination.PipelineFilter),
                     new("$addFields", new BsonDocument
                     {
                         {"customerObjectId", new BsonDocument("$convert", new BsonDocument
@@ -158,7 +158,7 @@ namespace api_bora_trampar.src.Services
                         {"createdAt", 1},
                         {"hasReviews", new BsonDocument ("$ifNull",  new BsonArray { "$review.professional_id", "" })},
                     }),
-                    new("$sort", new BsonDocument { { "createdAt", -1 } } )
+                    new("$sort", pagination.PipelineSort )
                 ];
 
                 List<dynamic> appointments = await repository.GetAllAsync(pipeline);
@@ -191,6 +191,11 @@ namespace api_bora_trampar.src.Services
             try
             {
                 Appointment entity = ObjectMapper.Map<CreateAppointmentRequest, Appointment>(request);
+
+                if (TimeSpan.TryParse(request.Hour, out TimeSpan time))
+                {
+                    entity.Date = request.Date.Date.Add(time);
+                }
 
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
@@ -310,7 +315,14 @@ namespace api_bora_trampar.src.Services
                 Appointment? appointment = await repository.GetByIdAsync(id);
                 if (appointment is null) return new(null, 404, "Agendamento não encontrado");
 
-                appointment.Status = "Finish";
+                if (appointment.Status == "StartService")
+                {
+                    appointment.Status = "FinishProfessional";
+                }
+                else
+                {
+                    appointment.Status = "Finish";
+                }
                 appointment.UpdatedBy = userId;
                 appointment.UpdatedAt = DateTime.UtcNow;
 
@@ -320,8 +332,11 @@ namespace api_bora_trampar.src.Services
                 ResponseApi<User?> user = await userService.GetByIdAsync(appointment.ProfessionalId);
                 if (user.Data is null) return new(null, 404, "Agendamento não encontrado");
 
-                await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
-                await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
+                if (appointment.Status == "Finish")
+                {
+                    await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
+                    await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
+                }
 
                 return new(updated, 200, "Agendamento finalizado");
             }
