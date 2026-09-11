@@ -309,7 +309,6 @@ class _ProfessionalFinancialHistoryScreenState
               .toList()
               .map((a) {
                 String st = a.status;
-                print(st);
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),

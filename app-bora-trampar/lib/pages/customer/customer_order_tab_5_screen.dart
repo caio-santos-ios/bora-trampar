@@ -20,8 +20,9 @@ import '../professional/professional_profile_screen.dart';
 
 class CustomerOrderTab5Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
+  final double price;
 
-  const CustomerOrderTab5Screen({super.key, required this.orderRequest});
+  const CustomerOrderTab5Screen({super.key, required this.orderRequest, required this.price});
 
   @override
   State<CustomerOrderTab5Screen> createState() =>
@@ -29,64 +30,34 @@ class CustomerOrderTab5Screen extends StatefulWidget {
 }
 
 class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
+  final _userRepository = UserRepository();
+
   bool _isSubmitting = false;
+  double _walletBalance = 0.0;
+  bool _walletLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _resolveProfessionalPrice();
+    _loadWalletBalance();
   }
 
-  Future<void> _resolveProfessionalPrice() async {
-    final prof = widget.orderRequest.selectedProfessional;
-    if (prof != null && prof.id.isNotEmpty) {
-      final profile = await ProfileProfessionalRepository().getByUserId(
-        prof.id,
-      );
-      if (profile != null && profile.services.isNotEmpty) {
-        final matching = profile.services.firstWhere(
-          (s) => widget.orderRequest.selectedServices.any(
-            (sel) =>
-                sel.id == s.serviceId ||
-                sel.name.toLowerCase() == s.serviceName.toLowerCase(),
-          ),
-          orElse: () => profile.services.firstWhere(
-            (s) => s.price > 0,
-            orElse: () => profile.services.first,
-          ),
-        );
-        double resolvedPrice = matching.price > 0 ? matching.price : 0.0;
-        if (resolvedPrice <= 0) {
-          for (final s in profile.services) {
-            if (s.price > 0) {
-              resolvedPrice = s.price;
-              break;
-            }
-          }
-        }
-        if (resolvedPrice > 0 && resolvedPrice != prof.basePrice) {
-          if (mounted) {
-            setState(() {
-              final photoFallback = prof.avatarUrl.isNotEmpty
-                  ? prof.avatarUrl
-                  : (profile.portfolioPhotos.isNotEmpty
-                        ? profile.portfolioPhotos.first
-                        : prof.avatarUrl);
 
-              widget.orderRequest.selectedProfessional = prof.copyWith(
-                basePrice: resolvedPrice,
-                bio: prof.bio.isNotEmpty
-                    ? prof.bio
-                    : (profile.bio.isNotEmpty ? profile.bio : prof.bio),
-                avatarUrl: photoFallback,
-                servicesList: profile.services.isNotEmpty
-                    ? profile.services
-                    : prof.servicesList,
-              );
-            });
-          }
-        }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final me = await _userRepository.getMe();
+      if (me != null && mounted) {
+        setState(() {
+          _walletBalance = me.walletBalance;
+          widget.orderRequest.creditApplied = _walletBalance;
+          _walletLoaded = true;
+        });
+      } else if (mounted) {
+        setState(() => _walletLoaded = true);
       }
+    } catch (_) {
+      if (mounted) setState(() => _walletLoaded = true);
     }
   }
 
@@ -108,9 +79,20 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
           ? widget.orderRequest.selectedServices.first.id
           : '';
 
+      try {
+        final me = await UserRepository().getMe();
+        if (me != null && me.walletBalance > 0) {
+          if (me.walletBalance >= widget.orderRequest.creditApplied) {
+            widget.orderRequest.creditApplied = me.walletBalance;
+          }
+          setState(() => _walletBalance = me.walletBalance);
+        }
+      } catch (_) {}
+
       final amountToPay = widget.orderRequest.amountToPay;
       final remainingCredit = widget.orderRequest.remainingCredit;
       final isFullyCovered = amountToPay <= 0;
+
 
       Object data = {
         "professionalId": profId,
@@ -123,7 +105,8 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
         "description": widget.orderRequest.description,
         "notes": widget.orderRequest.notes,
         "photoUrls": widget.orderRequest.photoPaths,
-        "totalPrice": widget.orderRequest.servicePrice,
+        "totalPrice": widget.price,
+        if (isFullyCovered) "status": "PendingAcceptance",
       };
 
       final appointment = await AppointmentRepository().create(data);
@@ -149,11 +132,16 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
       final appointmentId = appointment.id;
 
       if (isFullyCovered) {
+        // Debitar o valor total da carteira no backend
+        await UserRepository().debitWallet(
+          widget.orderRequest.servicePrice,
+          reason: 'Pagamento de agendamento via saldo em carteira',
+        );
+
+        // Se sobrou crédito (crédito > preço), já está no wallet — o debit acima cobre só o servicePrice
         if (remainingCredit > 0) {
-          await UserRepository().creditWallet(
-            remainingCredit,
-            reason: 'Sobra de troca de profissional',
-          );
+          // O remainingCredit NÃO precisa ser creditado, pois o wallet só foi debitado pelo servicePrice.
+          // O saldo restante permanece no wallet automaticamente.
         }
 
         if (!mounted) return;
@@ -162,9 +150,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              remainingCredit > 0
-                  ? 'Solicitação enviada! A sobra de R\$ ${remainingCredit.toStringAsFixed(2).replaceAll('.', ',')} foi adicionada ao seu saldo.'
-                  : 'Solicitação enviada com sucesso sem custo adicional!',
+              'Solicitação enviada! O profissional será notificado.',
               style: GoogleFonts.inter(
                 color: AppColors.textDark,
                 fontWeight: FontWeight.w700,
@@ -237,11 +223,21 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
       );
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
+
     } finally {}
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_walletLoaded) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
     final prof = widget.orderRequest.selectedProfessional;
     final serviceName = widget.orderRequest.serviceNamesDisplay;
     final dateDisplay = widget.orderRequest.scheduledDate != null
@@ -377,6 +373,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                             builder: (context) => ProfessionalProfileScreen(
                               orderRequest: widget.orderRequest,
                               professional: prof,
+                              price: prof.basePrice,
                             ),
                           ),
                         );
@@ -774,7 +771,9 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Crédito já pago (anterior)',
+                                (widget.orderRequest.previousAppointmentId?.isNotEmpty ?? false)
+                                    ? 'Crédito já pago (anterior)'
+                                    : 'Saldo em carteira',
                                 style: GoogleFonts.inter(
                                   color: AppColors.success,
                                   fontSize: 13,
@@ -820,6 +819,34 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: Divider(color: AppColors.divider),
                         ),
+                        if (_walletLoaded && _walletBalance > 0 && amountToPay > 0) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.orange.shade300),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.info_outline, color: Colors.orange.shade700, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Seu saldo (R\$ ${_walletBalance.toStringAsFixed(2).replaceAll('.', ',')}) não é suficiente. '
+                                    'O restante de R\$ ${amountToPay.toStringAsFixed(2).replaceAll('.', ',')} será cobrado via PIX.',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.orange.shade800,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

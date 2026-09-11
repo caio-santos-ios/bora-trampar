@@ -211,6 +211,14 @@ namespace api_bora_trampar.src.Services
                         appointment.Status = "PendingAcceptance";
                         await appointmentRepository.UpdateAsync(appointment);
 
+                        // Se o valor do Pix é menor que o TotalPrice, parte foi coberta pelo wallet_balance.
+                        // Debitar a diferença da carteira do cliente agora que o Pix foi confirmado.
+                        if (payment.Value > 0 && appointment.TotalPrice > payment.Value)
+                        {
+                            decimal walletUsed = appointment.TotalPrice - payment.Value;
+                            await userService.UpdateWalletBalanceAsync(appointment.CustomerId, -walletUsed);
+                        }
+
                         if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
                         {
                             string message = "Você recebeu uma nova solicitação de agendamento.";
@@ -238,6 +246,7 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+
         public async Task<ResponseApi<Payment?>> CheckPaymentAsync(CheckPaymentRequest request)
         {
             try
@@ -260,6 +269,13 @@ namespace api_bora_trampar.src.Services
                     {
                         appointment.Status = "PendingAcceptance";
                         await appointmentRepository.UpdateAsync(appointment);
+
+                        // Debitar a diferença do wallet_balance se o Pix cobriu apenas parte do TotalPrice
+                        if (payment.Value > 0 && appointment.TotalPrice > payment.Value)
+                        {
+                            decimal walletUsed = appointment.TotalPrice - payment.Value;
+                            await userService.UpdateWalletBalanceAsync(appointment.CustomerId, -walletUsed);
+                        }
 
                         if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
                         {
@@ -294,23 +310,25 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                Payment? payment = await repository.GetByAppointmentIdAsync(appointmentId);
-                if (payment is null) return new(null, 404, "Pagamento não encontrado");
-
-                payment.Status = "EXPENSE";
-                payment.UpdatedAt = DateTime.UtcNow;
-
-                Payment? updatedPayment = await repository.UpdateAsync(payment);
-                if (updatedPayment is null) return new(null, 400, "Falha ao fazer reembolso");
-
                 Appointment? appointment = await appointmentRepository.GetByIdAsync(appointmentId);
-                if (appointment is not null)
+                if (appointment is null) return new(null, 404, "Agendamento não encontrado");
+
+                Payment? payment = await repository.GetByAppointmentIdAsync(appointmentId);
+                if (payment is not null)
                 {
-                    await userService.UpdateWalletBalanceAsync(appointment.CustomerId, payment.Value);
+                    payment.Status = "EXPENSE";
+                    payment.UpdatedAt = DateTime.UtcNow;
+                    await repository.UpdateAsync(payment);
                 }
 
+                // Reembolsar o valor total do agendamento (cobre Pix + wallet_balance utilizado)
+                decimal refundAmount = appointment.TotalPrice > 0 ? appointment.TotalPrice : (payment?.Value ?? 0);
+                if (refundAmount > 0)
+                {
+                    await userService.UpdateWalletBalanceAsync(appointment.CustomerId, refundAmount);
+                }
 
-                return new(updatedPayment, 200, "Reembolso feito com sucesso");
+                return new(payment, 200, "Reembolso feito com sucesso");
             }
             catch (Exception ex)
             {

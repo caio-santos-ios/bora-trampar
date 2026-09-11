@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_bora_trampar/api/http_client_api.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_4_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +9,6 @@ import '../../core/theme/app_colors.dart';
 import '../../models/order_request_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../main/main_navigation_screen.dart';
-import '../_old/professionals/professionals_list_screen.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 enum TrackingStatus {
@@ -148,22 +148,16 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   void _chooseAnotherProfessional() {
     _countdownTimer?.cancel();
 
-    final previouslyPaid = widget.orderRequest.creditApplied > 0
-        ? (widget.orderRequest.creditApplied + widget.orderRequest.amountToPay)
-        : widget.orderRequest.servicePrice;
-
-    if (widget.appointmentId.isNotEmpty) {
-      _appointmentRepository.deleteAppointment(widget.appointmentId);
-    }
-
-    widget.orderRequest.creditApplied = previouslyPaid;
+    // O saldo já foi creditado de volta ao wallet_balance pelo backend.
+    // Portanto, zeramos o creditApplied para que a Tab 5 leia o wallet_balance real da API.
+    widget.orderRequest.creditApplied = 0;
     widget.orderRequest.previousAppointmentId = widget.appointmentId;
     widget.orderRequest.selectedProfessional = null;
 
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) =>
-            ProfessionalsListScreen(orderRequest: widget.orderRequest),
+            CustomerOrderTab4Screen(orderRequest: widget.orderRequest),
       ),
     );
   }

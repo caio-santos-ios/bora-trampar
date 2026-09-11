@@ -65,12 +65,12 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
       final List<ProfessionalModel> loadedPros = [];
       final Map<String, double> distances = {};
 
-      for (final item in rawList) {
-        final prof = ProfessionalModel.fromJson(item);
-        loadedPros.add(prof);
-        final dist = prof.distanceKm ?? (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
-        distances[prof.id] = dist;
-      }
+      // for (final item in rawList) {
+      //   final prof = ProfessionalModel.fromJson(item);
+      //   loadedPros.add(prof);
+      //   final dist = prof.distanceKm ?? (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
+      //   distances[prof.id] = dist;
+      // }
 
       if (mounted) {
         setState(() {
@@ -147,14 +147,14 @@ class _ProfessionalsListScreenState extends State<ProfessionalsListScreen> {
     );
 
     widget.orderRequest.selectedProfessional = resolvedProf;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ProfessionalProfileScreen(
-          orderRequest: widget.orderRequest,
-          professional: resolvedProf,
-        ),
-      ),
-    );
+    // Navigator.of(context).push(
+    //   MaterialPageRoute(
+    //     builder: (context) => ProfessionalProfileScreen(
+    //       orderRequest: widget.orderRequest,
+    //       professional: resolvedProf,
+    //     ),
+    //   ),
+    // );
   }
 
   @override

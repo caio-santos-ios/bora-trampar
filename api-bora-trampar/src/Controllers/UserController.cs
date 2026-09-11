@@ -24,6 +24,7 @@ namespace api_bora_trampar.src.Controllers
         public async Task<IActionResult> GetMe()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            System.Console.WriteLine(userId);
             ResponseApi<User?> response = await service.GetByIdAsync(userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }
@@ -35,6 +36,16 @@ namespace api_bora_trampar.src.Controllers
 
             string userId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : (User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "");
             ResponseApi<decimal> response = await service.UpdateWalletBalanceAsync(userId, request.Amount);
+            return StatusCode(response.StatusCode, new { newBalance = response.Result });
+        }
+
+        [HttpPost("wallet/debit")]
+        public async Task<IActionResult> DebitWallet([FromBody] CreditWalletRequest request)
+        {
+            if (request == null || request.Amount <= 0) return BadRequest("Valor inválido.");
+
+            string userId = !string.IsNullOrEmpty(request.UserId) ? request.UserId : (User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "");
+            ResponseApi<decimal> response = await service.UpdateWalletBalanceAsync(userId, -request.Amount);
             return StatusCode(response.StatusCode, new { newBalance = response.Result });
         }
 

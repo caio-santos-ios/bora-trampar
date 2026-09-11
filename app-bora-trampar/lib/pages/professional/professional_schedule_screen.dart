@@ -199,7 +199,7 @@ class _ProfessionalScheduleScreenState
       case "FinishProfessional":
         return "Aguardando Pagamento";
       case "PendingPayment":
-        return "Pagamento Pendente";
+        return "Pagamento Pendente 1";
       case "PendingAcceptance":
         return "Aguardando Profissional Aceitar";
       case "Accepted":
@@ -310,7 +310,9 @@ class _ProfessionalScheduleScreenState
       _selectedDay.year,
       _selectedDay.month,
     );
-    final dayAppointments = _appointmentsOnSelectedDay;
+    final dayAppointments = _appointmentsOnSelectedDay.where((a) {
+      return a.status != "PendingPayment";
+    }).toList();
 
     final pending = _appointments.where((a) {
       return a.status == "PendingAcceptance" || a.status == "Accepted";

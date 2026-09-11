@@ -10,18 +10,22 @@ import '../../models/professional_model.dart';
 class ProfessionalProfileScreen extends StatelessWidget {
   final OrderRequestModel orderRequest;
   final ProfessionalModel professional;
+  final double price;
 
   const ProfessionalProfileScreen({
     super.key,
     required this.orderRequest,
     required this.professional,
+    required this.price,
   });
 
   void _onRequestProfessional(BuildContext context) {
     orderRequest.selectedProfessional = professional;
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => CustomerOrderTab5Screen(orderRequest: orderRequest),
+        builder: (context) =>
+            CustomerOrderTab5Screen(orderRequest: orderRequest, price: price),
       ),
     );
   }
@@ -32,9 +36,14 @@ class ProfessionalProfileScreen extends StatelessWidget {
     if (effectivePrice <= 0.0 && professional.servicesList.isNotEmpty) {
       final matching = professional.servicesList.firstWhere(
         (s) => orderRequest.selectedServices.any(
-          (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
+          (sel) =>
+              sel.id == s.serviceId ||
+              sel.name.toLowerCase() == s.serviceName.toLowerCase(),
         ),
-        orElse: () => professional.servicesList.firstWhere((s) => s.price > 0, orElse: () => professional.servicesList.first),
+        orElse: () => professional.servicesList.firstWhere(
+          (s) => s.price > 0,
+          orElse: () => professional.servicesList.first,
+        ),
       );
       if (matching.price > 0) {
         effectivePrice = matching.price;
@@ -51,19 +60,24 @@ class ProfessionalProfileScreen extends StatelessWidget {
 
     final services = professional.servicesList.isNotEmpty
         ? professional.servicesList
-            .map((s) => s.price > 0
-                ? '${s.serviceName} (R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')})'
-                : s.serviceName)
-            .toList()
+              .map(
+                (s) => s.price > 0
+                    ? '${s.serviceName} (R\$ ${s.price.toStringAsFixed(2).replaceAll('.', ',')})'
+                    : s.serviceName,
+              )
+              .toList()
         : (professional.offeredServices.isNotEmpty
-            ? professional.offeredServices
-            : [orderRequest.serviceNamesDisplay]);
+              ? professional.offeredServices
+              : [orderRequest.serviceNamesDisplay]);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -106,7 +120,10 @@ class ProfessionalProfileScreen extends StatelessWidget {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,12 +138,18 @@ class ProfessionalProfileScreen extends StatelessWidget {
                                     width: 100,
                                     height: 110,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => Container(
-                                      width: 100,
-                                      height: 110,
-                                      color: AppColors.cardElevated,
-                                      child: const Icon(Icons.person, size: 50, color: AppColors.textMuted),
-                                    ),
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                              width: 100,
+                                              height: 110,
+                                              color: AppColors.cardElevated,
+                                              child: const Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: AppColors.textMuted,
+                                              ),
+                                            ),
                                   )
                                 : Container(
                                     width: 100,
@@ -134,7 +157,9 @@ class ProfessionalProfileScreen extends StatelessWidget {
                                     color: AppColors.cardElevated,
                                     child: Center(
                                       child: Text(
-                                        professional.name.isNotEmpty ? professional.name[0].toUpperCase() : 'P',
+                                        professional.name.isNotEmpty
+                                            ? professional.name[0].toUpperCase()
+                                            : 'P',
                                         style: GoogleFonts.inter(
                                           color: AppColors.primaryGold,
                                           fontSize: 32,
@@ -149,7 +174,10 @@ class ProfessionalProfileScreen extends StatelessWidget {
                               bottom: 6,
                               left: 6,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.black.withValues(alpha: 0.8),
                                   borderRadius: BorderRadius.circular(6),
@@ -197,7 +225,8 @@ class ProfessionalProfileScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                if (professional.isVerified && professional.highlightBadge.isNotEmpty) ...[
+                                if (professional.isVerified &&
+                                    professional.highlightBadge.isNotEmpty) ...[
                                   const SizedBox(width: 4),
                                   const Icon(
                                     Icons.verified_rounded,
@@ -278,18 +307,27 @@ class ProfessionalProfileScreen extends StatelessWidget {
                             if (professional.highlightBadge.isNotEmpty) ...[
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E1A10),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppColors.primaryGold.withValues(alpha: 0.6),
+                                    color: AppColors.primaryGold.withValues(
+                                      alpha: 0.6,
+                                    ),
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.star_rounded, size: 12, color: AppColors.primaryGold),
+                                    const Icon(
+                                      Icons.star_rounded,
+                                      size: 12,
+                                      color: AppColors.primaryGold,
+                                    ),
                                     const SizedBox(width: 4),
                                     Text(
                                       professional.highlightBadge,
@@ -310,7 +348,10 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(14),
@@ -321,7 +362,11 @@ class ProfessionalProfileScreen extends StatelessWidget {
                         Expanded(
                           child: Column(
                             children: [
-                              const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 18),
+                              const Icon(
+                                Icons.location_on_outlined,
+                                color: AppColors.primaryGold,
+                                size: 18,
+                              ),
                               const SizedBox(height: 6),
                               Text(
                                 professional.region,
@@ -346,11 +391,19 @@ class ProfessionalProfileScreen extends StatelessWidget {
                           ),
                         ),
 
-                        Container(width: 1, height: 36, color: AppColors.divider),
+                        Container(
+                          width: 1,
+                          height: 36,
+                          color: AppColors.divider,
+                        ),
                         Expanded(
                           child: Column(
                             children: [
-                              const Icon(Icons.verified_user_outlined, color: AppColors.primaryGold, size: 18),
+                              const Icon(
+                                Icons.verified_user_outlined,
+                                color: AppColors.primaryGold,
+                                size: 18,
+                              ),
                               const SizedBox(height: 6),
                               Text(
                                 'Garantia',
@@ -377,11 +430,16 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   ),
                   Container(
                     margin: const EdgeInsets.only(top: 14),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.cardElevated,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                      border: Border.all(
+                        color: AppColors.primaryGold.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -391,24 +449,40 @@ class ProfessionalProfileScreen extends StatelessWidget {
                           children: [
                             Text(
                               'Valor da Diária',
-                              style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 12),
+                              style: GoogleFonts.inter(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'R\$ ${effectivePrice.toStringAsFixed(2).replaceAll('.', ',')}',
-                              style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 18, fontWeight: FontWeight.w800),
+                              UtilBrasilFields.obterReal(price),
+                              style: GoogleFonts.inter(
+                                color: AppColors.primaryGold,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.15),
+                            color: AppColors.primaryGold.withValues(
+                              alpha: 0.15,
+                            ),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Diária Completa',
-                            style: GoogleFonts.inter(color: AppColors.primaryGold, fontSize: 11, fontWeight: FontWeight.w700),
+                            style: GoogleFonts.inter(
+                              color: AppColors.primaryGold,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -417,7 +491,11 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Icon(Icons.person_outline_rounded, color: AppColors.primaryGold, size: 20),
+                      const Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primaryGold,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Sobre o profissional',
@@ -443,7 +521,11 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Icon(Icons.handyman_outlined, color: AppColors.primaryGold, size: 20),
+                      const Icon(
+                        Icons.handyman_outlined,
+                        color: AppColors.primaryGold,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Serviços oferecidos',
@@ -461,7 +543,10 @@ class ProfessionalProfileScreen extends StatelessWidget {
                     runSpacing: 10,
                     children: services.map((service) {
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.cardBackground,
                           borderRadius: BorderRadius.circular(20),
@@ -492,7 +577,11 @@ class ProfessionalProfileScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      const Icon(Icons.star_outline_rounded, color: AppColors.primaryGold, size: 20),
+                      const Icon(
+                        Icons.star_outline_rounded,
+                        color: AppColors.primaryGold,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         'Avaliações',
@@ -538,7 +627,8 @@ class ProfessionalProfileScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     rev.authorName,
@@ -588,7 +678,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Solicitar Profissional • ${UtilBrasilFields.obterReal(effectivePrice)}',
+                    'Solicitar Profissional • ${UtilBrasilFields.obterReal(price)}',
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,

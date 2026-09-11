@@ -84,58 +84,31 @@ class ProfileProfessionalRepository {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getProfessionalsAvailabilityRaw(
+  Future<List<ProfessionalModel>> getProfessionalsAvailabilityRaw(
     DateTime date,
     String hour,
     double latitude,
     double longitude, {
     String? serviceIds,
   }) async {
-    try {
-      final queryParams = <String, dynamic>{
-        'date': date.toIso8601String(),
-        'hour': hour,
-        'latitude': latitude,
-        'longitude': longitude,
-        'serviceIds': serviceIds ?? '',
-      };
+    final queryParams = <String, dynamic>{
+      'date': date.toIso8601String(),
+      'hour': hour,
+      'latitude': latitude,
+      'longitude': longitude,
+      'serviceIds': serviceIds ?? '',
+    };
 
-      final response = await _api.client.get(
-        '/api/profile-professionals/professional-availability',
-        queryParameters: queryParams,
-      );
-
-      if (response.statusCode == 200 && response.data != null) {
-        dynamic res =
-            response.data['result'] ?? response.data['data'] ?? response.data;
-        if (res is Map && res['data'] != null) {
-          res = res['data'];
-        }
-        if (res is List) {
-          return res.map((item) => Map<String, dynamic>.from(item as Map)).toList();
-        }
-      }
-      return [];
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<List<ProfessionalModel>> getProfessionalsAvailability(
-    DateTime date,
-    String hour,
-    double latitude,
-    double longitude, {
-    String? serviceIds,
-  }) async {
-    final rawList = await getProfessionalsAvailabilityRaw(
-      date,
-      hour,
-      latitude,
-      longitude,
-      serviceIds: serviceIds,
+    final response = await _api.client.get(
+      '/api/profile-professionals/professional-availability',
+      queryParameters: queryParams,
     );
-    return rawList.map((item) => ProfessionalModel.fromJson(item)).toList();
+
+    return response.statusCode == 200
+        ? (response.data["result"]["data"] as List)
+              .map((e) => ProfessionalModel.fromJson(e))
+              .toList()
+        : [];
   }
 
   Future<ProfileProfessionalModel?> saveProfile(

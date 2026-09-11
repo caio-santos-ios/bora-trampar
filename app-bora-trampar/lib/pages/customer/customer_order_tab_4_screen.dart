@@ -1,4 +1,7 @@
+import 'package:app_bora_trampar/models/profile_professional_model.dart';
+import 'package:app_bora_trampar/models/service_item_model.dart';
 import 'package:app_bora_trampar/pages/professional/professional_profile_screen.dart';
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
@@ -62,19 +65,11 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
         serviceIds: serviceIds.isNotEmpty ? serviceIds : null,
       );
 
-      final List<ProfessionalModel> loadedPros = [];
       final Map<String, double> distances = {};
-
-      for (final item in rawList) {
-        final prof = ProfessionalModel.fromJson(item);
-        loadedPros.add(prof);
-        final dist = prof.distanceKm ?? (item['distanciaKm'] as num?)?.toDouble() ?? 0.0;
-        distances[prof.id] = dist;
-      }
 
       if (mounted) {
         setState(() {
-          _professionals = loadedPros;
+          _professionals = rawList;
           _proDistances = distances;
         });
       }
@@ -115,43 +110,22 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
     return list;
   }
 
-  void _onSelectProfessional(ProfessionalModel professional) {
-    double effectivePrice = professional.basePrice;
-    if (effectivePrice <= 0.0 && professional.servicesList.isNotEmpty) {
-      final matching = professional.servicesList.firstWhere(
-        (s) => widget.orderRequest.selectedServices.any(
-          (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
-        ),
-        orElse: () => professional.servicesList.firstWhere(
-          (s) => s.price > 0,
-          orElse: () => professional.servicesList.first,
-        ),
-      );
-      if (matching.price > 0) {
-        effectivePrice = matching.price;
-      }
-    }
+  void _onSelectProfessional(ProfessionalModel professional) {   
+    double price = 0;
+    ProfessionalServiceItemModel? service = professional.servicesList
+        .where((e) => e.serviceId == widget.orderRequest.selectedServices[0].id)
+        .firstOrNull;
 
-    if (effectivePrice <= 0.0 &&
-        widget.orderRequest.selectedServices.isNotEmpty &&
-        widget.orderRequest.selectedServices.first.basePrice > 0) {
-      effectivePrice = widget.orderRequest.selectedServices.first.basePrice;
-    }
+    if(service != null) price = service.price;
 
-    if (effectivePrice <= 0.0) {
-      effectivePrice = 150.0;
-    }
+    widget.orderRequest.selectedProfessional = professional;
 
-    final resolvedProf = professional.copyWith(
-      basePrice: effectivePrice,
-    );
-
-    widget.orderRequest.selectedProfessional = resolvedProf;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ProfessionalProfileScreen(
           orderRequest: widget.orderRequest,
-          professional: resolvedProf,
+          professional: professional,
+          price: price,
         ),
       ),
     );
@@ -175,7 +149,7 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Sou cliente',
+          'Sou cliente Teste',
           style: GoogleFonts.inter(
             color: AppColors.textPrimary,
             fontSize: 16,
@@ -655,20 +629,25 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Center(
-                                child: Text(
-                                  prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.primaryGold,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w700,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Center(
+                                    child: Text(
+                                      prof.name.isNotEmpty
+                                          ? prof.name[0].toUpperCase()
+                                          : 'P',
+                                      style: GoogleFonts.inter(
+                                        color: AppColors.primaryGold,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
                             )
                           : Center(
                               child: Text(
-                                prof.name.isNotEmpty ? prof.name[0].toUpperCase() : 'P',
+                                prof.name.isNotEmpty
+                                    ? prof.name[0].toUpperCase()
+                                    : 'P',
                                 style: GoogleFonts.inter(
                                   color: AppColors.primaryGold,
                                   fontSize: 22,
@@ -886,25 +865,18 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
                   ),
                   Builder(
                     builder: (context) {
-                      double cardPrice = prof.basePrice;
-                      if (cardPrice <= 0.0 && prof.servicesList.isNotEmpty) {
-                        final matching = prof.servicesList.firstWhere(
-                          (s) => widget.orderRequest.selectedServices.any(
-                            (sel) => sel.id == s.serviceId || sel.name.toLowerCase() == s.serviceName.toLowerCase(),
-                          ),
-                          orElse: () => prof.servicesList.firstWhere((s) => s.price > 0, orElse: () => prof.servicesList.first),
-                        );
-                        if (matching.price > 0) cardPrice = matching.price;
-                      }
-                      if (cardPrice <= 0.0 &&
-                          widget.orderRequest.selectedServices.isNotEmpty &&
-                          widget.orderRequest.selectedServices.first.basePrice > 0) {
-                        cardPrice = widget.orderRequest.selectedServices.first.basePrice;
-                      }
-                      if (cardPrice <= 0.0) cardPrice = 150.0;
+                      ProfessionalServiceItemModel? service = prof.servicesList
+                          .where(
+                            (e) =>
+                                e.serviceId ==
+                                widget.orderRequest.selectedServices[0].id,
+                          )
+                          .firstOrNull;
 
                       return Text(
-                        'R\$ ${cardPrice.toStringAsFixed(2).replaceAll('.', ',')}',
+                        UtilBrasilFields.obterReal(
+                          service == null ? 0 : service.price,
+                        ),
                         style: GoogleFonts.inter(
                           color: AppColors.textPrimary,
                           fontSize: 16,

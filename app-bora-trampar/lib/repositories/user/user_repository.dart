@@ -11,24 +11,26 @@ class UserRepository {
   }
 
   Future<UserModel?> getMe() async {
-    try {
-      final response = await _api.client.get('/api/users/me');
-      if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result'] ?? response.data['data'] ?? response.data;
-        if (res is Map) {
-          return UserModel.fromJson(Map<String, dynamic>.from(res));
-        }
-      }
-      return null;
-    } catch (_) {
-      return null;
-    }
+    final response = await _api.client.get('/api/users/me');
+    return response.statusCode == 200 ? UserModel.fromJson(response.data['result']["data"]) : null;
   }
 
   Future<bool> creditWallet(double amount, {String reason = ''}) async {
     try {
       final response = await _api.client.post(
         '/api/users/wallet/credit',
+        data: {'amount': amount, 'reason': reason},
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> debitWallet(double amount, {String reason = ''}) async {
+    try {
+      final response = await _api.client.post(
+        '/api/users/wallet/debit',
         data: {'amount': amount, 'reason': reason},
       );
       return response.statusCode == 200;
