@@ -64,6 +64,9 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
+            "allowedHosts": [
+              "4300-i64dbrm37k174o69vripv-0890e119.us1.manus.computer"
+            ],
             "headers": {
               "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
               "Cross-Origin-Embedder-Policy": "unsafe-none"

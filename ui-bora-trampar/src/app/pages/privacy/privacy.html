@@ -1,0 +1,31 @@
+<main class="terms-page">
+  <header class="terms-nav">
+    <a class="brand" routerLink="/" aria-label="Voltar para o início"><img src="/assets/logo-bora-trampar.jpeg" alt="Bora Trampar" class="brand-logo"></a>
+    <a class="back-link" routerLink="/">← Voltar para a página inicial</a>
+  </header>
+
+  <section class="terms-hero">
+    <div class="eyebrow"><span></span> Proteção de dados</div>
+    <h1>Política de <em>Privacidade.</em></h1>
+    <p>Como o Bora Trampa coleta, utiliza, armazena, compartilha e protege dados pessoais.</p>
+    <div class="updated">Última atualização <strong>[DATA]</strong></div>
+    <div class="draft-note">Minuta para revisão jurídica</div>
+  </section>
+
+  <div class="terms-layout">
+    <aside class="terms-index" aria-label="Índice da política de privacidade">
+      <span>nesta política</span>
+      @for (section of sections; track section.title; let i = $index) { <a [href]="'#privacy-sec-' + i">{{ section.title }}</a> }
+    </aside>
+    <article class="terms-content">
+      <div class="welcome-copy"><p>O Bora Trampa valoriza a privacidade e a proteção dos dados pessoais.</p><p>Esta Política explica as práticas aplicáveis ao uso da plataforma, em conformidade com a Lei nº 13.709/2018 — LGPD e demais normas aplicáveis.</p></div>
+      @for (section of sections; track section.title; let i = $index) {
+        <section class="term-section" [id]="'privacy-sec-' + i"><div class="section-number">{{ (i + 1).toString().padStart(2, '0') }}</div><div><h2>{{ section.title }}</h2>@for (paragraph of section.paragraphs; track paragraph) { <p class="preserve-lines">{{ paragraph }}</p> }</div></section>
+      }
+      <aside class="lawyer-note"><strong>Nota ao advogado</strong><p>Esta é uma minuta inicial preparada com base no modelo informado para o Bora Trampa: plataforma intermediadora de serviços, contratação dentro do aplicativo, pagamento dentro do aplicativo, cobrança de 10% de taxa de intermediação do cliente e repasse do valor do serviço ao profissional. Solicita-se revisão jurídica integral, especialmente quanto às bases legais, tratamento de dados biométricos, documentos de profissionais, pagamentos, retenção e repasse, compartilhamento com terceiros, transferência internacional, direitos dos titulares, responsabilidade da plataforma e adequação ao CDC e demais normas aplicáveis.</p></aside>
+      <div class="terms-end"><span>BT</span> Fim do documento</div>
+    </article>
+  </div>
+
+  <footer class="terms-footer"><a class="brand" routerLink="/"><img src="/assets/logo-bora-trampar.jpeg" alt="Bora Trampar" class="brand-logo"></a><span>© 2026 Bora Trampa. Feito no Brasil.</span><a routerLink="/termos-uso">Termos de Uso ↗</a></footer>
+</main>
