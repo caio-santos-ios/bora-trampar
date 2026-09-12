@@ -8,6 +8,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<List<dynamic>> GetAllAsync(List<BsonDocument> pipeline);
         Task<long> GetCountAsync(List<BsonDocument> pipeline);
         Task<Contestation?> GetByIdAsync(string id);
+        Task<Contestation?> GetByAppointmentIdAsync(string appointmentId);
         Task<Contestation?> CreateAsync(Contestation entity);
         Task<Contestation?> UpdateAsync(Contestation entity);
         Task<Contestation> DeleteAsync(Contestation entity);

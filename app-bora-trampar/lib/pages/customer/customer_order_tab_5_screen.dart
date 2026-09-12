@@ -14,7 +14,6 @@ import '../../core/widgets/primary_button.dart';
 import '../../models/order_request_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/payment/payment_repository.dart';
-import '../../repositories/profile/profile_professional_repository.dart';
 import '../../repositories/user/user_repository.dart';
 import '../professional/professional_profile_screen.dart';
 

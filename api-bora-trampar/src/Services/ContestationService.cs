@@ -282,6 +282,39 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+
+        public async Task<ResponseApi<Contestation?>> GetByAppointmentIdAsync(string appointmentId)
+        {
+            try
+            {
+                Contestation? contestation = await repository.GetByAppointmentIdAsync(appointmentId);
+                if (contestation is null) return new(null, 404, "Contestação não encontrada para este agendamento");
+
+                if (!string.IsNullOrEmpty(contestation.CustomerId))
+                {
+                    User? customer = await userRepository.GetByIdAsync(contestation.CustomerId);
+                    if (customer != null) contestation.CustomerName = customer.Name;
+                }
+
+                if (!string.IsNullOrEmpty(contestation.ProfessionalId))
+                {
+                    User? pro = await userRepository.GetByIdAsync(contestation.ProfessionalId);
+                    if (pro != null) contestation.ProfessionalName = pro.Name;
+                }
+
+                if (!string.IsNullOrEmpty(contestation.AppointmentId))
+                {
+                    Appointment? appointment = await appointmentRepository.GetByIdAsync(contestation.AppointmentId);
+                    if (appointment != null) contestation.ServiceName = appointment.ServiceNames ?? appointment.CategoryName ?? "Serviço Prestado";
+                }
+
+                return new(contestation, 200, "Contestação buscada com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
         #endregion
 
         #region CREATE
@@ -397,6 +430,11 @@ namespace api_bora_trampar.src.Services
                         existed.StatusLabel = "Aguardando Informações";
                         if (appointment is not null) appointment.Status = "ExpenseInfoRequest";
                     }
+                    else if (request.Status == "under_review")
+                    {
+                        existed.StatusLabel = "Em Análise";
+                        if (appointment is not null) appointment.Status = "Disputed";
+                    }
 
                 }
 
@@ -404,6 +442,45 @@ namespace api_bora_trampar.src.Services
                 if (!string.IsNullOrEmpty(request.AdminDecision)) existed.AdminDecision = request.AdminDecision;
                 if (!string.IsNullOrEmpty(request.DecidedBy)) existed.DecidedBy = request.DecidedBy;
                 if (!string.IsNullOrEmpty(request.ProNotes)) existed.ProNotes = request.ProNotes;
+
+                if (!string.IsNullOrEmpty(request.Description))
+                {
+                    if (string.IsNullOrEmpty(existed.Description))
+                    {
+                        existed.Description = request.Description;
+                    }
+                    else
+                    {
+                        existed.Description += $"\n\n[Informações Adicionais]: {request.Description}";
+                    }
+                }
+
+                if (request.Photos != null && request.Photos.Count > 0)
+                {
+                    existed.Photos ??= [];
+                    foreach (var photo in request.Photos)
+                    {
+                        if (!existed.Photos.Contains(photo))
+                        {
+                            existed.Photos.Add(photo);
+                        }
+                    }
+                    if (string.IsNullOrEmpty(existed.CustomerEvidenceUrl) && existed.Photos.Count > 0)
+                    {
+                        existed.CustomerEvidenceUrl = existed.Photos[0];
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.CustomerEvidenceUrl))
+                {
+                    existed.CustomerEvidenceUrl = request.CustomerEvidenceUrl;
+                }
+
+                if (!string.IsNullOrEmpty(request.VideoUrl))
+                {
+                    existed.VideoUrl = request.VideoUrl;
+                }
+
                 existed.DecidedAt = DateTime.UtcNow;
                 existed.UpdatedAt = DateTime.UtcNow;
 

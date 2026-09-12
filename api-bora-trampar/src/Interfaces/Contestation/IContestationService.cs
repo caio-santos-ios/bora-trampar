@@ -12,6 +12,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request);
         Task<ResponseApi<List<dynamic>>> GetSelectAsync(GetAllRequest request);
         Task<ResponseApi<Contestation?>> GetByIdAsync(string id);
+        Task<ResponseApi<Contestation?>> GetByAppointmentIdAsync(string appointmentId);
         Task<ResponseApi<Contestation?>> CreateAsync(CreateContestationRequest request);
         Task<ResponseApi<Contestation?>> UpdateAsync(UpdateContestationRequest request);
         Task<ResponseApi<Contestation?>> DeleteAsync(DeleteRequest request);

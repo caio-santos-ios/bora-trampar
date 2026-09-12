@@ -1,5 +1,4 @@
 import 'package:app_bora_trampar/models/profile_professional_model.dart';
-import 'package:app_bora_trampar/models/service_item_model.dart';
 import 'package:app_bora_trampar/pages/professional/professional_profile_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';

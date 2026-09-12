@@ -691,6 +691,108 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                             ),
                           ],
 
+                          if (st == "ExpenseInfoRequest") ...[
+                            const SizedBox(height: 12),
+                            const Divider(
+                              color: AppColors.cardBorder,
+                              height: 1,
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGoldDark.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.primaryGoldDark.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.info_outline_rounded,
+                                        color: AppColors.primaryGoldDark,
+                                        size: 16,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          'Mais informações solicitadas pela moderação',
+                                          style: GoogleFonts.inter(
+                                            color: AppColors.primaryGoldDark,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'A moderação necessita de esclarecimentos adicionais para dar continuidade à sua contestação.',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () async {
+                                        final result =
+                                            await Navigator.push<bool>(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                CustomerCreateContestationScreen(
+                                              appointment: apt,
+                                              isAddingInfo: true,
+                                            ),
+                                          ),
+                                        );
+                                        if (result == true) {
+                                          _loadData();
+                                        }
+                                      },
+                                      icon: const Icon(
+                                        Icons.upload_file_rounded,
+                                        color: Colors.white,
+                                        size: 16,
+                                      ),
+                                      label: Text(
+                                        'Enviar Mais Informações',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primaryGoldDark,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+
                           if (st == "Finish" && apt.hasReviews.isEmpty) ...[
                             const SizedBox(height: 12),
                             const Divider(

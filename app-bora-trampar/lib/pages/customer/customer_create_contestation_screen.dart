@@ -11,10 +11,14 @@ import '../../repositories/upload/upload_repository.dart';
 
 class CustomerCreateContestationScreen extends StatefulWidget {
   final AppointmentModel appointment;
+  final bool isAddingInfo;
+  final String? contestationId;
 
   const CustomerCreateContestationScreen({
     super.key,
     required this.appointment,
+    this.isAddingInfo = false,
+    this.contestationId,
   });
 
   @override
@@ -42,11 +46,40 @@ class _CustomerCreateContestationScreenState
 
   bool _isSubmitting = false;
   String _uploadStatus = '';
+  bool _isLoadingContestation = false;
+  String? _resolvedContestationId;
 
   @override
   void initState() {
     super.initState();
     _selectedReason = _reasons.first;
+    _resolvedContestationId = widget.contestationId;
+    if (widget.isAddingInfo) {
+      _loadExistingContestation();
+    }
+  }
+
+  Future<void> _loadExistingContestation() async {
+    if (_resolvedContestationId != null && _resolvedContestationId!.isNotEmpty) {
+      return;
+    }
+    setState(() => _isLoadingContestation = true);
+    try {
+      final contestationData = await ContestationRepository()
+          .getContestationByAppointment(widget.appointment.id);
+      if (contestationData != null && mounted) {
+        setState(() {
+          _resolvedContestationId =
+              contestationData['id'] ?? contestationData['_id'];
+        });
+      }
+    } catch (_) {
+      // Ignora erro no carregamento prévio
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingContestation = false);
+      }
+    }
   }
 
   @override
@@ -267,31 +300,67 @@ class _CustomerCreateContestationScreenState
         }
       }
 
-      // 3. Criação da contestação
+      // 3. Criação ou Atualização da contestação
       if (!mounted) return;
       setState(() {
-        _uploadStatus = 'Registrando contestação...';
+        _uploadStatus = widget.isAddingInfo
+            ? 'Enviando informações adicionais...'
+            : 'Registrando contestação...';
       });
 
-      final success = await ContestationRepository().createContestation(
-        appointmentId: widget.appointment.id,
-        reason: _selectedReason,
-        description: desc,
-        customerEvidenceUrl: photoUrls.isNotEmpty ? photoUrls.first : '',
-        photos: photoUrls,
-        videoUrl: videoUrl,
-      );
+      bool success = false;
+
+      if (widget.isAddingInfo) {
+        String? targetId = _resolvedContestationId;
+        if (targetId == null || targetId.isEmpty) {
+          final contestationData = await ContestationRepository()
+              .getContestationByAppointment(widget.appointment.id);
+          targetId = contestationData?['id'] ?? contestationData?['_id'];
+        }
+
+        if (targetId != null && targetId.isNotEmpty) {
+          success = await ContestationRepository().updateContestation(
+            id: targetId,
+            status: 'under_review',
+            statusLabel: 'Em Análise',
+            description: desc,
+            photos: photoUrls.isNotEmpty ? photoUrls : null,
+            videoUrl: videoUrl,
+          );
+        } else {
+          // Se não encontrou a contestação existente, cria uma nova
+          success = await ContestationRepository().createContestation(
+            appointmentId: widget.appointment.id,
+            reason: 'Informações Adicionais',
+            description: desc,
+            customerEvidenceUrl: photoUrls.isNotEmpty ? photoUrls.first : '',
+            photos: photoUrls,
+            videoUrl: videoUrl,
+          );
+        }
+      } else {
+        success = await ContestationRepository().createContestation(
+          appointmentId: widget.appointment.id,
+          reason: _selectedReason,
+          description: desc,
+          customerEvidenceUrl: photoUrls.isNotEmpty ? photoUrls.first : '',
+          photos: photoUrls,
+          videoUrl: videoUrl,
+        );
+      }
 
       if (!mounted) return;
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text(
-              'Contestação registrada com sucesso! O caso foi encaminhado para análise da nossa equipe.',
+              widget.isAddingInfo
+                  ? 'Informações adicionais enviadas com sucesso! Nossa equipe irá avaliar.'
+                  : 'Contestação registrada com sucesso! O caso foi encaminhado para análise da nossa equipe.',
             ),
             backgroundColor: AppColors.primaryGold,
-            duration: Duration(seconds: 4),
+            duration: const Duration(seconds: 4),
           ),
         );
         Navigator.of(context).pop(true);
@@ -342,7 +411,9 @@ class _CustomerCreateContestationScreenState
           onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Contestar Serviço',
+          widget.isAddingInfo
+              ? 'Enviar Mais Informações'
+              : 'Contestar Serviço',
           style: GoogleFonts.inter(
             color: AppColors.textPrimary,
             fontSize: 18,
@@ -352,11 +423,17 @@ class _CustomerCreateContestationScreenState
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            children: [
+        child: _isLoadingContestation
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryGold,
+                ),
+              )
+            : Form(
+                key: _formKey,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  children: [
               // Card Resumo do Agendamento
               _buildAppointmentCard(
                 serviceName: serviceName,
@@ -367,68 +444,72 @@ class _CustomerCreateContestationScreenState
 
               const SizedBox(height: 16),
 
-              // Aviso sobre o Reembolso / Custódia
+              // Aviso sobre o Reembolso / Custódia ou Informações Adicionais
               _buildNoticeCard(),
 
-              const SizedBox(height: 24),
+              if (!widget.isAddingInfo) ...[
+                const SizedBox(height: 24),
 
-              // Campo de Motivo Principal
-              Text(
-                'Motivo da Contestação *',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _selectedReason,
-                dropdownColor: AppColors.cardBackground,
-                style: GoogleFonts.inter(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                ),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: AppColors.inputBackground,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.inputBorder),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.inputBorder),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                // Campo de Motivo Principal
+                Text(
+                  'Motivo da Contestação *',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                items: _reasons.map((r) {
-                  return DropdownMenuItem(
-                    value: r,
-                    child: Text(r),
-                  );
-                }).toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (val) {
-                        if (val != null) {
-                          setState(() => _selectedReason = val);
-                        }
-                      },
-              ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedReason,
+                  dropdownColor: AppColors.cardBackground,
+                  style: GoogleFonts.inter(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                    ),
+                  ),
+                  items: _reasons.map((r) {
+                    return DropdownMenuItem(
+                      value: r,
+                      child: Text(r),
+                    );
+                  }).toList(),
+                  onChanged: _isSubmitting
+                      ? null
+                      : (val) {
+                          if (val != null) {
+                            setState(() => _selectedReason = val);
+                          }
+                        },
+                ),
+              ],
 
               const SizedBox(height: 20),
 
               // Descrição Detalhada
               Text(
-                'Descrição Detalhada do Ocorrido *',
+                widget.isAddingInfo
+                    ? 'Informações Adicionais / Esclarecimentos *'
+                    : 'Descrição Detalhada do Ocorrido *',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
@@ -437,7 +518,9 @@ class _CustomerCreateContestationScreenState
               ),
               const SizedBox(height: 6),
               Text(
-                'Explique claramente o motivo pelo qual você não reconhece a finalização ou solicita o estorno.',
+                widget.isAddingInfo
+                    ? 'Descreva as novas informações solicitadas pela moderação para análise da contestação.'
+                    : 'Explique claramente o motivo pelo qual você não reconhece a finalização ou solicita o estorno.',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: AppColors.textSecondary,
@@ -512,8 +595,10 @@ class _CustomerCreateContestationScreenState
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(
-                          Icons.report_problem_rounded,
+                      : Icon(
+                          widget.isAddingInfo
+                              ? Icons.send_rounded
+                              : Icons.report_problem_rounded,
                           color: Colors.white,
                           size: 20,
                         ),
@@ -521,8 +606,12 @@ class _CustomerCreateContestationScreenState
                     _isSubmitting
                         ? (_uploadStatus.isNotEmpty
                             ? _uploadStatus
-                            : 'Enviando contestação...')
-                        : 'Confirmar e Solicitar Reembolso',
+                            : (widget.isAddingInfo
+                                ? 'Enviando informações...'
+                                : 'Enviando contestação...'))
+                        : (widget.isAddingInfo
+                            ? 'Enviar Informações Solicitadas'
+                            : 'Confirmar e Solicitar Reembolso'),
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -530,7 +619,9 @@ class _CustomerCreateContestationScreenState
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.errorRed,
+                    backgroundColor: widget.isAddingInfo
+                        ? AppColors.primaryGoldDark
+                        : AppColors.errorRed,
                     disabledBackgroundColor: AppColors.errorRed.withValues(alpha: 0.6),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -643,15 +734,19 @@ class _CustomerCreateContestationScreenState
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.shield_outlined,
+          Icon(
+            widget.isAddingInfo
+                ? Icons.info_outline_rounded
+                : Icons.shield_outlined,
             color: AppColors.primaryGold,
             size: 20,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'O valor pago permanecerá bloqueado com segurança até que a moderação avalie os fatos e documentos anexados para realizar o reembolso.',
+              widget.isAddingInfo
+                  ? 'A moderação solicitou informações complementares sobre a contestação deste serviço. Por favor, forneça os detalhes, fotos e/ou vídeo solicitados para prosseguir com a mediação.'
+                  : 'O valor pago permanecerá bloqueado com segurança até que a moderação avalie os fatos e documentos anexados para realizar o reembolso.',
               style: GoogleFonts.inter(
                 color: AppColors.primaryGold,
                 fontSize: 12,

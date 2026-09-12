@@ -204,8 +204,6 @@ namespace api_bora_trampar.src.Services
 
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentCreated", new { appointment.Id, status = "Created" });
 
-                // Se o agendamento já foi criado como PendingAcceptance (pago com saldo em carteira),
-                // notificar o profissional imediatamente sem aguardar o fluxo de Pix
                 if (entity.Status == "PendingAcceptance" && !string.IsNullOrWhiteSpace(entity.ProfessionalId))
                 {
                     await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest

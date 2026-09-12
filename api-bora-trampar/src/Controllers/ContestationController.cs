@@ -39,6 +39,13 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [HttpGet("appointment/{appointmentId}")]
+        public async Task<IActionResult> GetByAppointmentIdAsync(string appointmentId)
+        {
+            ResponseApi<Contestation?> response = await service.GetByAppointmentIdAsync(appointmentId);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateContestationRequest request)
         {

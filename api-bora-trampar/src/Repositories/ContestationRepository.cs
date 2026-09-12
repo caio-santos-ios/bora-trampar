@@ -26,6 +26,11 @@ namespace api_bora_trampar.src.Repositories
             return await appDbContext.Contestations.Find(x => !x.Deleted && x.Id.Equals(id)).FirstOrDefaultAsync();
         }
 
+        public async Task<Contestation?> GetByAppointmentIdAsync(string appointmentId)
+        {
+            return await appDbContext.Contestations.Find(x => !x.Deleted && x.AppointmentId.Equals(appointmentId)).FirstOrDefaultAsync();
+        }
+
         public async Task<Contestation?> CreateAsync(Contestation entity)
         {
             await appDbContext.Contestations.InsertOneAsync(entity);
