@@ -15,6 +15,7 @@ namespace api_bora_trampar.src.Requests.Auth
         [Display(Order = 2)]
         public string Email { get; set; } = string.Empty;
         public string WhatsApp { get; set; } = string.Empty;
+        public string Document { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "A Senha é obrigatória.")]
         [Display(Order = 3)]

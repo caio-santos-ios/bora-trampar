@@ -68,6 +68,7 @@ namespace api_bora_trampar.src.Services
                         email = user.Email,
                         role = user.Role.ToString(),
                         photo = user.Photo,
+                        document = user.Document,
                         whatsapp = user.WhatsApp,
                         walletBalance = user.WalletBalance,
                         isProfileCompleted,
@@ -141,6 +142,7 @@ namespace api_bora_trampar.src.Services
                         email = user.Email,
                         role = user.Role.ToString(),
                         photo = user.Photo,
+                        document = user.Document,
                         whatsapp = user.WhatsApp,
                         walletBalance = user.WalletBalance,
                         isProfileCompleted,
@@ -169,6 +171,12 @@ namespace api_bora_trampar.src.Services
                     if (existingUserWhatsApp != null) return new(null, 400, "WhatsApp inválido, tente user um diferente.");
                 }
 
+                if (!string.IsNullOrEmpty(request.Document))
+                {
+                    User? existingUserDoc = await authRepository.GetByDocumentAsync(request.Document);
+                    if (existingUserDoc != null) return new(null, 400, "CPF já cadastrado, tente usar um diferente.");
+                }
+
                 string code = GenerateCode.GenerateCodeNumber();
                 DateTime today = DateTime.Now;
 
@@ -177,7 +185,8 @@ namespace api_bora_trampar.src.Services
                     Id = ObjectId.GenerateNewId().ToString(),
                     Name = request.Name,
                     Email = request.Email,
-                    WhatsApp = request.WhatsApp,
+                    WhatsApp = CleanField.CleanPhone(request.WhatsApp),
+                    Document = CleanField.CleanDocument(request.Document),
                     Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Role = request.Role,
                     CreatedAt = DateTime.UtcNow,

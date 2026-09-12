@@ -5,6 +5,7 @@ class UserModel {
   final String? role;
   final String? photo;
   final String? whatsapp;
+  final String? document;
   final double walletBalance;
 
   UserModel({
@@ -14,6 +15,7 @@ class UserModel {
     this.role,
     this.photo,
     this.whatsapp,
+    this.document,
     this.walletBalance = 0.0,
   });
 
@@ -25,6 +27,7 @@ class UserModel {
       role: json['role']?.toString(),
       photo: json['photo']?.toString(),
       whatsapp: json['whatsapp'] ?? json['whatsApp'],
+      document: json['document']?.toString(),
       walletBalance: (json['walletBalance'] as num?)?.toDouble() ??
           (json['wallet_balance'] as num?)?.toDouble() ??
           0.0,
@@ -39,6 +42,7 @@ class UserModel {
       'role': role,
       'photo': photo,
       'whatsapp': whatsapp,
+      'document': document,
       'walletBalance': walletBalance,
     };
   }
@@ -50,6 +54,7 @@ class UserModel {
     String? role,
     String? photo,
     String? whatsapp,
+    String? document,
     double? walletBalance,
   }) {
     return UserModel(
@@ -59,6 +64,7 @@ class UserModel {
       role: role ?? this.role,
       photo: photo ?? this.photo,
       whatsapp: whatsapp ?? this.whatsapp,
+      document: document ?? this.document,
       walletBalance: walletBalance ?? this.walletBalance,
     );
   }

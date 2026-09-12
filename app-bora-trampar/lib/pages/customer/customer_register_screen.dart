@@ -19,6 +19,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _cpfController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -32,6 +33,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _cpfController.dispose();
     _whatsappController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -59,6 +61,7 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
     final res = await AuthService().registerCustomer(
       name: _nameController.text,
       email: _emailController.text,
+      document: _cpfController.text,
       whatsApp: _whatsappController.text,
       password: _passwordController.text,
     );
@@ -215,6 +218,53 @@ class _CustomerRegisterScreenState extends State<CustomerRegisterScreen> {
                     }
                     if (!value.contains('@')) {
                       return 'Informe um e-mail válido.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'CPF',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _cpfController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CpfInputFormatter(),
+                  ],
+                  style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: '000.000.000-00',
+                    hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                    prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textMuted, size: 20),
+                    filled: true,
+                    fillColor: AppColors.inputBackground,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.inputBorder),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Informe seu CPF.';
+                    }
+                    if (!UtilBrasilFields.isCPFValido(value)) {
+                      return 'Informe um CPF válido.';
                     }
                     return null;
                   },

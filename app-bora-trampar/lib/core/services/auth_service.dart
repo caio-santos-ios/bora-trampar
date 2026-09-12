@@ -17,6 +17,7 @@ class AuthService {
     required String email,
     required String whatsApp,
     required String password,
+    String? document,
   }) async {
     try {
       final response = await _repository.register({
@@ -25,6 +26,8 @@ class AuthService {
         'whatsApp': whatsApp.trim(),
         'password': password,
         'role': 'Customer',
+        if (document != null && document.trim().isNotEmpty)
+          'document': document.trim(),
       });
 
       final data = response.data;
