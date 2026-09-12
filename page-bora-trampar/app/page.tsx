@@ -14,7 +14,7 @@ const faqs = [
   ['Preciso pagar para começar?', 'Você pode conhecer a plataforma e criar seu cadastro. As condições de uso aparecem de forma clara durante a jornada.'],
 ];
 
-function Brand() { return <Link className="brand" href="/"><img src="/logo-bora-trampar.jpeg" alt="Bora Trampa" /></Link>; }
+function Brand() { return <Link className="brand" href="/"><img src="/logo-bora-trampar-crop.png" alt="Bora Trampa" /></Link>; }
 function DashboardMockup() { return <div className="visual"><div className="orbit one" /><div className="orbit two" /><div className="dashboard"><div className="dash-top"><b>BT</b><span>Visão geral</span><i>CS</i></div><small>Bom dia, Caio</small><h3>Vamos trampar?</h3><div className="stats"><div><small>Trabalhos este mês</small><strong>24</strong><em>+18%</em></div><div><small>A receber</small><strong>R$ 3.840</strong><em>próximo: hoje</em></div></div><div className="dash-title">Próximos trabalhos <span>Ver todos ↗</span></div>{['Identidade visual|Hoje, 14:30 · Remoto|R$ 850','Manutenção elétrica|Amanhã, 09:00 · São Paulo|R$ 320','Fotografia de produto|18 set · Campinas|R$ 640'].map((row) => { const [title, sub, price] = row.split('|'); return <div className="job" key={title}><i>✦</i><div><b>{title}</b><small>{sub}</small></div><strong>{price}</strong></div>; })}</div><div className="floating rating">★ <b>4.9</b><small>avaliação média</small></div><div className="floating secure">✓ <b>Perfil verificado</b><small>Mais confiança para fechar</small></div></div>; }
 
 export default function Home() {
