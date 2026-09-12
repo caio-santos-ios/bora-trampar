@@ -106,7 +106,7 @@
 
 @media (min-width: 768px) {
   .dispute-claims {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -166,6 +166,36 @@
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid var(--border-color);
+}
+
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.claim-thumbnail {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.claim-thumbnail:hover {
+  transform: scale(1.04);
+}
+
+.claim-video {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 8px;
+  background: #000;
+  border: 1px solid var(--border-color);
+  margin-top: 4px;
 }
 
 .audit-box {

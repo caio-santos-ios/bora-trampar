@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_reviews_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_create_contestation_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +10,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
-import '../../repositories/contestation/contestation_repository.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 
 class CustomerOrderScreen extends StatefulWidget {
@@ -47,7 +47,8 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    String query = "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    String query =
+        "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
     final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
@@ -58,7 +59,8 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    String query = "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    String query =
+        "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
     final appointments = await _appointmentRepo.getAppointments(query: query);
 
     if (mounted) {
@@ -148,7 +150,7 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
       }
     }
   }
-  
+
   Future<void> _handleFinishAppointment(String appointmentId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -249,6 +251,14 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
         return "Cancelado";
       case "Disputed":
         return "Em Contestação";
+      case "ExpenseProfessional":
+        return "Contestação Perdida";
+      case "ExpenseInfoRequest":
+        return "Informar mais detalhes - Contestação";
+      case "ExpenseCustomer":
+        return "Reembolsado";
+      case "ExpensePartialProfessional":
+        return "Reembolsado Parcial";
       default:
         return "";
     }
@@ -258,11 +268,14 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
     switch (status) {
       case "Finish":
       case "Accepted":
+      case "ExpenseCustomer":
+      case "ExpensePartialProfessional":
         return Colors.green;
       case "FinishProfessional":
       case "PendingPayment":
         return Colors.orangeAccent;
       case "PendingAcceptance":
+      case "ExpenseInfoRequest":
         return Colors.blueAccent;
       case "StartService":
         return Colors.purpleAccent;
@@ -270,218 +283,11 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
         return Colors.orange;
       case "Declined":
       case "CancelledByCustomer":
+      case "ExpenseProfessional":
         return Colors.redAccent;
       default:
         return Colors.grey;
     }
-  }
-
-  Future<void> _showDisputeDialog(String appointmentId) async {
-    final reasonController = TextEditingController();
-    String selectedReason = 'Serviço incompleto';
-    final reasons = [
-      'Serviço incompleto',
-      'Serviço não realizado',
-      'Qualidade insatisfatória',
-      'Cobrança indevida',
-      'Outro motivo',
-    ];
-    bool isSubmitting = false;
-
-    await showDialog(
-      context: context,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.cardBackground,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: AppColors.cardBorder),
-          ),
-          title: Row(
-            children: [
-              const Icon(Icons.gavel_rounded, color: AppColors.primaryGold, size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Contestar Serviço',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Informe o motivo da contestação. O valor permanecerá retido no sistema até a análise do suporte para reembolso.',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Motivo principal *',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.inputBorder),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedReason,
-                      isExpanded: true,
-                      dropdownColor: AppColors.cardBackground,
-                      style: GoogleFonts.inter(
-                        color: AppColors.textPrimary,
-                        fontSize: 13,
-                      ),
-                      items: reasons
-                          .map((r) => DropdownMenuItem(
-                                value: r,
-                                child: Text(r),
-                              ))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setDialogState(() => selectedReason = val);
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'Descrição detalhada *',
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: reasonController,
-                  maxLines: 3,
-                  style: GoogleFonts.inter(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Explique o que aconteceu com detalhes...',
-                    hintStyle: GoogleFonts.inter(
-                      color: AppColors.textMuted,
-                      fontSize: 12,
-                    ),
-                    filled: true,
-                    fillColor: AppColors.background,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.inputBorder),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppColors.primaryGold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
-              child: Text(
-                'Cancelar',
-                style: GoogleFonts.inter(color: AppColors.textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      final desc = reasonController.text.trim();
-                      if (desc.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Por favor, informe uma descrição detalhada.'),
-                            backgroundColor: AppColors.errorRed,
-                          ),
-                        );
-                        return;
-                      }
-
-                      setDialogState(() => isSubmitting = true);
-
-                      final success = await ContestationRepository().createContestation(
-                        appointmentId: appointmentId,
-                        reason: selectedReason,
-                        description: desc,
-                      );
-
-                      if (!mounted) return;
-                      Navigator.of(ctx).pop();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            success
-                                ? 'Contestação registrada com sucesso! O caso foi encaminhado para análise.'
-                                : 'Falha ao registrar contestação. Tente novamente.',
-                          ),
-                          backgroundColor:
-                              success ? AppColors.primaryGold : AppColors.errorRed,
-                        ),
-                      );
-
-                      if (success) _loadData();
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.errorRed,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      'Confirmar Contestação',
-                      style: GoogleFonts.inter(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -568,7 +374,14 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   }
 
   Widget _buildCustomerView() {
-    final filters = ['Todos', 'Pendentes', 'Você Cancelou', 'Profissional Recusou', 'Confirmados', 'Concluídos'];
+    final filters = [
+      'Todos',
+      'Pendentes',
+      'Você Cancelou',
+      'Profissional Recusou',
+      'Confirmados',
+      'Concluídos',
+    ];
 
     final filteredAppointments = _appointments.where((apt) {
       if (_selectedFilterIndex == 0) return true;
@@ -755,7 +568,13 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
 
                           if (st != "Finish" &&
                               st != "Declined" &&
-                              st != "CancelledByCustomer" && st != "FinishProfessional") ...[
+                              st != "CancelledByCustomer" &&
+                              st != "FinishProfessional" &&
+                              st != "Disputed" &&
+                              st != "ExpenseProfessional" &&
+                              st != "ExpenseInfoRequest" &&
+                              st != "ExpenseCustomer" &&
+                              st != "ExpensePartialProfessional") ...[
                             const SizedBox(height: 12),
                             const Divider(
                               color: AppColors.cardBorder,
@@ -792,7 +611,7 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                               ),
                             ),
                           ],
-                          
+
                           if (st == "FinishProfessional") ...[
                             const SizedBox(height: 12),
                             const Divider(
@@ -804,7 +623,20 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
-                                  onPressed: () => _showDisputeDialog(apt.id),
+                                  onPressed: () async {
+                                    final result = await Navigator.push<bool>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            CustomerCreateContestationScreen(
+                                              appointment: apt,
+                                            ),
+                                      ),
+                                    );
+                                    if (result == true) {
+                                      _loadData();
+                                    }
+                                  },
                                   icon: const Icon(
                                     Icons.report_problem_outlined,
                                     color: AppColors.errorRed,

@@ -26,6 +26,27 @@ class UploadRepository {
     }
   }
 
+  Future<String?> uploadVideo(File file, {String folder = 'contestations'}) async {
+    try {
+      final fileName = file.path.split(Platform.pathSeparator).last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: fileName),
+        'folder': folder,
+      });
+
+      final response = await _api.client.post('/api/uploads/video', data: formData);
+
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data['url']?.toString();
+      }
+      return null;
+    } on DioException {
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<String?> uploadBase64(String base64, {String folder = 'documents'}) async {
     try {
       final response = await _api.client.post(

@@ -31,7 +31,6 @@ class _ProfessionalFinancialHistoryScreenState
   bool _hideBalance = false;
   List<PaymentModel> _payments = [];
   List<AppointmentModel> _appointments = [];
-  int _selectedFilterIndex = 0;
 
   @override
   void initState() {
@@ -87,14 +86,6 @@ class _ProfessionalFinancialHistoryScreenState
           return a.status == "FinishProfessional";
         })
         .fold(0.0, (sum, a) => sum + (a.price ?? 0.0));
-  }
-
-  List<PaymentModel> get _filteredPayments {
-    if (_selectedFilterIndex == 0) return _payments;
-    final filter = ['', 'pago', 'pend'][_selectedFilterIndex];
-    return _payments
-        .where((p) => (p.status ?? '').toLowerCase().contains(filter))
-        .toList();
   }
 
   String _normalizeStatusPaymentName(String status) {

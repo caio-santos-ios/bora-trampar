@@ -180,10 +180,21 @@
         <div class="dispute-claims">
           <div class="claim-box customer-claim">
             <h4><i class="fa-solid fa-circle-exclamation"></i> Alegação do Cliente</h4>
-            <p>{{ selectedItem.reason }}</p>
-            <div class="evidence-preview" *ngIf="selectedItem.customerEvidenceUrl">
-              <span class="evidence-title">Foto Anexada como Evidência:</span>
-              <img [src]="selectedItem.customerEvidenceUrl" alt="Evidência Cliente" class="claim-img" />
+            <p><strong>Motivo:</strong> {{ selectedItem.reason }}</p>
+            <p *ngIf="selectedItem.description"><strong>Descrição:</strong> {{ selectedItem.description }}</p>
+
+            <div class="evidence-preview" *ngIf="selectedItem.photos && selectedItem.photos.length > 0">
+              <span class="evidence-title">Fotos Anexadas ({{ selectedItem.photos.length }}):</span>
+              <div class="photos-grid">
+                <a *ngFor="let photo of selectedItem.photos" [href]="photo" target="_blank" rel="noopener noreferrer">
+                  <img [src]="photo" alt="Foto Evidência" class="claim-thumbnail" />
+                </a>
+              </div>
+            </div>
+
+            <div class="evidence-preview" *ngIf="selectedItem.videoUrl">
+              <span class="evidence-title">Vídeo Anexado:</span>
+              <video [src]="selectedItem.videoUrl" controls class="claim-video"></video>
             </div>
           </div>
 

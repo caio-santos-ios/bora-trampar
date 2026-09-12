@@ -207,6 +207,18 @@ namespace api_bora_trampar.src.Repositories
             {
             }
 
+            try
+            {
+                var pendingContestations = await db.Contestations.CountDocumentsAsync(a =>
+                    !a.Deleted && a.Status == "under_review"
+                );
+                response.OpenDisputes = (int)pendingContestations;
+            }
+            catch
+            {
+                response.OpenDisputes = 0;
+            }
+
             return response;
         }
     }

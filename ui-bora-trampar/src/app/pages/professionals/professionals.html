@@ -133,16 +133,6 @@
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span>{{ pro.phone }}</span>
-                <a
-                  *ngIf="pro.phone !== 'Não informado'"
-                  [href]="'https://wa.me/55' + cleanPhone(pro.phone)"
-                  target="_blank"
-                  class="btn-icon"
-                  style="color: #25d366;"
-                  title="Abrir WhatsApp"
-                >
-                  <i class="fa-brands fa-whatsapp"></i>
-                </a>
               </div>
             </td>
             <td>

@@ -15,7 +15,10 @@ export interface DisputeItem {
   totalValue: number;
   openedAt: string;
   reason: string;
+  description?: string;
   customerEvidenceUrl?: string;
+  photos?: string[];
+  videoUrl?: string;
   proNotes?: string;
   status: 'under_review' | 'released_pro' | 'refunded_full' | 'refunded_partial' | 'info_requested';
   statusLabel: string;
@@ -84,7 +87,10 @@ export class Disputes implements OnInit {
           totalValue: Number(item.value || item.totalValue || 0),
           openedAt: item.openedAt || item.createdAt || item.created_at || new Date().toISOString(),
           reason: item.reason || 'Contestação sobre a qualidade ou entrega do serviço.',
+          description: item.description || '',
           customerEvidenceUrl: item.customerEvidenceUrl || item.customer_evidence_url || '',
+          photos: Array.isArray(item.photos) ? item.photos : (item.customerEvidenceUrl ? [item.customerEvidenceUrl] : []),
+          videoUrl: item.videoUrl || item.video_url || '',
           proNotes: item.proNotes || item.pro_notes || '',
           status: item.status || 'under_review',
           statusLabel: item.statusLabel || item.status_label || 'Em Análise',

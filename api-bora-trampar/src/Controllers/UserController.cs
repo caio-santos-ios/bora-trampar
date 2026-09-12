@@ -24,7 +24,6 @@ namespace api_bora_trampar.src.Controllers
         public async Task<IActionResult> GetMe()
         {
             string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
-            System.Console.WriteLine(userId);
             ResponseApi<User?> response = await service.GetByIdAsync(userId);
             return StatusCode(response.StatusCode, new { response.Result });
         }

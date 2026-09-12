@@ -125,9 +125,13 @@ namespace api_bora_trampar.src.Services
                                 "Serviço Prestado"
                             })
                         })},
-                        {"value", 1},
-                        {"totalValue", "$value"},
+                        {"value", new BsonDocument("$toDouble", "$value")},
+                        {"totalValue", new BsonDocument("$toDouble", "$value")},
                         {"reason", 1},
+                        {"description", new BsonDocument("$ifNull", new BsonArray { "$description", "" })},
+                        {"photos", new BsonDocument("$ifNull", new BsonArray { "$photos", new BsonArray() })},
+                        {"videoUrl", new BsonDocument("$ifNull", new BsonArray { "$video_url", "" })},
+                        {"video_url", 1},
                         {"customerEvidenceUrl", "$customer_evidence_url"},
                         {"customer_evidence_url", 1},
                         {"proNotes", "$pro_notes"},
@@ -302,6 +306,25 @@ namespace api_bora_trampar.src.Services
                     }
                 }
 
+                if (request.Photos != null && request.Photos.Count > 0)
+                {
+                    entity.Photos = request.Photos;
+                    if (string.IsNullOrEmpty(entity.CustomerEvidenceUrl))
+                    {
+                        entity.CustomerEvidenceUrl = request.Photos[0];
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(request.VideoUrl))
+                {
+                    entity.VideoUrl = request.VideoUrl;
+                }
+
+                if (!string.IsNullOrEmpty(request.Description))
+                {
+                    entity.Description = request.Description;
+                }
+
                 entity.Status = "under_review";
                 entity.StatusLabel = "Em Análise";
                 entity.CreatedAt = DateTime.UtcNow;
@@ -327,6 +350,8 @@ namespace api_bora_trampar.src.Services
                 Contestation? existed = await repository.GetByIdAsync(request.Id);
                 if (existed is null) return new(null, 404, "Contestação não encontrada");
 
+                Appointment? appointment = await appointmentRepository.GetByIdAsync(existed.AppointmentId);
+
                 if (!string.IsNullOrEmpty(request.Status))
                 {
                     existed.Status = request.Status;
@@ -336,6 +361,7 @@ namespace api_bora_trampar.src.Services
                         existed.StatusLabel = "Reembolso Total Cliente";
                         if (!string.IsNullOrEmpty(existed.CustomerId) && existed.Value > 0)
                         {
+                            if (appointment is not null) appointment.Status = "ExpenseCustomer";
                             await userService.UpdateWalletBalanceAsync(existed.CustomerId, existed.Value);
                         }
                     }
@@ -345,6 +371,7 @@ namespace api_bora_trampar.src.Services
                         if (!string.IsNullOrEmpty(existed.ProfessionalId) && existed.Value > 0)
                         {
                             await userService.UpdateWalletBalanceAsync(existed.ProfessionalId, existed.Value);
+                            if (appointment is not null) appointment.Status = "ExpenseProfessional";
                         }
                     }
                     else if (request.Status == "refunded_partial")
@@ -362,11 +389,15 @@ namespace api_bora_trampar.src.Services
                         {
                             await userService.UpdateWalletBalanceAsync(existed.ProfessionalId, proRelease);
                         }
+
+                        if (appointment is not null) appointment.Status = "ExpensePartialProfessional";
                     }
                     else if (request.Status == "info_requested")
                     {
                         existed.StatusLabel = "Aguardando Informações";
+                        if (appointment is not null) appointment.Status = "ExpenseInfoRequest";
                     }
+
                 }
 
                 if (!string.IsNullOrEmpty(request.StatusLabel)) existed.StatusLabel = request.StatusLabel;
@@ -378,6 +409,12 @@ namespace api_bora_trampar.src.Services
 
                 Contestation? updated = await repository.UpdateAsync(existed);
                 if (updated is null) return new(null, 400, "Falha ao atualizar contestação");
+                
+                if (appointment is not null)
+                {
+                    appointment.UpdatedAt = DateTime.UtcNow;
+                    await appointmentRepository.UpdateAsync(appointment);
+                }
 
                 return new(updated, 200, "Contestação atualizada com sucesso");
             }

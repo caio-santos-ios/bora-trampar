@@ -113,16 +113,6 @@
             <td>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span>{{ customer.phone }}</span>
-                <a
-                  *ngIf="customer.phone !== 'Não informado'"
-                  [href]="'https://wa.me/55' + cleanPhone(customer.phone)"
-                  target="_blank"
-                  class="btn-icon"
-                  style="color: #25d366;"
-                  title="Abrir WhatsApp"
-                >
-                  <i class="fa-brands fa-whatsapp"></i>
-                </a>
               </div>
             </td>
             <td>{{ customer.document }}</td>

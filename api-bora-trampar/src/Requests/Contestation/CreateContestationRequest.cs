@@ -19,6 +19,12 @@ namespace api_bora_trampar.src.Requests
         [JsonPropertyName("description")]
         public string Description { get; set; } = string.Empty;
 
+        [JsonPropertyName("photos")]
+        public List<string> Photos { get; set; } = [];
+
+        [JsonPropertyName("videoUrl")]
+        public string VideoUrl { get; set; } = string.Empty;
+
         [JsonPropertyName("customerEvidenceUrl")]
         public string CustomerEvidenceUrl { get; set; } = string.Empty;
 

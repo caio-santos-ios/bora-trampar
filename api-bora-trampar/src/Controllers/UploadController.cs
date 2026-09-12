@@ -21,6 +21,18 @@ namespace api_bora_trampar.src.Controllers
             return Ok(new { url });
         }
 
+        [HttpPost("video")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadVideo([FromForm] IFormFile file, [FromForm] string? folder)
+        {
+            if (file == null || file.Length == 0) return BadRequest(new { message = "Arquivo inválido ou não enviado." });
+
+            string targetFolder = string.IsNullOrWhiteSpace(folder) ? "boratrampar/contestations" : $"boratrampar/{folder}";
+            string url = await cloudinaryHandler.UploadVideoAsync(file, targetFolder);
+
+            return Ok(new { url });
+        }
+
         [HttpPost("base64")]
         public async Task<IActionResult> UploadBase64([FromBody] UploadBase64Request request)
         {

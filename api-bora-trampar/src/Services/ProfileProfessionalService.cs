@@ -541,7 +541,6 @@ namespace api_bora_trampar.src.Services
             }
             catch (Exception ex)
             {
-                System.Console.WriteLine(ex.Message);
                 return new(null, 500, $"Ocorreu um erro inesperado: {ex.Message}");
             }
         }

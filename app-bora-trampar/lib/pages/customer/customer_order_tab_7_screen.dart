@@ -91,7 +91,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
           setState(() {
             _status = TrackingStatus.startService;
           });
-        } else if (status == "Finish") {
+        } else if (status == "FinishProfessional") {
           setState(() {
             _status = TrackingStatus.finish;
           });

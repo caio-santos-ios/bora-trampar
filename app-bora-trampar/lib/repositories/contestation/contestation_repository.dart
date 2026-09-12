@@ -9,6 +9,8 @@ class ContestationRepository {
     required String reason,
     String description = '',
     String customerEvidenceUrl = '',
+    List<String> photos = const [],
+    String videoUrl = '',
   }) async {
     try {
       final response = await _api.client.post(
@@ -17,7 +19,11 @@ class ContestationRepository {
           'appointmentId': appointmentId,
           'reason': reason,
           'description': description,
-          'customerEvidenceUrl': customerEvidenceUrl,
+          'customerEvidenceUrl': customerEvidenceUrl.isNotEmpty
+              ? customerEvidenceUrl
+              : (photos.isNotEmpty ? photos.first : ''),
+          'photos': photos,
+          'videoUrl': videoUrl,
         },
       );
 

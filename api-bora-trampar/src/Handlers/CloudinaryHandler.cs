@@ -69,6 +69,47 @@ namespace api_bora_trampar.src.Handlers
             }
         }
 
+        public async Task<string> UploadVideoAsync(IFormFile file, string folder = "boratrampar/contestations")
+        {
+            try
+            {
+                if (_cloudinary == null)
+                {
+                    using var ms = new MemoryStream();
+                    await file.CopyToAsync(ms);
+                    var bytes = ms.ToArray();
+                    var base64 = Convert.ToBase64String(bytes);
+                    return $"data:{file.ContentType};base64,{base64}";
+                }
+
+                string extension = Path.GetExtension(file.FileName).ToLower();
+                string fileName = Guid.NewGuid().ToString();
+
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                var uploadParams = new VideoUploadParams
+                {
+                    File = new FileDescription(fileName + extension, memoryStream),
+                    Folder = folder,
+                    PublicId = fileName,
+                    Overwrite = true
+                };
+
+                var result = await _cloudinary.UploadAsync(uploadParams);
+                return result.SecureUrl?.ToString() ?? result.Url?.ToString() ?? "";
+            }
+            catch
+            {
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                var bytes = ms.ToArray();
+                var base64 = Convert.ToBase64String(bytes);
+                return $"data:{file.ContentType};base64,{base64}";
+            }
+        }
+
         public async Task<string> UploadBase64Async(string base64Data, string folder = "boratrampar/documents")
         {
             try

@@ -13,13 +13,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../models/user_model.dart';
-import '../../models/category_model.dart';
-import '../../models/professional_model.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
-import '../../repositories/category/category_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
-import '../../repositories/user/user_repository.dart';
 import 'package:moment_dart/moment_dart.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 
@@ -38,23 +34,19 @@ class ProfessionalHomeScreen extends StatefulWidget {
 }
 
 class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
-  final _categoryRepo = CategoryRepository();
   final _profileRepo = ProfileProfessionalRepository();
   final _appointmentRepo = AppointmentRepository();
-  final _userRepo = UserRepository();
 
   final _storageService = StorageService();
 
   UserModel? _user;
   ProfileProfessionalModel? _profile;
-  List<CategoryModel> _categories = [];
   List<AppointmentModel> _appointments = [];
-  List<ProfessionalModel> _nearbyPros = [];
   bool _isLoading = true;
-  bool _isStartLoading = true;
+  bool _isStartLoading = false;
+  bool _isFinishLoading = false;
   bool _isAvailable = true;
   bool _showBalance = true;
-  String _customerSearchQuery = '';
   Timer? _pollTimer;
 
   @override
@@ -75,7 +67,8 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    String query = "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    String query =
+        "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
     final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
@@ -87,29 +80,24 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final user = await AuthService().getCurrentUser();
-    final categories = await _categoryRepo.getCategories();
     final role = (user?.role ?? '').toLowerCase();
     final isPro = role.contains('prof') || role.contains('prestador');
 
     ProfileProfessionalModel? profile;
     List<AppointmentModel> appointments = [];
-    List<ProfessionalModel> pros = [];
 
     if (isPro) {
       profile = await _profileRepo.getMe();
       appointments = await _appointmentRepo.getAppointments();
     } else {
       appointments = await _appointmentRepo.getAppointments();
-      pros = await _userRepo.getProfessionals();
     }
 
     if (mounted) {
       setState(() {
         _user = user;
-        _categories = categories;
         _profile = profile;
         _appointments = appointments;
-        _nearbyPros = pros;
         _isAvailable = profile?.isAvailableNow ?? true;
         _isLoading = false;
       });
@@ -183,7 +171,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   Future<void> _finishService(String id) async {
     try {
       setState(() {
-        _isStartLoading = true;
+        _isFinishLoading = true;
       });
       await _appointmentRepo.finishAppointment(id);
       if (mounted) Toastfy.show(context, "Serviço finalizado!", "success");
@@ -193,7 +181,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
       if (mounted) UtilService.normalizeError(context, err);
     } finally {
       setState(() {
-        _isStartLoading = false;
+        _isFinishLoading = false;
       });
     }
   }
@@ -1109,7 +1097,9 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                             size: 16,
                           ),
                           label: Text(
-                            'Iniciar Serviço',
+                            _isStartLoading
+                                ? 'Iniciando...'
+                                : 'Iniciar Serviço',
                             style: GoogleFonts.inter(
                               color: AppColors.textDark,
                               fontWeight: FontWeight.w800,
@@ -1420,6 +1410,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   Widget _buildStartSection(List<AppointmentModel> requests) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 14,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1434,7 +1425,6 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
         ...requests.take(3).map((req) {
           final dateStr = DateFormat('dd/MM/yyyy').format(req.date);
           final hourStr = req.hour.isNotEmpty ? ' • ${req.hour}' : '';
@@ -1514,7 +1504,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: Text(
-                            'Finalizar Trampo',
+                            _isFinishLoading ? 'Finalizando...' : 'Finalizar Trampo',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,

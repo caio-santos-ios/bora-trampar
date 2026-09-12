@@ -76,7 +76,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     try {
       const response = await api.get('/api/dashboard');
       const data = response.data?.result?.data;
-
+      console.log(data)
       if (data) {
         this.stats.totalRevenue = data.totalRevenue || 0;
         this.stats.monthAppointments = data.monthAppointments || 0;

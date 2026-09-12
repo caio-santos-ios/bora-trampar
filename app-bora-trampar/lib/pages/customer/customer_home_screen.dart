@@ -8,6 +8,7 @@ import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/models/user_model.dart';
 import 'package:app_bora_trampar/pages/_old/categories/category_selection_screen.dart';
 import 'package:app_bora_trampar/pages/_old/services/service_selection_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:app_bora_trampar/repositories/profile/profile_professional_repository.dart';
 import 'package:dio/dio.dart';
@@ -107,11 +108,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 
   Widget _buildHeaderSection(String userName) {
-    // final radius = _profile?.address.serviceRadiusKm ?? 25;
-    // final city = _profile?.address.city ?? '';
-    // final state = _profile?.address.state ?? '';
-    // final hasLocation = city.isNotEmpty && state.isNotEmpty;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -183,67 +179,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppColors.inputBackground,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.inputBorder),
-          ),
-          child: TextField(
-            style: GoogleFonts.inter(
-              color: AppColors.textPrimary,
-              fontSize: 14,
-            ),
-            onChanged: (v) => setState(() => {}),
-            decoration: InputDecoration(
-              icon: const Icon(
-                Icons.search_rounded,
-                color: AppColors.textMuted,
-                size: 22,
-              ),
-
-              hintText:
-                  'Buscar serviço ou profissional (ex: Pintor, Diarista)...',
-              hintStyle: GoogleFonts.inter(
-                color: AppColors.textMuted,
-                fontSize: 13,
-              ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-        ),
-        const SizedBox(height: 14),
-        // Container(
-        //   child: ElevatedButton.icon(
-        //     onPressed: () {
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(
-        //           builder: (_) => const CustomerReviewsScreen(),
-        //         ),
-        //       );
-        //     },
-        //     icon: const Icon(Icons.add_rounded, color: AppColors.textDark),
-        //     label: Text(
-        //       'Avaliar Profissional',
-        //       style: GoogleFonts.inter(
-        //         color: AppColors.textDark,
-        //         fontSize: 15,
-        //         fontWeight: FontWeight.w700,
-        //       ),
-        //     ),
-        //     style: ElevatedButton.styleFrom(
-        //       backgroundColor: AppColors.primaryGold,
-        //       shape: RoundedRectangleBorder(
-        //         borderRadius: BorderRadius.circular(14),
-        //       ),
-        //       elevation: 0,
-        //     ),
-        //   ),
-        // ),
-        const SizedBox(height: 24),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -261,7 +196,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const CategorySelectionScreen(),
+                      builder: (_) => const CustomerOrderTab1Screen(),
                     ),
                   );
                 },

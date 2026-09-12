@@ -20,6 +20,15 @@ namespace api_bora_trampar.src.Models
         [BsonElement("reason")]
         public string Reason { get; set; } = string.Empty;
 
+        [BsonElement("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [BsonElement("photos")]
+        public List<string> Photos { get; set; } = [];
+
+        [BsonElement("video_url")]
+        public string VideoUrl { get; set; } = string.Empty;
+
         [BsonElement("customer_evidence_url")]
         public string CustomerEvidenceUrl { get; set; } = string.Empty;
 

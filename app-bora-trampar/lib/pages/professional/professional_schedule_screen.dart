@@ -7,7 +7,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
@@ -32,7 +31,6 @@ class _ProfessionalScheduleScreenState
 
   List<AppointmentModel> _appointments = [];
   bool _isLoading = true;
-  bool _isProfessional = false;
   DateTime _selectedDay = DateTime.now();
   Timer? _pollTimer;
 
@@ -54,7 +52,8 @@ class _ProfessionalScheduleScreenState
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    String query = "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    String query =
+        "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
     final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {
@@ -65,15 +64,13 @@ class _ProfessionalScheduleScreenState
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    final user = await AuthService().getCurrentUser();
-    final appointments = await _appointmentRepo.getAppointments();
-    final role = (user?.role ?? '').toLowerCase();
-    final isPro = role.contains('prof') || role.contains('prestador');
+    String query =
+        "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    final appointments = await _appointmentRepo.getAppointments(query: query);
 
     if (mounted) {
       setState(() {
         _appointments = appointments;
-        _isProfessional = isPro;
         _isLoading = false;
       });
     }
@@ -82,8 +79,9 @@ class _ProfessionalScheduleScreenState
   Future<void> _handleAcceptAppointment(String appointmentId) async {
     try {
       await _appointmentRepo.acceptAppointment(appointmentId);
-      if (mounted)
+      if (mounted) {
         Toastfy.show(context, "Serviço aceito com sucesso!", "success");
+      }
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
     } finally {}
@@ -92,90 +90,13 @@ class _ProfessionalScheduleScreenState
   Future<void> _handleDeclineAppointment(String appointmentId) async {
     try {
       await _appointmentRepo.declineAppointment(appointmentId);
-      if (mounted)
+      if (mounted) {
         Toastfy.show(context, "Serviço recusado com sucesso!", "success");
+      }
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
     } finally {}
   }
-
-  // Future<void> _handleCancelAppointment(String appointmentId) async {
-  //   final confirm = await showDialog<bool>(
-  //     context: context,
-  //     builder: (context) {
-  //       return AlertDialog(
-  //         backgroundColor: AppColors.cardBackground,
-  //         shape: RoundedRectangleBorder(
-  //           borderRadius: BorderRadius.circular(16),
-  //         ),
-  //         title: Text(
-  //           'Cancelar Agendamento',
-  //           style: GoogleFonts.inter(
-  //             color: AppColors.textPrimary,
-  //             fontWeight: FontWeight.w700,
-  //             fontSize: 18,
-  //           ),
-  //         ),
-  //         content: Text(
-  //           'Tem certeza de que deseja cancelar esta diária agendada?',
-  //           style: GoogleFonts.inter(
-  //             color: AppColors.textSecondary,
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () => Navigator.of(context).pop(false),
-  //             child: Text(
-  //               'Não',
-  //               style: GoogleFonts.inter(
-  //                 color: AppColors.textMuted,
-  //                 fontWeight: FontWeight.w600,
-  //               ),
-  //             ),
-  //           ),
-  //           ElevatedButton(
-  //             onPressed: () => Navigator.of(context).pop(true),
-  //             style: ElevatedButton.styleFrom(
-  //               backgroundColor: AppColors.errorRed,
-  //               foregroundColor: Colors.white,
-  //               shape: RoundedRectangleBorder(
-  //                 borderRadius: BorderRadius.circular(8),
-  //               ),
-  //             ),
-  //             child: Text(
-  //               'Sim, Cancelar',
-  //               style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-  //             ),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-
-  //   if (confirm == true) {
-  //     final success = await _appointmentRepo.deleteAppointment(appointmentId);
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //           content: Text(
-  //             success
-  //                 ? 'Agendamento cancelado.'
-  //                 : 'Não foi possível cancelar o agendamento.',
-  //             style: GoogleFonts.inter(
-  //               color: success ? AppColors.textDark : Colors.white,
-  //               fontWeight: FontWeight.w600,
-  //             ),
-  //           ),
-  //           backgroundColor: success
-  //               ? AppColors.primaryGold
-  //               : AppColors.errorRed,
-  //         ),
-  //       );
-  //       if (success) _loadData();
-  //     }
-  //   }
-  // }
 
   List<AppointmentModel> get _appointmentsOnSelectedDay {
     return _appointments.where((a) {
@@ -199,7 +120,7 @@ class _ProfessionalScheduleScreenState
       case "FinishProfessional":
         return "Aguardando Pagamento";
       case "PendingPayment":
-        return "Pagamento Pendente 1";
+        return "Pagamento Pendente";
       case "PendingAcceptance":
         return "Aguardando Profissional Aceitar";
       case "Accepted":
@@ -211,7 +132,14 @@ class _ProfessionalScheduleScreenState
       case "CancelledByCustomer":
         return "Cliente Cancelou";
       case "Disputed":
+      case "ExpenseInfoRequest":
         return "Cliente Contestou";
+      case "ExpenseProfessional":
+        return "Pagamento Recebido - Contestação";
+      case "ExpensePartialProfessional":
+        return "Reembolso Parcial - Contestação";
+      case "ExpenseCustomer":
+        return "Reembolso pro Cliente - Contestação";
       default:
         return "";
     }
@@ -221,9 +149,11 @@ class _ProfessionalScheduleScreenState
     switch (status) {
       case "Finish":
       case "Accepted":
+      case "ExpenseProfessional":
         return Colors.green;
       case "PendingPayment":
       case "FinishProfessional":
+      case "ExpensePartialProfessional":
         return Colors.orangeAccent;
       case "PendingAcceptance":
         return Colors.blueAccent;
@@ -232,6 +162,8 @@ class _ProfessionalScheduleScreenState
       case "Declined":
       case "CancelledByCustomer":
       case "Disputed":
+      case "ExpenseCustomer":
+      case "ExpenseInfoRequest":
         return Colors.redAccent;
       default:
         return Colors.grey;
@@ -260,7 +192,7 @@ class _ProfessionalScheduleScreenState
               : _buildProfessionalView(),
         ),
       ),
-      bottomNavigationBar: (!_isLoading && !_isProfessional)
+      bottomNavigationBar: (!_isLoading)
           ? Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: SizedBox(

@@ -9,12 +9,10 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
-import '../_old/financial/financial_history_screen.dart';
 import '../professional/professional_home_screen.dart';
 import '../onboarding/identity_verification_pending_screen.dart';
 import '../onboarding/professional_onboarding_screen.dart';
 import '../profile/profile_screen.dart';
-import '../_old/schedule/schedule_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   final int initialIndex;
