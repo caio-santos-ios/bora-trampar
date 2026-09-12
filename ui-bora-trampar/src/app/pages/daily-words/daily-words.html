@@ -1,0 +1,321 @@
+﻿<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Palavra do Dia</h1>
+      <p class="page-subtitle">Gerencie as mensagens e versículos bíblicos de esperança exibidos na tela inicial do app</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-primary" (click)="openCreateModal()">
+        <i class="fa-solid fa-plus"></i>
+        <span>Nova Mensagem</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card search-card">
+    <div class="filters-row">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por versículo ou mensagem..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchInput()"
+        />
+        <button
+          *ngIf="searchQuery"
+          type="button"
+          class="search-clear-btn"
+          (click)="clearSearch()"
+          title="Limpar pesquisa"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="filter-audience-box">
+        <select class="form-control" [(ngModel)]="selectedAudienceFilter" (change)="onFilterAudienceChange()">
+          <option value="all">Todos os Públicos</option>
+          <option value="both">Ambos (Cliente & Pro)</option>
+          <option value="customer">Apenas Clientes</option>
+          <option value="professional">Apenas Profissionais</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <app-loading [isLoading]="isLoading"></app-loading>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Versículo & Referência</th>
+            <th>Mensagem Complementar</th>
+            <th>Público-Alvo</th>
+            <th>Período de Vigência</th>
+            <th>Status</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredList">
+            <td style="max-width: 280px;">
+              <div class="verse-cell">
+                <span class="verse-quote">“{{ item.verse }}”</span>
+                <span class="verse-reference">{{ item.reference }}</span>
+              </div>
+            </td>
+            <td style="max-width: 240px;">
+              <span class="desc-text">{{ item.message || '-' }}</span>
+            </td>
+            <td>
+              <span class="audience-badge" [ngClass]="getAudienceBadgeClass(item.targetAudience)">
+                {{ getAudienceLabel(item.targetAudience) }}
+              </span>
+            </td>
+            <td>
+              <div class="period-cell">
+                <span>Início: {{ global.formatDate(item.startDate) }}</span>
+                <span *ngIf="item.endDate" class="period-end">Fim: {{ global.formatDate(item.endDate) }}</span>
+                <span *ngIf="!item.endDate" class="period-indefinite">Sem término</span>
+              </div>
+            </td>
+            <td>
+              <button 
+                class="status-pill" 
+                [class.active]="item.isActive" 
+                (click)="toggleStatus(item)"
+                title="Clique para alternar status"
+              >
+                <i class="fa-solid" [ngClass]="item.isActive ? 'fa-circle-check' : 'fa-circle-pause'"></i>
+                {{ item.isActive ? 'Ativo' : 'Pausado' }}
+              </button>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-icon" (click)="openEditModal(item)" title="Editar">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="btn-icon delete-icon" (click)="confirmDelete(item)" title="Excluir">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="6" class="empty-state-cell">
+              <i class="fa-solid fa-book-bible empty-icon"></i>
+              <p>Nenhuma Palavra do Dia encontrada.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of filteredList">
+        <div class="mobile-card-header">
+          <div>
+            <span class="audience-badge" [ngClass]="getAudienceBadgeClass(item.targetAudience)">
+              {{ getAudienceLabel(item.targetAudience) }}
+            </span>
+          </div>
+          <button 
+            class="status-pill" 
+            [class.active]="item.isActive" 
+            (click)="toggleStatus(item)"
+          >
+            {{ item.isActive ? 'Ativo' : 'Pausado' }}
+          </button>
+        </div>
+        <p class="verse-quote">“{{ item.verse }}”</p>
+        <p class="verse-reference">{{ item.reference }}</p>
+        <p class="desc-text" *ngIf="item.message">{{ item.message }}</p>
+        <div class="mobile-card-actions">
+          <button class="btn-secondary btn-sm" (click)="openEditModal(item)">
+            <i class="fa-solid fa-pen-to-square"></i> Editar
+          </button>
+          <button class="btn-danger btn-sm" (click)="confirmDelete(item)">
+            <i class="fa-solid fa-trash-can"></i> Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ items.length }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+
+      <div class="pagination-nav">
+        <button
+          type="button"
+          class="page-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(1)"
+          title="Primeira página"
+        >
+          &laquo;
+        </button>
+        <button
+          type="button"
+          class="page-btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+          title="Página anterior"
+        >
+          &lsaquo;
+        </button>
+
+        <button
+          type="button"
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          class="page-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+          title="Próxima página"
+        >
+          &rsaquo;
+        </button>
+        <button
+          type="button"
+          class="page-btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(totalPages)"
+          title="Última página"
+        >
+          &raquo;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" *ngIf="isModalOpen">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>{{ modalMode === 'create' ? 'Nova Palavra do Dia' : 'Editar Palavra do Dia' }}</h2>
+        <button class="btn-close" (click)="closeModal()">&times;</button>
+      </div>
+
+      <form (ngSubmit)="saveDailyWord()">
+        <div class="form-group">
+          <label>Versículo Bíblico *</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Ex: Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará."
+            [(ngModel)]="formData.verse"
+            name="verse"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Referência Bíblica *</label>
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Ex: Salmos 37:5"
+            [(ngModel)]="formData.reference"
+            name="reference"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Mensagem Complementar de Reflexão / Encorajamento</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Ex: Talvez você tenha aberto o Bora Trampa por um motivo. Deus tem algo incrível para o seu dia. 💛"
+            [(ngModel)]="formData.message"
+            name="message"
+          ></textarea>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-group">
+            <label>Público-Alvo *</label>
+            <select class="form-control" [(ngModel)]="formData.targetAudience" name="targetAudience" required>
+              <option value="both">Ambos (Clientes e Profissionais)</option>
+              <option value="customer">Somente Clientes</option>
+              <option value="professional">Somente Profissionais</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Status de Exibição</label>
+            <div class="status-toggle-wrapper">
+              <label class="toggle-switch">
+                <input type="checkbox" [(ngModel)]="formData.isActive" name="isActive" />
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-label">{{ formData.isActive ? 'Publicação Ativa' : 'Pausada' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row-grid">
+          <div class="form-group">
+            <label>Data de Início</label>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="formData.startDate"
+              name="startDate"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Data de Término (Opcional)</label>
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="formData.endDate"
+              name="endDate"
+            />
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check"></i>
+            <span>{{ modalMode === 'create' ? 'Publicar Palavra' : 'Salvar Alterações' }}</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" *ngIf="isDeleteModalOpen && itemToDelete">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Excluir Mensagem</h2>
+        <button class="btn-close" (click)="closeDeleteModal()">&times;</button>
+      </div>
+      <p>Tem certeza de que deseja remover a mensagem <strong>{{ itemToDelete.reference }}</strong>?</p>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 8px;">
+        Esta mensagem deixará de ser exibida para os usuários no aplicativo.
+      </p>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDeleteModal()">Cancelar</button>
+        <button class="btn-danger" (click)="executeDelete()">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>

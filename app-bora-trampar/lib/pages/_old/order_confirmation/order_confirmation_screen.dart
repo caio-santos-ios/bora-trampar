@@ -432,6 +432,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                             builder: (context) => ProfessionalProfileScreen(
                               orderRequest: widget.orderRequest,
                               professional: prof,
+                              price: 0.0,
                             ),
                           ),
                         );

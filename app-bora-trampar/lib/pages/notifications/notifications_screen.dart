@@ -281,42 +281,42 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-              child: Row(
-                children: List.generate(_filters.length, (index) {
-                  final isSelected = _selectedFilterIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(_filters[index]),
-                      selected: isSelected,
-                      labelStyle: GoogleFonts.inter(
-                        color: isSelected
-                            ? AppColors.textDark
-                            : AppColors.textSecondary,
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w500,
-                        fontSize: 13,
-                      ),
-                      selectedColor: AppColors.primaryGold,
-                      backgroundColor: AppColors.cardBackground,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isSelected
-                              ? AppColors.primaryGold
-                              : AppColors.cardBorder,
-                        ),
-                      ),
-                      onSelected: (_) =>
-                          setState(() => _selectedFilterIndex = index),
-                    ),
-                  );
-                }),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+            //   child: Row(
+            //     children: List.generate(_filters.length, (index) {
+            //       final isSelected = _selectedFilterIndex == index;
+            //       return Padding(
+            //         padding: const EdgeInsets.only(right: 8),
+            //         child: ChoiceChip(
+            //           label: Text(_filters[index]),
+            //           selected: isSelected,
+            //           labelStyle: GoogleFonts.inter(
+            //             color: isSelected
+            //                 ? AppColors.textDark
+            //                 : AppColors.textSecondary,
+            //             fontWeight: isSelected
+            //                 ? FontWeight.w700
+            //                 : FontWeight.w500,
+            //             fontSize: 13,
+            //           ),
+            //           selectedColor: AppColors.primaryGold,
+            //           backgroundColor: AppColors.cardBackground,
+            //           shape: RoundedRectangleBorder(
+            //             borderRadius: BorderRadius.circular(20),
+            //             side: BorderSide(
+            //               color: isSelected
+            //                   ? AppColors.primaryGold
+            //                   : AppColors.cardBorder,
+            //             ),
+            //           ),
+            //           onSelected: (_) =>
+            //               setState(() => _selectedFilterIndex = index),
+            //         ),
+            //       );
+            //     }),
+            //   ),
+            // ),
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -530,249 +530,250 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                     height: 1.3,
                                                   ),
                                                 ),
-                                              if (item.appointmentId != null &&
-                                                  item
-                                                      .appointmentId!
-                                                      .isNotEmpty) ...[
-                                                const SizedBox(height: 10),
-                                                Builder(
-                                                  builder: (context) {
-                                                    final aptId =
-                                                        item.appointmentId!;
-                                                    final status =
-                                                        _appointmentActionStatus[aptId];
-                                                    final isProcessing =
-                                                        _processingActionIds
-                                                            .contains(aptId);
+                                              // if (item.appointmentId != null &&
+                                              //     item
+                                              //         .appointmentId!
+                                              //         .isNotEmpty) ...[
+                                              //   const SizedBox(height: 10),
+                                              //   Builder(
+                                              //     builder: (context) {
+                                              //       final aptId =
+                                              //           item.appointmentId!;
+                                              //       final status =
+                                              //           _appointmentActionStatus[aptId];
+                                              //       final isProcessing =
+                                              //           _processingActionIds
+                                              //               .contains(aptId);
 
-                                                    if (status == 'accepted') {
-                                                      return Container(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 10,
-                                                              vertical: 5,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color: AppColors
-                                                              .success
-                                                              .withValues(
-                                                                alpha: 0.15,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          border: Border.all(
-                                                            color: AppColors
-                                                                .success
-                                                                .withValues(
-                                                                  alpha: 0.4,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            const Icon(
-                                                              Icons
-                                                                  .check_circle_rounded,
-                                                              size: 14,
-                                                              color: AppColors
-                                                                  .success,
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 6,
-                                                            ),
-                                                            Text(
-                                                              'Agendamento Aceito',
-                                                              style: GoogleFonts.inter(
-                                                                color: AppColors
-                                                                    .success,
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    }
+                                              //       if (status == 'accepted') {
+                                              //         return Container(
+                                              //           padding:
+                                              //               const EdgeInsets.symmetric(
+                                              //                 horizontal: 10,
+                                              //                 vertical: 5,
+                                              //               ),
+                                              //           decoration: BoxDecoration(
+                                              //             color: AppColors
+                                              //                 .success
+                                              //                 .withValues(
+                                              //                   alpha: 0.15,
+                                              //                 ),
+                                              //             borderRadius:
+                                              //                 BorderRadius.circular(
+                                              //                   8,
+                                              //                 ),
+                                              //             border: Border.all(
+                                              //               color: AppColors
+                                              //                   .success
+                                              //                   .withValues(
+                                              //                     alpha: 0.4,
+                                              //                   ),
+                                              //             ),
+                                              //           ),
+                                              //           child: Row(
+                                              //             mainAxisSize:
+                                              //                 MainAxisSize.min,
+                                              //             children: [
+                                              //               const Icon(
+                                              //                 Icons
+                                              //                     .check_circle_rounded,
+                                              //                 size: 14,
+                                              //                 color: AppColors
+                                              //                     .success,
+                                              //               ),
+                                              //               const SizedBox(
+                                              //                 width: 6,
+                                              //               ),
+                                              //               Text(
+                                              //                 'Agendamento Aceito',
+                                              //                 style: GoogleFonts.inter(
+                                              //                   color: AppColors
+                                              //                       .success,
+                                              //                   fontSize: 12,
+                                              //                   fontWeight:
+                                              //                       FontWeight
+                                              //                           .w700,
+                                              //                 ),
+                                              //               ),
+                                              //             ],
+                                              //           ),
+                                              //         );
+                                              //       }
 
-                                                    if (status == 'declined') {
-                                                      return Container(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 10,
-                                                              vertical: 5,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color: AppColors
-                                                              .errorRed
-                                                              .withValues(
-                                                                alpha: 0.15,
-                                                              ),
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                8,
-                                                              ),
-                                                          border: Border.all(
-                                                            color: AppColors
-                                                                .errorRed
-                                                                .withValues(
-                                                                  alpha: 0.4,
-                                                                ),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisSize:
-                                                              MainAxisSize.min,
-                                                          children: [
-                                                            const Icon(
-                                                              Icons
-                                                                  .cancel_rounded,
-                                                              size: 14,
-                                                              color: AppColors
-                                                                  .errorRed,
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 6,
-                                                            ),
-                                                            Text(
-                                                              'Agendamento Recusado',
-                                                              style: GoogleFonts.inter(
-                                                                color: AppColors
-                                                                    .errorRed,
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    }
+                                              //       if (status == 'declined') {
+                                              //         return Container(
+                                              //           padding:
+                                              //               const EdgeInsets.symmetric(
+                                              //                 horizontal: 10,
+                                              //                 vertical: 5,
+                                              //               ),
+                                              //           decoration: BoxDecoration(
+                                              //             color: AppColors
+                                              //                 .errorRed
+                                              //                 .withValues(
+                                              //                   alpha: 0.15,
+                                              //                 ),
+                                              //             borderRadius:
+                                              //                 BorderRadius.circular(
+                                              //                   8,
+                                              //                 ),
+                                              //             border: Border.all(
+                                              //               color: AppColors
+                                              //                   .errorRed
+                                              //                   .withValues(
+                                              //                     alpha: 0.4,
+                                              //                   ),
+                                              //             ),
+                                              //           ),
+                                              //           child: Row(
+                                              //             mainAxisSize:
+                                              //                 MainAxisSize.min,
+                                              //             children: [
+                                              //               const Icon(
+                                              //                 Icons
+                                              //                     .cancel_rounded,
+                                              //                 size: 14,
+                                              //                 color: AppColors
+                                              //                     .errorRed,
+                                              //               ),
+                                              //               const SizedBox(
+                                              //                 width: 6,
+                                              //               ),
+                                              //               Text(
+                                              //                 'Agendamento Recusado',
+                                              //                 style: GoogleFonts.inter(
+                                              //                   color: AppColors
+                                              //                       .errorRed,
+                                              //                   fontSize: 12,
+                                              //                   fontWeight:
+                                              //                       FontWeight
+                                              //                           .w700,
+                                              //                 ),
+                                              //               ),
+                                              //             ],
+                                              //           ),
+                                              //         );
+                                              //       }
 
-                                                    if (isProcessing) {
-                                                      return const Padding(
-                                                        padding:
-                                                            EdgeInsets.symmetric(
-                                                              vertical: 4,
-                                                            ),
-                                                        child: SizedBox(
-                                                          width: 20,
-                                                          height: 20,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                                color: AppColors
-                                                                    .primaryGold,
-                                                              ),
-                                                        ),
-                                                      );
-                                                    }
+                                              //       if (isProcessing) {
+                                              //         return const Padding(
+                                              //           padding:
+                                              //               EdgeInsets.symmetric(
+                                              //                 vertical: 4,
+                                              //               ),
+                                              //           child: SizedBox(
+                                              //             width: 20,
+                                              //             height: 20,
+                                              //             child:
+                                              //                 CircularProgressIndicator(
+                                              //                   strokeWidth: 2,
+                                              //                   color: AppColors
+                                              //                       .primaryGold,
+                                              //                 ),
+                                              //           ),
+                                              //         );
+                                              //       }
 
-                                                    return Row(
-                                                      children: [
-                                                        Expanded(
-                                                          child: OutlinedButton.icon(
-                                                            onPressed: () =>
-                                                                _handleDeclineAppointment(
-                                                                  item,
-                                                                ),
-                                                            icon: const Icon(
-                                                              Icons
-                                                                  .close_rounded,
-                                                              size: 15,
-                                                              color: AppColors
-                                                                  .errorRed,
-                                                            ),
-                                                            label: Text(
-                                                              'Rejeitar',
-                                                              style: GoogleFonts.inter(
-                                                                color: AppColors
-                                                                    .errorRed,
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700,
-                                                              ),
-                                                            ),
-                                                            style: OutlinedButton.styleFrom(
-                                                              side: const BorderSide(
-                                                                color: AppColors
-                                                                    .errorRed,
-                                                                width: 1.2,
-                                                              ),
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    vertical: 8,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(
-                                                          width: 10,
-                                                        ),
-                                                        Expanded(
-                                                          child: ElevatedButton.icon(
-                                                            onPressed: () =>
-                                                                _handleAcceptAppointment(
-                                                                  item,
-                                                                ),
-                                                            icon: const Icon(
-                                                              Icons
-                                                                  .check_rounded,
-                                                              size: 15,
-                                                              color: AppColors
-                                                                  .textDark,
-                                                            ),
-                                                            label: Text(
-                                                              'Aceitar',
-                                                              style: GoogleFonts.inter(
-                                                                color: AppColors
-                                                                    .textDark,
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w800,
-                                                              ),
-                                                            ),
-                                                            style: ElevatedButton.styleFrom(
-                                                              backgroundColor:
-                                                                  AppColors
-                                                                      .primaryGold,
-                                                              foregroundColor:
-                                                                  AppColors
-                                                                      .textDark,
-                                                              shape: RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    vertical: 8,
-                                                                  ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                ),
-                                                const SizedBox(height: 6),
-                                              ],
-                                              const SizedBox(height: 6),
+                                              //       return Row(
+                                              //         children: [
+                                              //           Expanded(
+                                              //             child: OutlinedButton.icon(
+                                              //               onPressed: () =>
+                                              //                   _handleDeclineAppointment(
+                                              //                     item,
+                                              //                   ),
+                                              //               icon: const Icon(
+                                              //                 Icons
+                                              //                     .close_rounded,
+                                              //                 size: 15,
+                                              //                 color: AppColors
+                                              //                     .errorRed,
+                                              //               ),
+                                              //               label: Text(
+                                              //                 'Rejeitar',
+                                              //                 style: GoogleFonts.inter(
+                                              //                   color: AppColors
+                                              //                       .errorRed,
+                                              //                   fontSize: 12,
+                                              //                   fontWeight:
+                                              //                       FontWeight
+                                              //                           .w700,
+                                              //                 ),
+                                              //               ),
+                                              //               style: OutlinedButton.styleFrom(
+                                              //                 side: const BorderSide(
+                                              //                   color: AppColors
+                                              //                       .errorRed,
+                                              //                   width: 1.2,
+                                              //                 ),
+                                              //                 shape: RoundedRectangleBorder(
+                                              //                   borderRadius:
+                                              //                       BorderRadius.circular(
+                                              //                         8,
+                                              //                       ),
+                                              //                 ),
+                                              //                 padding:
+                                              //                     const EdgeInsets.symmetric(
+                                              //                       vertical: 8,
+                                              //                     ),
+                                              //               ),
+                                              //             ),
+                                              //           ),
+                                              //           const SizedBox(
+                                              //             width: 10,
+                                              //           ),
+                                                        
+                                              //           Expanded(
+                                              //             child: ElevatedButton.icon(
+                                              //               onPressed: () =>
+                                              //                   _handleAcceptAppointment(
+                                              //                     item,
+                                              //                   ),
+                                              //               icon: const Icon(
+                                              //                 Icons
+                                              //                     .check_rounded,
+                                              //                 size: 15,
+                                              //                 color: AppColors
+                                              //                     .textDark,
+                                              //               ),
+                                              //               label: Text(
+                                              //                 'Aceitar',
+                                              //                 style: GoogleFonts.inter(
+                                              //                   color: AppColors
+                                              //                       .textDark,
+                                              //                   fontSize: 12,
+                                              //                   fontWeight:
+                                              //                       FontWeight
+                                              //                           .w800,
+                                              //                 ),
+                                              //               ),
+                                              //               style: ElevatedButton.styleFrom(
+                                              //                 backgroundColor:
+                                              //                     AppColors
+                                              //                         .primaryGold,
+                                              //                 foregroundColor:
+                                              //                     AppColors
+                                              //                         .textDark,
+                                              //                 shape: RoundedRectangleBorder(
+                                              //                   borderRadius:
+                                              //                       BorderRadius.circular(
+                                              //                         8,
+                                              //                       ),
+                                              //                 ),
+                                              //                 padding:
+                                              //                     const EdgeInsets.symmetric(
+                                              //                       vertical: 8,
+                                              //                     ),
+                                              //               ),
+                                              //             ),
+                                              //           ),
+                                              //         ],
+                                              //       );
+                                              //     },
+                                              //   ),
+                                              //   const SizedBox(height: 6),
+                                              // ],
+                                              // const SizedBox(height: 6),
                                               Text(
                                                 _formatRelativeTime(
                                                   item.createdAt,

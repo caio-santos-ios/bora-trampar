@@ -134,4 +134,30 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Seed initial Daily Word if none exists
+try
+{
+    var dbContext = app.Services.GetRequiredService<AppDbContext>();
+    if (await dbContext.DailyWords.CountDocumentsAsync(MongoDB.Driver.Builders<api_bora_trampar.src.Models.DailyWord>.Filter.Empty) == 0)
+    {
+        await dbContext.DailyWords.InsertOneAsync(new api_bora_trampar.src.Models.DailyWord
+        {
+            Title = "PALAVRA DO DIA",
+            Verse = "Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.",
+            Reference = "Salmos 37:5",
+            Message = "Talvez você tenha aberto o Bora Trampa por um motivo.\nDeus tem algo incrível para o seu dia. 💛",
+            TargetAudience = "both",
+            IsActive = true,
+            StartDate = DateTime.UtcNow.AddHours(-1),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        });
+    }
+}
+catch
+{
+    // Ignore seed errors if MongoDB is reconnecting
+}
+
 app.Run();

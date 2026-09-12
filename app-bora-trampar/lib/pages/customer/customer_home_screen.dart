@@ -2,7 +2,9 @@ import 'package:app_bora_trampar/core/services/auth_service.dart';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/main_app_bar.dart';
+import 'package:app_bora_trampar/core/widgets/daily_word_card.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
+import 'package:app_bora_trampar/models/daily_word_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
 import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/models/user_model.dart';
@@ -10,6 +12,7 @@ import 'package:app_bora_trampar/pages/_old/categories/category_selection_screen
 import 'package:app_bora_trampar/pages/_old/services/service_selection_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
+import 'package:app_bora_trampar/repositories/daily_word/daily_word_repository.dart';
 import 'package:app_bora_trampar/repositories/profile/profile_professional_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -27,10 +30,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   final _profileRepo = ProfileProfessionalRepository();
   final _categoryRepo = CategoryRepository();
+  final _dailyWordRepo = DailyWordRepository();
 
   List<CategoryModel> _categories = [];
   ProfileProfessionalModel? _profile;
   UserModel? _user;
+  DailyWordModel? _dailyWord;
   bool _isLoading = false;
 
   @override
@@ -48,11 +53,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       final user = await _authService.getCurrentUser();
       final profile = await _profileRepo.getMe();
       final categories = await _categoryRepo.getCategories();
+      final dailyWord = await _dailyWordRepo.getTodayWord(audience: 'customer');
 
       setState(() {
         _user = user;
         _profile = profile;
         _categories = categories;
+        _dailyWord = dailyWord;
       });
     } on DioException catch (err) {
       if (mounted) UtilService.normalizeError(context, err);
@@ -97,7 +104,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               ],
               if (!_isLoading) ...[
                 _buildHeaderSection(userName),
-                SizedBox(height: 14),
+                if (_dailyWord != null) ...[
+                  const SizedBox(height: 14),
+                  DailyWordCard(dailyWord: _dailyWord!),
+                ],
+                const SizedBox(height: 14),
                 _buildCustomerView(),
               ],
             ],

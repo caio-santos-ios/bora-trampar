@@ -106,12 +106,12 @@ namespace api_bora_trampar.src.Works
                         _logger.LogInformation("Notificação push FCM enviada para usuário {UserId}: {Title}", notification.UserId, notification.Title);
                     }
 
-                    await MarkAsSentAsync(context, notification.Id);
+                    await MarkAsSentAsync(context, notification.Id!);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Falha ao enviar notificaÃ§Ã£o {Id} para o usuÃ¡rio {UserId}", notification.Id, notification.UserId);
-                    await MarkAsSentAsync(context, notification.Id);
+                    await MarkAsSentAsync(context, notification.Id!);
                 }
             }
         }

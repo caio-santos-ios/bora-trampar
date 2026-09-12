@@ -12,6 +12,7 @@ import { Customers } from './pages/customers/customers';
 import { Professionals } from './pages/professionals/professionals';
 import { Settings } from './pages/settings/settings';
 import { Profile } from './pages/profile/profile';
+import { DailyWords } from './pages/daily-words/daily-words';
 import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
 import { Confirmation } from './pages/confirmation/confirmation';
@@ -32,6 +33,7 @@ export const routes: Routes = [
       { path: 'verifications', component: Verifications },
       { path: 'categories', component: Categories },
       { path: 'services', component: Services },
+      { path: 'daily-words', component: DailyWords },
       { path: 'appointments', component: Appointments },
       { path: 'payments', component: Payments },
       { path: 'disputes', component: Disputes },

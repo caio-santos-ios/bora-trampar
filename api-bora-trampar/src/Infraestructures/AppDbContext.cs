@@ -35,5 +35,6 @@ namespace api_bora_trampar.src.Configuration
         public IMongoCollection<PlatformSettings> PlatformSettings => Database.GetCollection<PlatformSettings>("platform_settings");
         public IMongoCollection<Notification> Notifications => Database.GetCollection<Notification>("notifications");
         public IMongoCollection<Contestation> Contestations => Database.GetCollection<Contestation>("contestations");
+        public IMongoCollection<DailyWord> DailyWords => Database.GetCollection<DailyWord>("daily_words");
     }
 }

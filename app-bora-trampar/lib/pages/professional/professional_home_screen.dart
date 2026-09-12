@@ -11,10 +11,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/main_app_bar.dart';
+import '../../core/widgets/daily_word_card.dart';
 import '../../models/appointment_model.dart';
+import '../../models/daily_word_model.dart';
 import '../../models/user_model.dart';
 import '../../models/profile_professional_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
+import '../../repositories/daily_word/daily_word_repository.dart';
 import '../../repositories/profile/profile_professional_repository.dart';
 import 'package:moment_dart/moment_dart.dart';
 import 'package:brasil_fields/brasil_fields.dart';
@@ -36,11 +39,13 @@ class ProfessionalHomeScreen extends StatefulWidget {
 class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   final _profileRepo = ProfileProfessionalRepository();
   final _appointmentRepo = AppointmentRepository();
+  final _dailyWordRepo = DailyWordRepository();
 
   final _storageService = StorageService();
 
   UserModel? _user;
   ProfileProfessionalModel? _profile;
+  DailyWordModel? _dailyWord;
   List<AppointmentModel> _appointments = [];
   bool _isLoading = true;
   bool _isStartLoading = false;
@@ -85,6 +90,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
 
     ProfileProfessionalModel? profile;
     List<AppointmentModel> appointments = [];
+    final dailyWord = await _dailyWordRepo.getTodayWord(audience: 'professional');
 
     if (isPro) {
       profile = await _profileRepo.getMe();
@@ -97,6 +103,7 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
       setState(() {
         _user = user;
         _profile = profile;
+        _dailyWord = dailyWord;
         _appointments = appointments;
         _isAvailable = profile?.isAvailableNow ?? true;
         _isLoading = false;
@@ -458,6 +465,10 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             children: [
               _buildHeaderSection(userName),
+              if (_dailyWord != null) ...[
+                const SizedBox(height: 16),
+                DailyWordCard(dailyWord: _dailyWord!),
+              ],
               const SizedBox(height: 20),
               if (_isLoading)
                 const Center(

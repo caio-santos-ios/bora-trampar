@@ -25,6 +25,14 @@ namespace api_bora_trampar.src.Models
         [BsonElement("is_available_now")]
         [JsonPropertyName("isAvailableNow")]
         public bool IsAvailableNow { get; set; } = true;
+        
+        [BsonElement("is_available_now_manual")]
+        [JsonPropertyName("isAvailableNowManual")]
+        public bool IsAvailableNowManual { get; set; } = true;
+        
+        [BsonElement("date_available_now_manual")]
+        [JsonPropertyName("dateAvailableNow")]
+        public DateTime? DateAvailableNowManual { get; set; } = null;
 
         [BsonElement("is_profile_completed")]
         [JsonPropertyName("isProfileCompleted")]

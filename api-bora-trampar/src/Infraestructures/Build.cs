@@ -5,6 +5,7 @@ using api_bora_trampar.src.Interfaces.Auth;
 using api_bora_trampar.src.Interfaces.Dashboard;
 using api_bora_trampar.src.Repositories;
 using api_bora_trampar.src.Services;
+using api_bora_trampar.src.Works;
 
 namespace api_bora_trampar.src.Configuration
 {
@@ -28,6 +29,9 @@ namespace api_bora_trampar.src.Configuration
 
             builder.Services.AddTransient<ICategoryService, CategoryService>();
             builder.Services.AddTransient<ICategoryRepository, CategoryRepository>();
+
+            builder.Services.AddTransient<IDailyWordService, DailyWordService>();
+            builder.Services.AddTransient<IDailyWordRepository, DailyWordRepository>();
 
             builder.Services.AddTransient<IContestationService, ContestationService>();
             builder.Services.AddTransient<IContestationRepository, ContestationRepository>();
@@ -55,6 +59,8 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<IProfileProfessionalService, ProfileProfessionalService>();
             builder.Services.AddTransient<IProfileProfessionalRepository, ProfileProfessionalRepository>();
 
+            builder.Services.AddTransient<INotificationService, NotificationService>();
+            builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
 
             builder.Services.AddTransient<ICloudinaryHandler, CloudinaryHandler>();
             builder.Services.AddTransient<ISettingsService, SettingsService>();
@@ -62,9 +68,9 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddHttpClient<IAddressService, AddressService>();
             builder.Services.AddHttpClient<MailHandler>();
 
-            builder.Services.AddTransient<INotificationService, NotificationService>();
-            builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
-            builder.Services.AddHostedService<api_bora_trampar.src.Works.PushNotificationWork>();
+            
+            builder.Services.AddHostedService<PushNotificationWork>();
+            builder.Services.AddHostedService<ProfessionalAvailableNowWork>();
         }
     }
 }
