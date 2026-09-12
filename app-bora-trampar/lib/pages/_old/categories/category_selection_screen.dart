@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_stepper.dart';
 import '../../../core/widgets/bora_trampa_logo.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/font_awesome_helper.dart';
 import '../../../models/category_model.dart';
 import '../../../models/order_request_model.dart';
 import '../../../repositories/category/category_repository.dart';
@@ -240,7 +241,11 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                                                 : const Color(0xFF1F1C12),
                                             shape: BoxShape.circle,
                                           ),
-                                          child: Icon(cat.icon, color: AppColors.primaryGold, size: 24),
+                                          child: Icon(
+                                            stringToIcon(cat.iconName, fallbackText: cat.title),
+                                            color: AppColors.primaryGold,
+                                            size: 24,
+                                          ),
                                         ),
                                         const SizedBox(width: 14),
                                         Expanded(

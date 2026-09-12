@@ -262,7 +262,10 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                         child: Row(
                           children: [
                             Icon(
-                              serviceItemModel.effectiveIcon,
+                              stringToIcon(
+                                serviceItemModel.icon,
+                                fallbackText: serviceItemModel.name,
+                              ),
                               color: AppColors.primaryGold,
                               size: 22,
                             ),

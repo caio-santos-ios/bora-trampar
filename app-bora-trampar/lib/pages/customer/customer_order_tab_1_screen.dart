@@ -1,5 +1,6 @@
 import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/bora_trampa_logo.dart';
+import 'package:app_bora_trampar/core/widgets/primary_button.dart';
 import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';

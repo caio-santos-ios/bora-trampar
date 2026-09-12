@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_stepper.dart';
 import '../../../core/widgets/bora_trampa_logo.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/utils/font_awesome_helper.dart';
 import '../../../models/category_model.dart';
 import '../../../models/order_request_model.dart';
 import '../../../models/service_item_model.dart';
@@ -252,7 +253,7 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        _getServiceIcon(_services[i].name),
+                                        stringToIcon(_services[i].icon, fallbackText: _services[i].name),
                                         color: AppColors.primaryGold,
                                         size: 26,
                                       ),
