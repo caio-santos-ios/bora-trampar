@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "dist/page-bora-trampar/browser",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
