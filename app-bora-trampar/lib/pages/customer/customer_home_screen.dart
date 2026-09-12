@@ -3,6 +3,7 @@ import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/main_app_bar.dart';
 import 'package:app_bora_trampar/core/widgets/daily_word_card.dart';
+import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
 import 'package:app_bora_trampar/models/daily_word_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
@@ -281,7 +282,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
-                          cat.icon,
+                          stringToIcon(cat.iconName, fallbackText: cat.title),
                           color: AppColors.primaryGold,
                           size: 22,
                         ),

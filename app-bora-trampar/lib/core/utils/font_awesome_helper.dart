@@ -330,4 +330,53 @@ class FontAwesomeHelper {
     );
     return faIcon.data;
   }
+
+  /// Converte uma string (classe CSS ou nome) em IconData do FontAwesome.
+  static IconData stringToIcon(
+    String? iconName, {
+    String? fallbackText,
+    IconData? defaultIcon,
+  }) => getIcon(iconName, fallbackText: fallbackText, defaultIcon: defaultIcon);
+
+  /// Converte uma string diretamente no Widget Icon do Flutter.
+  static Widget stringToIconWidget(
+    String? iconName, {
+    String? fallbackText,
+    Color? color,
+    double? size,
+    IconData? defaultIcon,
+  }) {
+    return Icon(
+      stringToIcon(iconName, fallbackText: fallbackText, defaultIcon: defaultIcon),
+      color: color,
+      size: size,
+    );
+  }
 }
+
+/// Função global para converter string em IconData
+IconData stringToIcon(
+  String? iconName, {
+  String? fallbackText,
+  IconData? defaultIcon,
+}) => FontAwesomeHelper.stringToIcon(
+      iconName,
+      fallbackText: fallbackText,
+      defaultIcon: defaultIcon,
+    );
+
+/// Função global para converter string diretamente em um Widget Icon
+Widget stringToIconWidget(
+  String? iconName, {
+  String? fallbackText,
+  Color? color,
+  double? size,
+  IconData? defaultIcon,
+}) => FontAwesomeHelper.stringToIconWidget(
+      iconName,
+      fallbackText: fallbackText,
+      color: color,
+      size: size,
+      defaultIcon: defaultIcon,
+    );
+
