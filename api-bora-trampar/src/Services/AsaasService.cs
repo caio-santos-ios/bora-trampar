@@ -81,11 +81,6 @@ namespace api_bora_trampar.src.Services
                     }
                 }
 
-                if (string.IsNullOrEmpty(cleanCpf))
-                {
-                    cleanCpf = "08630628570";
-                }
-
                 var searchResponse = await _httpClient.GetAsync($"customers?email={Uri.EscapeDataString(email)}");
                 if (searchResponse.IsSuccessStatusCode)
                 {
