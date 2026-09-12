@@ -1,0 +1,51 @@
+<main class="terms-page">
+  <header class="terms-nav">
+    <a class="brand" routerLink="/" aria-label="Voltar para o início">
+      <img src="/assets/logo-bora-trampar.jpeg" alt="Bora Trampar" class="brand-logo">
+    </a>
+    <a class="back-link" routerLink="/">← Voltar para a página inicial</a>
+  </header>
+
+  <section class="terms-hero">
+    <div class="eyebrow"><span></span> Documento oficial</div>
+    <h1>Termos de <em>Uso.</em></h1>
+    <p>As regras para utilização do aplicativo, site e demais serviços oferecidos pelo Bora Trampa.</p>
+    <div class="updated">Última atualização <strong>03/09/2026</strong></div>
+  </section>
+
+  <div class="terms-layout">
+    <aside class="terms-index" aria-label="Índice dos termos">
+      <span>neste documento</span>
+      @for (section of sections; track section.title; let i = $index) {
+        <a [href]="'#sec-' + i">{{ section.title }}</a>
+      }
+    </aside>
+
+    <article class="terms-content">
+      <div class="welcome-copy">
+        <p>Bem-vindo ao Bora Trampa.</p>
+        <p>Estes Termos de Uso estabelecem as regras para utilização do aplicativo, site e demais serviços oferecidos pelo Bora Trampa.</p>
+        <p>Ao criar uma conta ou utilizar a plataforma, o usuário declara que leu, compreendeu e concorda com estes Termos de Uso.</p>
+      </div>
+      @for (section of sections; track section.title; let i = $index) {
+        <section class="term-section" [id]="'sec-' + i">
+          <div class="section-number">{{ (i + 1).toString().padStart(2, '0') }}</div>
+          <div>
+            <h2>{{ section.title }}</h2>
+            @for (paragraph of section.paragraphs ?? []; track paragraph) { <p>{{ paragraph }}</p> }
+            @if (section.bullets) {
+              <ul>@for (bullet of section.bullets; track bullet) { <li>{{ bullet }}</li> }</ul>
+            }
+          </div>
+        </section>
+      }
+      <div class="terms-end"><span>BT</span> Fim do documento</div>
+    </article>
+  </div>
+
+  <footer class="terms-footer">
+    <a class="brand" routerLink="/"><img src="/assets/logo-bora-trampar.jpeg" alt="Bora Trampar" class="brand-logo"></a>
+    <span>© 2026 Bora Trampa. Feito no Brasil.</span>
+    <a routerLink="/politica-privacidade">Política de Privacidade ↗</a>
+  </footer>
+</main>
