@@ -267,6 +267,23 @@ namespace api_bora_trampar.src.Services
                 await notificationService.MarkAsReadAppointmentAsync(appointment.Id);
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Accepted" });
 
+                if (!string.IsNullOrWhiteSpace(appointment.CustomerId))
+                {
+                    string srvName = !string.IsNullOrWhiteSpace(appointment.ServiceNames) ? appointment.ServiceNames : (appointment.CategoryName ?? "serviço");
+                    await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                    {
+                        UserId = appointment.CustomerId,
+                        AppointmentId = appointment.Id,
+                        Action = "appointment_accepted",
+                        Title = "Agendamento Confirmado!",
+                        Message = $"O profissional aceitou sua solicitação de {srvName} para {appointment.Date:dd/MM} às {appointment.Hour}.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
+
                 return new(updated, 200, "Agendamento aceito com sucesso");
             }
             catch (Exception ex)
@@ -451,6 +468,23 @@ namespace api_bora_trampar.src.Services
                 }
 
                 await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "CancelledByCustomer" });
+
+                if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
+                {
+                    string srvName = !string.IsNullOrWhiteSpace(appointment.ServiceNames) ? appointment.ServiceNames : (appointment.CategoryName ?? "serviço");
+                    await notificationService.CreateAsync(new Requests.Notification.CreateNotificationRequest
+                    {
+                        UserId = appointment.ProfessionalId,
+                        AppointmentId = appointment.Id,
+                        Action = "appointment_cancelled_by_customer",
+                        Title = "Agendamento Cancelado",
+                        Message = $"O cliente cancelou o agendamento de {srvName}. Seu horário foi liberado na agenda.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
 
                 return new(updated, 200, "Agendamento cancelado pelo cliente e saldo creditado");
             }

@@ -5,6 +5,7 @@ using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests._Base;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Notification;
 using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
 
@@ -14,7 +15,8 @@ namespace api_bora_trampar.src.Services
         IContestationRepository repository,
         IAppointmentRepository appointmentRepository,
         IUserRepository userRepository,
-        IUserService userService) : IContestationService
+        IUserService userService,
+        INotificationService notificationService) : IContestationService
     {
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request)
@@ -366,6 +368,22 @@ namespace api_bora_trampar.src.Services
                 Contestation? contestation = await repository.CreateAsync(entity);
                 if (contestation is null) return new(null, 400, "Falha ao criar contestação");
 
+                if (!string.IsNullOrWhiteSpace(entity.ProfessionalId))
+                {
+                    await notificationService.CreateAsync(new CreateNotificationRequest
+                    {
+                        UserId = entity.ProfessionalId,
+                        AppointmentId = entity.AppointmentId,
+                        Action = "contestation_opened",
+                        Title = "Contestação Aberta",
+                        Message = "O cliente abriu uma contestação sobre o serviço prestado. Nossa equipe de mediação irá analisar o caso.",
+                        Type = Models.Enums.NotificationTypeEnum.Service,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
+
                 return new(contestation, 201, "Contestação criada com sucesso");
             }
             catch (Exception ex)
@@ -397,6 +415,38 @@ namespace api_bora_trampar.src.Services
                             if (appointment is not null) appointment.Status = "ExpenseCustomer";
                             await userService.UpdateWalletBalanceAsync(existed.CustomerId, existed.Value);
                         }
+
+                        if (!string.IsNullOrEmpty(existed.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.CustomerId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_refunded_full_customer",
+                                Title = "Reembolso Aprovado!",
+                                Message = $"Sua contestação foi aceita. O valor integral de R$ {existed.Value:F2} foi creditado em sua carteira.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
+
+                        if (!string.IsNullOrEmpty(existed.ProfessionalId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.ProfessionalId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_refunded_full_pro",
+                                Title = "Contestação Finalizada",
+                                Message = "A contestação referente ao serviço foi encerrada com reembolso integral ao cliente.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (request.Status == "released_pro")
                     {
@@ -405,6 +455,38 @@ namespace api_bora_trampar.src.Services
                         {
                             await userService.UpdateWalletBalanceAsync(existed.ProfessionalId, existed.Value);
                             if (appointment is not null) appointment.Status = "ExpenseProfessional";
+                        }
+
+                        if (!string.IsNullOrEmpty(existed.ProfessionalId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.ProfessionalId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_released_pro",
+                                Title = "Contestação Finalizada a Seu Favor!",
+                                Message = $"A análise foi concluída e o valor de R$ {existed.Value:F2} foi liberado na sua carteira.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
+
+                        if (!string.IsNullOrEmpty(existed.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.CustomerId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_released_customer",
+                                Title = "Contestação Finalizada",
+                                Message = "A mediação da contestação foi concluída e o valor foi liberado ao profissional. Detalhes no app.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
                         }
                     }
                     else if (request.Status == "refunded_partial")
@@ -424,11 +506,59 @@ namespace api_bora_trampar.src.Services
                         }
 
                         if (appointment is not null) appointment.Status = "ExpensePartialProfessional";
+
+                        if (!string.IsNullOrEmpty(existed.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.CustomerId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_refunded_partial_customer",
+                                Title = "Reembolso Parcial Aprovado",
+                                Message = $"Sua contestação foi finalizada com reembolso parcial de {pct}% (R$ {customerRefund:F2}) creditado na sua carteira.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
+
+                        if (!string.IsNullOrEmpty(existed.ProfessionalId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.ProfessionalId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_refunded_partial_pro",
+                                Title = "Contestação Encerrada com Acordo Parcial",
+                                Message = $"A contestação foi encerrada em acordo parcial: R$ {proRelease:F2} foi liberado para sua carteira.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (request.Status == "info_requested")
                     {
                         existed.StatusLabel = "Aguardando Informações";
                         if (appointment is not null) appointment.Status = "ExpenseInfoRequest";
+
+                        if (!string.IsNullOrEmpty(existed.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = existed.CustomerId,
+                                AppointmentId = existed.AppointmentId,
+                                Action = "contestation_info_requested",
+                                Title = "Informações Solicitadas na Contestação",
+                                Message = "A equipe solicitou fotos, vídeos ou detalhes adicionais sobre sua contestação. Toque para responder no app.",
+                                Type = Models.Enums.NotificationTypeEnum.Service,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
                     }
                     else if (request.Status == "under_review")
                     {

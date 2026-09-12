@@ -1099,6 +1099,7 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
               child: PrimaryButton(
                 text: 'Encontrar profissionais',
                 onPressed: _onFindProfessionals,
+                isLoading: _isLocating,
               ),
             ),
           ],

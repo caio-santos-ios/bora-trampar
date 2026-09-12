@@ -3,12 +3,16 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Notification;
 using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
 
 namespace api_bora_trampar.src.Services
 {
-    public class ReviewsService(IReviewsRepository repository, IProfileProfessionalService profileProfessionalService) : IReviewsService
+    public class ReviewsService(
+        IReviewsRepository repository,
+        IProfileProfessionalService profileProfessionalService,
+        INotificationService notificationService) : IReviewsService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
@@ -73,6 +77,21 @@ namespace api_bora_trampar.src.Services
 
                 ResponseApi<ProfileProfessional?> profile = await profileProfessionalService.UpdateRatingAsync(entity.ProfessionalId, request.Point);
                 if (profile.Data is null) return new(null, 404, "Perfil não encontrado");
+
+                if (!string.IsNullOrWhiteSpace(entity.ProfessionalId))
+                {
+                    await notificationService.CreateAsync(new CreateNotificationRequest
+                    {
+                        UserId = entity.ProfessionalId,
+                        Action = "new_review",
+                        Title = "Nova Avaliação Recebida! ⭐",
+                        Message = $"Você recebeu uma avaliação com nota {request.Point} de um cliente pelo serviço prestado.",
+                        Type = Models.Enums.NotificationTypeEnum.Review,
+                        Read = false,
+                        Send = false,
+                        SendAt = DateTime.UtcNow
+                    });
+                }
 
                 return new(review, 201, "Avaliação criada com sucesso");
             }

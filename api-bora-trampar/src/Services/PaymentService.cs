@@ -238,6 +238,22 @@ namespace api_bora_trampar.src.Services
 
                             await notificationService.CreateAsync(notification);
                         }
+
+                        if (!string.IsNullOrWhiteSpace(appointment.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = appointment.CustomerId,
+                                AppointmentId = appointment.Id,
+                                Action = "payment_received_customer",
+                                Title = "Pagamento Confirmado! 💳",
+                                Message = $"Recebemos o seu pagamento de R$ {payment.Value:F2}. Seu agendamento foi enviado ao profissional.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
+                        }
                     }
                 }
 
@@ -297,6 +313,22 @@ namespace api_bora_trampar.src.Services
                             };
 
                             await notificationService.CreateAsync(notification);
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(appointment.CustomerId))
+                        {
+                            await notificationService.CreateAsync(new CreateNotificationRequest
+                            {
+                                UserId = appointment.CustomerId,
+                                AppointmentId = appointment.Id,
+                                Action = "payment_received_customer",
+                                Title = "Pagamento Confirmado! 💳",
+                                Message = $"Recebemos o seu pagamento de R$ {payment.Value:F2}. Seu agendamento foi enviado ao profissional.",
+                                Type = Models.Enums.NotificationTypeEnum.Payment,
+                                Read = false,
+                                Send = false,
+                                SendAt = DateTime.UtcNow
+                            });
                         }
                     }
                 }

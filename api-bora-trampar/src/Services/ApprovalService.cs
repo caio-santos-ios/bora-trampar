@@ -4,13 +4,15 @@ using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models.Base;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Notification;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Services
 {
     public class ApprovalService(
         IApprovalRepository repository,
-        AppDbContext appDbContext) : IApprovalService
+        AppDbContext appDbContext,
+        INotificationService notificationService) : IApprovalService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
@@ -185,6 +187,54 @@ namespace api_bora_trampar.src.Services
                     profile.IdentityVerificationNotes = request.ReviewNotes ?? string.Empty;
                     profile.UpdatedAt = DateTime.UtcNow;
                     await appDbContext.ProfileProfessionals.ReplaceOneAsync(p => p.Id == profile.Id, profile);
+                }
+
+                if (!string.IsNullOrWhiteSpace(existing.ProfessionalId))
+                {
+                    if (isApproved)
+                    {
+                        await notificationService.CreateAsync(new CreateNotificationRequest
+                        {
+                            UserId = existing.ProfessionalId,
+                            Action = "profile_approved",
+                            Title = "Perfil Aprovado! 🎉",
+                            Message = "Parabéns! Seus documentos foram verificados e aprovados. Você já está liberado para receber chamados de clientes.",
+                            Type = Models.Enums.NotificationTypeEnum.System,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.UtcNow
+                        });
+                    }
+                    else if (isCorrection)
+                    {
+                        string note = !string.IsNullOrWhiteSpace(request.ReviewNotes) ? $" Motivo: {request.ReviewNotes}" : " Verifique as orientações no seu perfil.";
+                        await notificationService.CreateAsync(new CreateNotificationRequest
+                        {
+                            UserId = existing.ProfessionalId,
+                            Action = "profile_correction",
+                            Title = "Ajuste nos Documentos Necessário ⚠️",
+                            Message = $"A equipe solicitou o reenvio de documentos.{note}",
+                            Type = Models.Enums.NotificationTypeEnum.System,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.UtcNow
+                        });
+                    }
+                    else if (isRejected)
+                    {
+                        string note = !string.IsNullOrWhiteSpace(request.ReviewNotes) ? $" Motivo: {request.ReviewNotes}" : " Verifique os detalhes no seu perfil.";
+                        await notificationService.CreateAsync(new CreateNotificationRequest
+                        {
+                            UserId = existing.ProfessionalId,
+                            Action = "profile_rejected",
+                            Title = "Verificação de Perfil Recusada ❌",
+                            Message = $"Seus documentos não foram aprovados.{note}",
+                            Type = Models.Enums.NotificationTypeEnum.System,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.UtcNow
+                        });
+                    }
                 }
 
                 return new(approval, 200, "Aprovação atualizada com sucesso");
