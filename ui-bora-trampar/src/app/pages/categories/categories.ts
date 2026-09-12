@@ -6,6 +6,8 @@ import { Loading } from '../../components/loading/loading';
 import { GlobalService } from '../../services/global.service';
 import { api } from '../../services/api';
 
+import { AVAILABLE_FONT_AWESOME_ICONS, ICON_CATEGORIES, IconOption } from '../../constants/fontawesome-icons';
+
 export interface CategoryItem {
   id: string;
   name: string;
@@ -47,17 +49,26 @@ export class Categories implements OnInit {
 
   categoryToDelete: CategoryItem | null = null;
 
-  availableIcons = [
-    { label: 'Construção', value: 'fa-hammer' },
-    { label: 'Pintura', value: 'fa-paint-roller' },
-    { label: 'Eletricista', value: 'fa-bolt' },
-    { label: 'Encanamento', value: 'fa-faucet-drip' },
-    { label: 'Limpeza', value: 'fa-broom' },
-    { label: 'Jardinagem', value: 'fa-seedling' },
-    { label: 'Montagem', value: 'fa-screwdriver-wrench' },
-    { label: 'Cuidados', value: 'fa-heart' },
-    { label: 'Geral', value: 'fa-layer-group' }
-  ];
+  iconCategories = ICON_CATEGORIES;
+  selectedIconCategory = 'Todas';
+  iconSearchTerm = '';
+
+  get filteredIcons(): IconOption[] {
+    const term = this.iconSearchTerm.trim().toLowerCase();
+    return AVAILABLE_FONT_AWESOME_ICONS.filter(ic => {
+      const matchCat = this.selectedIconCategory === 'Todas' || ic.category === this.selectedIconCategory;
+      const matchTerm = !term ||
+        ic.label.toLowerCase().includes(term) ||
+        ic.value.toLowerCase().includes(term) ||
+        (ic.keywords && ic.keywords.toLowerCase().includes(term));
+      return matchCat && matchTerm;
+    });
+  }
+
+  getSelectedIconLabel(): string {
+    const found = AVAILABLE_FONT_AWESOME_ICONS.find(i => i.value === this.formData.icon);
+    return found ? found.label : this.formData.icon;
+  }
 
   categories: CategoryItem[] = [];
 
@@ -197,12 +208,16 @@ export class Categories implements OnInit {
       icon: 'fa-hammer',
       description: ''
     };
+    this.iconSearchTerm = '';
+    this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
   }
 
   openEditModal(item: CategoryItem) {
     this.modalMode = 'edit';
     this.formData = { ...item };
+    this.iconSearchTerm = '';
+    this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
   }
 

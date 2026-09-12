@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../core/utils/font_awesome_helper.dart';
 import 'service_item_model.dart';
 
 class CategoryModel {
   final String id;
   final String title;
   final String subtitle;
+  final String iconName;
   final IconData icon;
   final List<ServiceItemModel> services;
   final bool isSpecial;
@@ -14,16 +16,21 @@ class CategoryModel {
     required this.title,
     required this.subtitle,
     required this.icon,
+    this.iconName = '',
     this.services = const [],
     this.isSpecial = false,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    final rawIcon = (json['icon'] ?? '').toString();
+    final name = (json['name'] ?? json['title'] ?? '').toString();
+
     return CategoryModel(
-      id: json['id'] ?? json['_id'] ?? '',
-      title: json['name'] ?? json['title'] ?? '',
-      subtitle: json['subtitle'] ?? json['description'] ?? '',
-      icon: _mapIconFromJson(json['icon'] ?? json['name'] ?? ''),
+      id: (json['id'] ?? json['_id'] ?? '').toString(),
+      title: name,
+      subtitle: (json['subtitle'] ?? json['description'] ?? '').toString(),
+      iconName: rawIcon,
+      icon: FontAwesomeHelper.getIcon(rawIcon, fallbackText: name),
       services: (json['services'] as List? ?? [])
           .map((s) => ServiceItemModel(
                 id: s['id'] ?? s['_id'] ?? '',
@@ -34,29 +41,6 @@ class CategoryModel {
           .toList(),
       isSpecial: json['isSpecial'] ?? false,
     );
-  }
-
-  static IconData _mapIconFromJson(String iconName) {
-    final name = iconName.toLowerCase();
-    if (name.contains('constru') || name.contains('obras') || name.contains('alvenaria')) {
-      return Icons.construction_rounded;
-    }
-    if (name.contains('pint') || name.contains('acabamento')) {
-      return Icons.format_paint_rounded;
-    }
-    if (name.contains('eletr') || name.contains('energia')) {
-      return Icons.bolt_rounded;
-    }
-    if (name.contains('hidraul') || name.contains('encan') || name.contains('agua')) {
-      return Icons.plumbing_rounded;
-    }
-    if (name.contains('limp') || name.contains('faxina') || name.contains('diaria')) {
-      return Icons.cleaning_services_rounded;
-    }
-    if (name.contains('jardim') || name.contains('paisag')) {
-      return Icons.yard_rounded;
-    }
-    return Icons.handyman_rounded;
   }
 
   @override

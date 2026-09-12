@@ -6,6 +6,8 @@ import { Loading } from '../../components/loading/loading';
 import { GlobalService } from '../../services/global.service';
 import { api } from '../../services/api';
 
+import { AVAILABLE_FONT_AWESOME_ICONS, ICON_CATEGORIES, IconOption } from '../../constants/fontawesome-icons';
+
 export interface ServiceItem {
   id: string;
   name: string;
@@ -49,17 +51,26 @@ export class Services implements OnInit {
   categoriesList: CategoryRef[] = [];
   services: ServiceItem[] = [];
 
-  availableIcons = [
-    { label: 'Serviço Geral', value: 'fa-briefcase' },
-    { label: 'Martelo / Obra', value: 'fa-hammer' },
-    { label: 'Chave de Fenda', value: 'fa-screwdriver' },
-    { label: 'Rolo de Pintura', value: 'fa-paint-roller' },
-    { label: 'Raio / Elétrica', value: 'fa-bolt' },
-    { label: 'Torneira / Cano', value: 'fa-faucet' },
-    { label: 'Vassoura / Faxina', value: 'fa-broom' },
-    { label: 'Coração / Babá', value: 'fa-heart' },
-    { label: 'Engrenagem / Reparo', value: 'fa-gear' }
-  ];
+  iconCategories = ICON_CATEGORIES;
+  selectedIconCategory = 'Todas';
+  iconSearchTerm = '';
+
+  get filteredIcons(): IconOption[] {
+    const term = this.iconSearchTerm.trim().toLowerCase();
+    return AVAILABLE_FONT_AWESOME_ICONS.filter(ic => {
+      const matchCat = this.selectedIconCategory === 'Todas' || ic.category === this.selectedIconCategory;
+      const matchTerm = !term ||
+        ic.label.toLowerCase().includes(term) ||
+        ic.value.toLowerCase().includes(term) ||
+        (ic.keywords && ic.keywords.toLowerCase().includes(term));
+      return matchCat && matchTerm;
+    });
+  }
+
+  getSelectedIconLabel(): string {
+    const found = AVAILABLE_FONT_AWESOME_ICONS.find(i => i.value === this.formData.icon);
+    return found ? found.label : this.formData.icon;
+  }
 
   constructor(
     private toastr: ToastrService,
@@ -195,12 +206,16 @@ export class Services implements OnInit {
       categoryId: this.categoriesList[0]?.id || '',
       icon: 'fa-briefcase'
     };
+    this.iconSearchTerm = '';
+    this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
   }
 
   openEditModal(item: ServiceItem) {
     this.modalMode = 'edit';
     this.formData = { ...item };
+    this.iconSearchTerm = '';
+    this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
   }
 

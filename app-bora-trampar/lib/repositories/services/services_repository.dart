@@ -25,12 +25,7 @@ class ServicesRepository {
         if (res is List) {
           final allServices = res.map((item) {
             final json = item as Map<String, dynamic>;
-            return ServiceItemModel(
-              id: (json['id'] ?? json['_id'] ?? '').toString(),
-              categoryId: (json['categoryId'] ?? json['category_id'] ?? '').toString(),
-              name: (json['name'] ?? json['title'] ?? 'Serviço').toString(),
-              basePrice: (json['basePrice'] ?? json['price'] ?? 150.0).toDouble(),
-            );
+            return ServiceItemModel.fromJson(json);
           }).toList();
 
           if (categoryId != null && categoryId.isNotEmpty) {

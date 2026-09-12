@@ -82,27 +82,6 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
     );
   }
 
-  IconData _getServiceIcon(String serviceName) {
-    final lower = serviceName.toLowerCase();
-    if (lower.contains('pedreiro') || lower.contains('alvenaria'))
-      return Icons.foundation_rounded;
-    if (lower.contains('pintura') || lower.contains('pintor'))
-      return Icons.format_paint_rounded;
-    if (lower.contains('reparo') || lower.contains('pequenos'))
-      return Icons.build_rounded;
-    if (lower.contains('serralheiro')) return Icons.fence_rounded;
-    if (lower.contains('marceneiro')) return Icons.carpenter_rounded;
-    if (lower.contains('vidraceiro')) return Icons.window_rounded;
-    if (lower.contains('manuten')) return Icons.settings_rounded;
-    if (lower.contains('eletric')) return Icons.bolt_rounded;
-    if (lower.contains('encanador') || lower.contains('hidraul'))
-      return Icons.plumbing_rounded;
-    if (lower.contains('ar-condicionado')) return Icons.ac_unit_rounded;
-    if (lower.contains('limpeza') || lower.contains('faxina'))
-      return Icons.cleaning_services_rounded;
-    return Icons.handyman_rounded;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -282,9 +261,9 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                         child: Row(
                           children: [
                             Icon(
-                              _getServiceIcon(serviceItemModel.name),
+                              serviceItemModel.effectiveIcon,
                               color: AppColors.primaryGold,
-                              size: 26,
+                              size: 22,
                             ),
                             const SizedBox(width: 16),
                             Expanded(

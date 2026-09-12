@@ -180,18 +180,68 @@
         </div>
 
         <div class="form-group">
-          <label>Ícone Representativo</label>
+          <div class="icon-selector-header">
+            <label>Ícone Representativo (FontAwesome) *</label>
+            <div class="selected-icon-badge" *ngIf="formData.icon">
+              <i class="fa-solid" [ngClass]="formData.icon"></i>
+              <span>{{ getSelectedIconLabel() }}</span>
+              <code>{{ formData.icon }}</code>
+            </div>
+          </div>
+
+          <div class="icon-search-bar">
+            <div class="icon-search-input-wrapper">
+              <i class="fa-solid fa-magnifying-glass icon-search-icon"></i>
+              <input
+                type="text"
+                class="form-control icon-search-input"
+                placeholder="Buscar ícone (ex: martelo, chave, carro, pintura)..."
+                [(ngModel)]="iconSearchTerm"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <button
+                type="button"
+                class="icon-clear-btn"
+                *ngIf="iconSearchTerm"
+                (click)="iconSearchTerm = ''"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+
+          <div class="icon-category-pills">
+            <button
+              type="button"
+              class="icon-pill-btn"
+              *ngFor="let cat of iconCategories"
+              [class.active]="selectedIconCategory === cat"
+              (click)="selectedIconCategory = cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
+
           <div class="icon-selector-grid">
             <button
               type="button"
               class="icon-option-btn"
-              *ngFor="let ic of availableIcons"
+              *ngFor="let ic of filteredIcons"
               [class.selected]="formData.icon === ic.value"
               (click)="formData.icon = ic.value"
+              [title]="ic.label + ' (' + ic.value + ')'"
             >
               <i class="fa-solid" [ngClass]="ic.value"></i>
-              <span>{{ ic.label }}</span>
+              <div class="icon-option-info">
+                <span class="icon-option-title">{{ ic.label }}</span>
+                <span class="icon-option-category">{{ ic.category }}</span>
+              </div>
             </button>
+
+            <div class="no-icons-found" *ngIf="filteredIcons.length === 0">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              <span>Nenhum ícone encontrado para "{{ iconSearchTerm }}"</span>
+            </div>
           </div>
         </div>
 
