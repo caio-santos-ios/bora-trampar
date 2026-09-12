@@ -12,6 +12,7 @@ namespace api_bora_trampar.src.Services
         IProfileProfessionalRepository repository,
         AppDbContext appDbContext) : IProfileProfessionalService
     {
+        #region READ
         public async Task<ResponseApi<ProfileProfessional?>> GetByUserIdAsync(string userId)
         {
             try
@@ -439,7 +440,9 @@ namespace api_bora_trampar.src.Services
 
             return true;
         }
+        #endregion
 
+        #region UPDATE
         public async Task<ResponseApi<ProfileProfessional?>> SaveAsync(CreateProfileProfessionalRequest request, string userId)
         {
             try
@@ -533,15 +536,6 @@ namespace api_bora_trampar.src.Services
 
                     resultProfile = await repository.CreateAsync(entity);
                 }
-
-                await UpsertApprovalRecordAsync(
-                    effectiveUserId,
-                    request.IdentityDocumentType,
-                    request.IdentityDocumentNumber,
-                    request.IdentityDocumentFrontUrl,
-                    request.IdentityDocumentBackUrl,
-                    request.IdentitySelfieUrl
-                );
 
                 return new(resultProfile, 200, "Perfil profissional salvo com sucesso");
             }
@@ -654,5 +648,6 @@ namespace api_bora_trampar.src.Services
             {
             }
         }
+        #endregion
     }
 }
