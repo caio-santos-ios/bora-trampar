@@ -64,6 +64,10 @@
                 <i class="fa-solid fa-layer-group"></i>
                 {{ item.categoryName }}
               </span>
+              <span class="vehicle-pill" *ngIf="item.vehicleType">
+                <i class="fa-solid fa-truck"></i>
+                {{ item.vehicleType }}
+              </span>
             </td>
             <td>{{ global.formatDate(item.createdAt || '') }}</td>
             <td style="text-align: right;">
@@ -99,6 +103,12 @@
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Categoria</span>
             <span class="mobile-card-field-value">{{ item.categoryName }}</span>
+          </div>
+          <div class="mobile-card-field" *ngIf="item.vehicleType">
+            <span class="mobile-card-field-label">Veículo</span>
+            <span class="mobile-card-field-value vehicle-text">
+              <i class="fa-solid fa-truck"></i> {{ item.vehicleType }}
+            </span>
           </div>
           <div class="mobile-card-field">
             <span class="mobile-card-field-label">Data</span>
@@ -172,6 +182,21 @@
               {{ cat.name }}
             </option>
           </select>
+        </div>
+
+        <div class="form-group vehicle-select-group" *ngIf="isCurrentCategoryFreight">
+          <label class="vehicle-label">
+            <i class="fa-solid fa-truck"></i> Tipo de Veículo Necessário *
+          </label>
+          <select class="form-control" [(ngModel)]="formData.vehicleType" name="vehicleType" required>
+            <option value="" disabled selected>Selecione o tipo de veículo...</option>
+            <option *ngFor="let v of vehicleTypes" [value]="v">
+              {{ v }}
+            </option>
+          </select>
+          <small class="form-hint">
+            Como esta categoria é de frete/transporte, a definição do veículo é obrigatória.
+          </small>
         </div>
 
         <div class="form-group">

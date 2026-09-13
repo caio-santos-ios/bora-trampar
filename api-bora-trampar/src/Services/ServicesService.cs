@@ -8,7 +8,7 @@ using ServiceModel = api_bora_trampar.src.Models.Services;
 
 namespace api_bora_trampar.src.Services
 {
-    public class ServicesService(IServicesRepository repository) : IServicesService
+    public class ServicesService(IServicesRepository repository, ICategoryRepository categoryRepository) : IServicesService
     {
         #region READ
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync(string? categoryId = null)
@@ -40,6 +40,8 @@ namespace api_bora_trampar.src.Services
                         {"categoryId", new BsonDocument("$ifNull", new BsonArray { "$categoryId", "$category_id", "" })},
                         {"category_id", new BsonDocument("$ifNull", new BsonArray { "$categoryId", "$category_id", "" })},
                         {"icon", 1},
+                        {"vehicleType", new BsonDocument("$ifNull", new BsonArray { "$vehicle_type", "$vehicleType", "" })},
+                        {"vehicle_type", new BsonDocument("$ifNull", new BsonArray { "$vehicle_type", "$vehicleType", "" })},
                         {"createdAt", 1}
                     }),
                     new("$sort", new BsonDocument { { "createdAt", -1 } } )
@@ -76,6 +78,15 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(request.CategoryId))
+                {
+                    var category = await categoryRepository.GetByIdAsync(request.CategoryId);
+                    if (category != null && category.IsFreight && string.IsNullOrWhiteSpace(request.VehicleType))
+                    {
+                        return new(null, 400, "O tipo de veículo é obrigatório para categorias de frete.");
+                    }
+                }
+
                 ServiceModel entity = ObjectMapper.Map<CreateServicesRequest, ServiceModel>(request);
 
                 entity.CreatedAt = DateTime.UtcNow;
@@ -97,6 +108,15 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                if (!string.IsNullOrWhiteSpace(request.CategoryId))
+                {
+                    var category = await categoryRepository.GetByIdAsync(request.CategoryId);
+                    if (category != null && category.IsFreight && string.IsNullOrWhiteSpace(request.VehicleType))
+                    {
+                        return new(null, 400, "O tipo de veículo é obrigatório para categorias de frete.");
+                    }
+                }
+
                 ServiceModel entity = ObjectMapper.Map<UpdateServicesRequest, ServiceModel>(request);
 
                 entity.UpdatedAt = DateTime.UtcNow;

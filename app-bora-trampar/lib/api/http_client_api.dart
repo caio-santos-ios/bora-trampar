@@ -5,6 +5,7 @@ import 'package:app_bora_trampar/core/services/storage_service.dart';
 class HttpClientApi {
   static const String _prodUrl = 'https://bora-trampar.onrender.com';
   static const String _devUrl = 'https://frugality-dayroom-dingo.ngrok-free.dev';
+  // static const String _devUrl = 'http://192.168.1.110:5067';
 
   static String get _baseUrl {
     const customUrl = String.fromEnvironment('BASE_URL');
@@ -44,6 +45,8 @@ class HttpClientApi {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
+          debugPrint('[HttpClientApi] Erro na requisição: ${e.requestOptions.method} ${e.requestOptions.uri}');
+          debugPrint('[HttpClientApi] Detalhes: tipo=${e.type}, status=${e.response?.statusCode}, msg=${e.message}');
           return handler.next(e);
         },
       ),

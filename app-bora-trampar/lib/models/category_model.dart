@@ -10,6 +10,7 @@ class CategoryModel {
   final IconData icon;
   final List<ServiceItemModel> services;
   final bool isSpecial;
+  final bool isFreight;
 
   const CategoryModel({
     required this.id,
@@ -19,6 +20,7 @@ class CategoryModel {
     this.iconName = '',
     this.services = const [],
     this.isSpecial = false,
+    this.isFreight = false,
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
@@ -37,9 +39,11 @@ class CategoryModel {
                 categoryId: json['id'] ?? json['_id'] ?? '',
                 name: s['name'] ?? s['title'] ?? '',
                 basePrice: (s['basePrice'] ?? s['price'] ?? 0.0).toDouble(),
+                vehicleType: s['vehicleType']?.toString() ?? s['vehicle_type']?.toString(),
               ))
           .toList(),
       isSpecial: json['isSpecial'] ?? false,
+      isFreight: json['isFreight'] == true || json['is_freight'] == true,
     );
   }
 

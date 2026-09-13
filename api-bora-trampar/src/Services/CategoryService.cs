@@ -37,6 +37,8 @@ namespace api_bora_trampar.src.Services
                         {"name", 1},
                         {"description", 1},
                         {"icon", 1},
+                        {"is_freight", new BsonDocument("$ifNull", new BsonArray { "$is_freight", "$isFreight", false })},
+                        {"isFreight", new BsonDocument("$ifNull", new BsonArray { "$is_freight", "$isFreight", false })},
                         {"created_at", 1}
                     })
                 ];
@@ -70,6 +72,8 @@ namespace api_bora_trampar.src.Services
                         {"name", 1},
                         {"description", 1},
                         {"icon", 1},
+                        {"is_freight", new BsonDocument("$ifNull", new BsonArray { "$is_freight", "$isFreight", false })},
+                        {"isFreight", new BsonDocument("$ifNull", new BsonArray { "$is_freight", "$isFreight", false })},
                         {"created_at", 1}
                     })
                 ];

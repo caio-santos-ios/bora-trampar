@@ -9,6 +9,7 @@ import '../../repositories/appointment/appointment_repository.dart';
 import '../../repositories/notification/notification_repository.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -73,44 +74,30 @@ class NotificationService {
             (action == 'new_appointment_request' ||
                 title.toLowerCase().contains('novo agendamento'));
 
-        final androidDetails = AndroidNotificationDetails(
-          'high_importance_channel',
-          'Notificações Importantes',
-          importance: Importance.high,
-          priority: Priority.high,
-          actions: isNewAppointmentRequest
-              ? const <AndroidNotificationAction>[
-                  AndroidNotificationAction(
-                    'decline_appointment',
-                    'Recusar',
-                    cancelNotification: true,
-                    showsUserInterface: false,
-                  ),
-                  AndroidNotificationAction(
-                    'accept_appointment',
-                    'Aceitar',
-                    cancelNotification: true,
-                    showsUserInterface: false,
-                  ),
-                ]
-              : null,
-        );
-
-        _localNotifications.show(
-          id: message.hashCode,
-          title: title,
-          body: body,
-          payload: appointmentId,
-          notificationDetails: NotificationDetails(
-            android: androidDetails,
-          ),
-        );
-
         if (isNewAppointmentRequest) {
+          // Quando o aplicativo esta ABERTO, exibe APENAS o modal no topo com as opcoes de Aceitar/Recusar
           _showInAppAppointmentBanner(
             appointmentId: appointmentId,
             title: title,
             body: body,
+          );
+        } else {
+          // Demais notificacoes quando o app esta aberto usam a notificacao padrao
+          final androidDetails = AndroidNotificationDetails(
+            'high_importance_channel',
+            'Notificações Importantes',
+            importance: Importance.high,
+            priority: Priority.high,
+          );
+
+          _localNotifications.show(
+            id: message.hashCode,
+            title: title,
+            body: body,
+            payload: appointmentId,
+            notificationDetails: NotificationDetails(
+              android: androidDetails,
+            ),
           );
         }
       });
@@ -138,144 +125,176 @@ class NotificationService {
     _currentBannerEntry = null;
 
     late OverlayEntry entry;
+    bool isProcessing = false;
+    String loadingAction = '';
+
     entry = OverlayEntry(
       builder: (context) {
-        return Positioned(
-          top: MediaQuery.of(context).padding.top + 10,
-          left: 16,
-          right: 16,
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1C16),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryGold, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.65),
-                    blurRadius: 18,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.notifications_active_rounded, color: AppColors.primaryGold, size: 20),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Positioned(
+              top: MediaQuery.of(context).padding.top + 10,
+              left: 16,
+              right: 16,
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1C16),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primaryGold, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.65),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          title,
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.notifications_active_rounded, color: AppColors.primaryGold, size: 20),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: GoogleFonts.inter(
+                                color: AppColors.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (!isProcessing)
+                            GestureDetector(
+                              onTap: () {
+                                entry.remove();
+                                if (_currentBannerEntry == entry) {
+                                  _currentBannerEntry = null;
+                                }
+                              },
+                              child: const Padding(
+                                padding: EdgeInsets.all(4),
+                                child: Icon(Icons.close_rounded, color: AppColors.textMuted, size: 20),
+                              ),
+                            ),
+                        ],
+                      ),
+                      if (body.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          body,
                           style: GoogleFonts.inter(
-                            color: AppColors.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                            height: 1.3,
                           ),
                         ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          entry.remove();
-                          if (_currentBannerEntry == entry) {
-                            _currentBannerEntry = null;
-                          }
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(Icons.close_rounded, color: AppColors.textMuted, size: 20),
-                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: isProcessing
+                                  ? null
+                                  : () async {
+                                      setModalState(() {
+                                        isProcessing = true;
+                                        loadingAction = 'decline';
+                                      });
+                                      if (appointmentId.isNotEmpty) {
+                                        await _handleDeclineAppointment(appointmentId);
+                                      }
+                                      entry.remove();
+                                      if (_currentBannerEntry == entry) {
+                                        _currentBannerEntry = null;
+                                      }
+                                    },
+                              icon: loadingAction == 'decline'
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.errorRed),
+                                    )
+                                  : const Icon(Icons.close_rounded, size: 16, color: AppColors.errorRed),
+                              label: Text(
+                                loadingAction == 'decline' ? 'Recusando...' : 'Recusar',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.errorRed,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: AppColors.errorRed, width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: isProcessing
+                                  ? null
+                                  : () async {
+                                      setModalState(() {
+                                        isProcessing = true;
+                                        loadingAction = 'accept';
+                                      });
+                                      if (appointmentId.isNotEmpty) {
+                                        await _handleAcceptAppointment(appointmentId);
+                                      }
+                                      entry.remove();
+                                      if (_currentBannerEntry == entry) {
+                                        _currentBannerEntry = null;
+                                      }
+                                    },
+                              icon: loadingAction == 'accept'
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textDark),
+                                    )
+                                  : const Icon(Icons.check_rounded, size: 16, color: AppColors.textDark),
+                              label: Text(
+                                loadingAction == 'accept' ? 'Aceitando...' : 'Aceitar',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.textDark,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGold,
+                                foregroundColor: AppColors.textDark,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  if (body.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      body,
-                      style: GoogleFonts.inter(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            entry.remove();
-                            if (_currentBannerEntry == entry) {
-                              _currentBannerEntry = null;
-                            }
-                            if (appointmentId.isNotEmpty) {
-                              await _handleDeclineAppointment(appointmentId);
-                            }
-                          },
-                          icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.errorRed),
-                          label: Text(
-                            'Recusar',
-                            style: GoogleFonts.inter(
-                              color: AppColors.errorRed,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.errorRed, width: 1.2),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            entry.remove();
-                            if (_currentBannerEntry == entry) {
-                              _currentBannerEntry = null;
-                            }
-                            if (appointmentId.isNotEmpty) {
-                              await _handleAcceptAppointment(appointmentId);
-                            }
-                          },
-                          icon: const Icon(Icons.check_rounded, size: 16, color: AppColors.textDark),
-                          label: Text(
-                            'Aceitar',
-                            style: GoogleFonts.inter(
-                              color: AppColors.textDark,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryGold,
-                            foregroundColor: AppColors.textDark,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -292,40 +311,51 @@ class NotificationService {
   }
 
   Future<void> _handleAcceptAppointment(String appointmentId) async {
-    print(appointmentId);
-    // try {
-    //   final success = await _appointmentRepo.acceptAppointment(appointmentId);
-    //   _showActionSnackBar(
-    //     success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
-    //     success ? AppColors.primaryGold : AppColors.errorRed,
-    //     success ? AppColors.textDark : Colors.white,
-    //   );
-    // } catch (e) {
-    //   debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
-    // }
+    try {
+      debugPrint('[NotificationService] Aceitando agendamento: $appointmentId');
+      final success = await _appointmentRepo.acceptAppointment(appointmentId);
+      debugPrint('[NotificationService] Resultado acceptAppointment: $success');
+      _showActionSnackBar(
+        success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
+        success ? AppColors.primaryGold : AppColors.errorRed,
+        success ? AppColors.textDark : Colors.white,
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
+      _showActionSnackBar(
+        'Erro ao processar agendamento.',
+        AppColors.errorRed,
+        Colors.white,
+      );
+    }
   }
 
   Future<void> _handleDeclineAppointment(String appointmentId) async {
-    print(appointmentId);
-    // try {
-    //   final success = await _appointmentRepo.declineAppointment(appointmentId);
-    //   _showActionSnackBar(
-    //     success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
-    //     AppColors.errorRed,
-    //     Colors.white,
-    //   );
-    // } catch (e) {
-    //   debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
-    // }
+    try {
+      debugPrint('[NotificationService] Recusando agendamento: $appointmentId');
+      final success = await _appointmentRepo.declineAppointment(appointmentId);
+      debugPrint('[NotificationService] Resultado declineAppointment: $success');
+      _showActionSnackBar(
+        success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
+        AppColors.errorRed,
+        Colors.white,
+      );
+    } catch (e) {
+      debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
+      _showActionSnackBar(
+        'Erro ao recusar agendamento.',
+        AppColors.errorRed,
+        Colors.white,
+      );
+    }
   }
 
   void _showActionSnackBar(String message, Color background, Color textColor) {
-    // Aguarda o frame seguinte para garantir que o context esteja pronto
-    // mesmo quando o app foi aberto a partir do estado fechado.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = navigatorKey.currentContext;
-      if (context != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = scaffoldMessengerKey.currentState;
+      if (messenger != null) {
+        messenger.clearSnackBars();
+        messenger.showSnackBar(
           SnackBar(
             content: Text(
               message,
@@ -333,9 +363,25 @@ class NotificationService {
             ),
             backgroundColor: background,
             behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 4),
           ),
         );
+      } else {
+        final context = navigatorKey.currentContext;
+        if (context != null && context.mounted) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                message,
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: textColor),
+              ),
+              backgroundColor: background,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     });
   }

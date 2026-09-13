@@ -20,5 +20,7 @@ namespace api_bora_trampar.src.Requests
         [Required(ErrorMessage = "O Icone é obrigatório.")]
         [Display(Order = 4)]
         public string Icon { get; set; } = string.Empty;
+
+        public string? VehicleType { get; set; }
     }
 }

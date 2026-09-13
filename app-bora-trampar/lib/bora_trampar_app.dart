@@ -11,6 +11,7 @@ class BoraTrampaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       title: 'BoraTrampa',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,

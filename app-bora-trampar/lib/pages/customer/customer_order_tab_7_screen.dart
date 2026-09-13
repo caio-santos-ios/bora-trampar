@@ -1032,7 +1032,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   }
 
   Widget _buildBottomActionBar() {
-    if (_status == TrackingStatus.accepted) {
+    if (_status == TrackingStatus.accepted || _status == TrackingStatus.startService || _status == TrackingStatus.finish) {
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         decoration: const BoxDecoration(

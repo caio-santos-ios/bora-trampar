@@ -246,11 +246,11 @@ class _ProfessionalScheduleScreenState
       _selectedDay.month,
     );
     final dayAppointments = _appointmentsOnSelectedDay.where((a) {
-      return a.status != "PendingPayment";
+      return a.status != "PendingPayment" && a.status != "PendingAcceptance";
     }).toList();
 
     final pending = _appointments.where((a) {
-      return a.status == "PendingAcceptance" || a.status == "Accepted";
+      return a.status == "PendingAcceptance";
     }).toList();
 
     return ListView(

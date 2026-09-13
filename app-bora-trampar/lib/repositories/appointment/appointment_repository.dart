@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../api/http_client_api.dart';
 import '../../models/appointment_model.dart';
 
@@ -6,8 +7,20 @@ class AppointmentRepository {
   final HttpClientApi _api = HttpClientApi();
 
   Future<List<AppointmentModel>> getAppointments({String query = ""}) async {
-    final response = await _api.client.get('/api/appointments?$query');
-    return response.statusCode == 200 ? (response.data["result"]["data"] as List).map((e) => AppointmentModel.fromJson(e)).toList() : [];
+    try {
+      final response = await _api.client.get('/api/appointments?$query');
+      return response.statusCode == 200
+          ? (response.data["result"]["data"] as List)
+              .map((e) => AppointmentModel.fromJson(e))
+              .toList()
+          : [];
+    } on DioException catch (e) {
+      debugPrint('[AppointmentRepository] getAppointments DioException: ${e.type} - ${e.message}');
+      return [];
+    } catch (e) {
+      debugPrint('[AppointmentRepository] getAppointments error: $e');
+      return [];
+    }
   }
 
   Future<AppointmentModel?> getAppointmentById(String id) async {
@@ -104,22 +117,30 @@ class AppointmentRepository {
 
   Future<bool> acceptAppointment(String id) async {
     try {
+      debugPrint('[AppointmentRepository] acceptAppointment id=$id');
       final response = await _api.client.put('/api/appointments/$id/accept');
+      debugPrint('[AppointmentRepository] acceptAppointment response status=${response.statusCode}, data=${response.data}');
       return response.statusCode == 200;
-    } on DioException {
+    } on DioException catch (e) {
+      debugPrint('[AppointmentRepository] acceptAppointment DioException: ${e.type} - ${e.message} - ${e.response?.statusCode} - ${e.response?.data}');
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AppointmentRepository] acceptAppointment error: $e');
       return false;
     }
   }
 
   Future<bool> declineAppointment(String id) async {
     try {
+      debugPrint('[AppointmentRepository] declineAppointment id=$id');
       final response = await _api.client.put('/api/appointments/$id/decline');
+      debugPrint('[AppointmentRepository] declineAppointment response status=${response.statusCode}, data=${response.data}');
       return response.statusCode == 200;
-    } on DioException {
+    } on DioException catch (e) {
+      debugPrint('[AppointmentRepository] declineAppointment DioException: ${e.type} - ${e.message} - ${e.response?.statusCode} - ${e.response?.data}');
       return false;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AppointmentRepository] declineAppointment error: $e');
       return false;
     }
   }
