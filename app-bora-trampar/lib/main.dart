@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:app_bora_trampar/bora_trampar_app.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -32,15 +33,26 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   final localNotifications = FlutterLocalNotificationsPlugin();
 
-  const androidChannel = AndroidNotificationChannel(
+  const standardChannel = AndroidNotificationChannel(
     'high_importance_channel',
     'Notificacoes Importantes',
     importance: Importance.high,
   );
 
-  await localNotifications
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(androidChannel);
+  const urgentChannel = AndroidNotificationChannel(
+    'appointment_requests_channel',
+    'Chamados de Serviços',
+    description: 'Notificações de novos serviços estilo corrida',
+    importance: Importance.max,
+    sound: RawResourceAndroidNotificationSound('bora_trampar'),
+    playSound: true,
+    enableVibration: true,
+  );
+
+  final androidPlugin = localNotifications
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.createNotificationChannel(standardChannel);
+  await androidPlugin?.createNotificationChannel(urgentChannel);
 
   await localNotifications.initialize(
     settings: const InitializationSettings(
@@ -50,13 +62,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     onDidReceiveBackgroundNotificationResponse: onNotificationActionBackground,
   );
 
-  final androidDetails = AndroidNotificationDetails(
-    'high_importance_channel',
-    'Notificacoes Importantes',
-    importance: Importance.high,
-    priority: Priority.high,
-    actions: isNewAppointmentRequest
-        ? const <AndroidNotificationAction>[
+  final androidDetails = isNewAppointmentRequest
+      ? AndroidNotificationDetails(
+          'appointment_requests_channel',
+          'Chamados de Serviços',
+          channelDescription: 'Notificações de novos serviços estilo corrida',
+          importance: Importance.max,
+          priority: Priority.max,
+          sound: const RawResourceAndroidNotificationSound('bora_trampar'),
+          playSound: true,
+          enableVibration: true,
+          vibrationPattern: Int64List.fromList([0, 1000, 500, 1000, 500, 1000]),
+          audioAttributesUsage: AudioAttributesUsage.alarm,
+          category: AndroidNotificationCategory.call,
+          fullScreenIntent: true,
+          actions: const <AndroidNotificationAction>[
             AndroidNotificationAction(
               'decline_appointment',
               'Recusar',
@@ -69,9 +89,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
               cancelNotification: true,
               showsUserInterface: false,
             ),
-          ]
-        : null,
-  );
+          ],
+        )
+      : const AndroidNotificationDetails(
+          'high_importance_channel',
+          'Notificacoes Importantes',
+          importance: Importance.high,
+          priority: Priority.high,
+        );
 
   await localNotifications.show(
     id: message.hashCode,

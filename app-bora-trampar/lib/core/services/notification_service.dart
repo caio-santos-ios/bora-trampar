@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/app_colors.dart';
@@ -20,6 +23,8 @@ class NotificationService {
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final _notificationRepo = NotificationRepository();
   final _appointmentRepo = AppointmentRepository();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Timer? _vibrationTimer;
   OverlayEntry? _currentBannerEntry;
 
   Future<void> init() async {
@@ -30,15 +35,26 @@ class NotificationService {
         sound: true,
       );
 
-      const androidChannel = AndroidNotificationChannel(
+      const standardChannel = AndroidNotificationChannel(
         'high_importance_channel',
-        'NotificaÃ§Ãµes Importantes',
+        'Notificações Importantes',
         importance: Importance.high,
       );
 
-      await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.createNotificationChannel(androidChannel);
+      const urgentChannel = AndroidNotificationChannel(
+        'appointment_requests_channel',
+        'Chamados de Serviços',
+        description: 'Notificações de novos serviços estilo corrida',
+        importance: Importance.max,
+        sound: RawResourceAndroidNotificationSound('bora_trampar'),
+        playSound: true,
+        enableVibration: true,
+      );
+
+      final androidPlugin = _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(standardChannel);
+      await androidPlugin?.createNotificationChannel(urgentChannel);
 
       await _localNotifications.initialize(
         settings: const InitializationSettings(
@@ -113,6 +129,31 @@ class NotificationService {
     }
   }
 
+  Future<void> _playRideAlert() async {
+    try {
+      await _stopRideAlert();
+      HapticFeedback.heavyImpact();
+      _vibrationTimer = Timer.periodic(const Duration(milliseconds: 1500), (_) {
+        HapticFeedback.heavyImpact();
+      });
+
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.play(AssetSource('audio/bora_trampar.mp3'), volume: 1.0);
+    } catch (e) {
+      debugPrint('[NotificationService] Erro ao tocar som do chamado: $e');
+    }
+  }
+
+  Future<void> _stopRideAlert() async {
+    try {
+      _vibrationTimer?.cancel();
+      _vibrationTimer = null;
+      await _audioPlayer.stop();
+    } catch (e) {
+      debugPrint('[NotificationService] Erro ao parar som do chamado: $e');
+    }
+  }
+
   void _showInAppAppointmentBanner({
     required String appointmentId,
     required String title,
@@ -121,8 +162,11 @@ class NotificationService {
     final overlayState = navigatorKey.currentState?.overlay;
     if (overlayState == null) return;
 
+    _stopRideAlert();
     _currentBannerEntry?.remove();
     _currentBannerEntry = null;
+
+    _playRideAlert();
 
     late OverlayEntry entry;
     bool isProcessing = false;
@@ -180,6 +224,7 @@ class NotificationService {
                           if (!isProcessing)
                             GestureDetector(
                               onTap: () {
+                                _stopRideAlert();
                                 entry.remove();
                                 if (_currentBannerEntry == entry) {
                                   _currentBannerEntry = null;
@@ -211,6 +256,7 @@ class NotificationService {
                               onPressed: isProcessing
                                   ? null
                                   : () async {
+                                      _stopRideAlert();
                                       setModalState(() {
                                         isProcessing = true;
                                         loadingAction = 'decline';
@@ -251,6 +297,7 @@ class NotificationService {
                               onPressed: isProcessing
                                   ? null
                                   : () async {
+                                      _stopRideAlert();
                                       setModalState(() {
                                         isProcessing = true;
                                         loadingAction = 'accept';
@@ -304,6 +351,7 @@ class NotificationService {
 
     Future.delayed(const Duration(seconds: 30), () {
       if (_currentBannerEntry == entry) {
+        _stopRideAlert();
         entry.remove();
         _currentBannerEntry = null;
       }

@@ -61,6 +61,9 @@ namespace api_bora_trampar.src.Works
                         continue;
                     }
 
+                    bool isNewAppointment = (notification.Action == "new_appointment_request") ||
+                                            (notification.Title?.Contains("Novo Agendamento", StringComparison.OrdinalIgnoreCase) ?? false);
+
                     if (FirebaseAdmin.FirebaseApp.DefaultInstance != null)
                     {
                         var message = new Message
@@ -88,15 +91,15 @@ namespace api_bora_trampar.src.Works
                                 {
                                     Title = notification.Title ?? "",
                                     Body = notification.Message ?? "",
-                                    ChannelId = "high_importance_channel",
-                                    Sound = "default"
+                                    ChannelId = isNewAppointment ? "appointment_requests_channel" : "high_importance_channel",
+                                    Sound = isNewAppointment ? "bora_trampar" : "default"
                                 }
                             },
                             Apns = new ApnsConfig
                             {
                                 Aps = new Aps
                                 {
-                                    Sound = "default",
+                                    Sound = isNewAppointment ? "bora_trampar.mp3" : "default",
                                     ContentAvailable = true
                                 }
                             }

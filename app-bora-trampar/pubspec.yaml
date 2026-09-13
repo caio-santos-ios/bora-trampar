@@ -29,6 +29,7 @@ dependencies:
   signalr_netcore: ^1.4.4
   moment_dart: ^5.3.4
   font_awesome_flutter: ^11.0.0
+  audioplayers: 6.1.2
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +41,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/audio/
 
 flutter_launcher_icons:
   android: true
