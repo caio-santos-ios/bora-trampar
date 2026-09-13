@@ -8,18 +8,34 @@ import { api } from '../../services/api';
 
 import { AVAILABLE_FONT_AWESOME_ICONS, ICON_CATEGORIES, IconOption } from '../../constants/fontawesome-icons';
 
+export const VEHICLE_TYPES = [
+  'Moto',
+  'Carro',
+  'Fiorino',
+  'Saveiro',
+  'Strada',
+  'Utilitário',
+  'Van',
+  'Caminhão 3/4',
+  'Caminhão Toco',
+  'Caminhão Truck',
+  'Outro'
+];
+
 export interface ServiceItem {
   id: string;
   name: string;
   categoryId: string;
   categoryName?: string;
   icon: string;
+  vehicleType?: string;
   createdAt?: string;
 }
 
 export interface CategoryRef {
   id: string;
   name: string;
+  isFreight?: boolean;
 }
 
 @Component({
@@ -39,11 +55,14 @@ export class Services implements OnInit {
   isDeleteModalOpen = false;
   modalMode: 'create' | 'edit' = 'create';
 
+  vehicleTypes = VEHICLE_TYPES;
+
   formData: ServiceItem = {
     id: '',
     name: '',
     categoryId: '',
-    icon: 'fa-briefcase'
+    icon: 'fa-briefcase',
+    vehicleType: ''
   };
 
   serviceToDelete: ServiceItem | null = null;
@@ -99,7 +118,8 @@ export class Services implements OnInit {
           : (Array.isArray(catData?.data) ? catData.data : []);
         this.categoriesList = catList.map((c: any) => ({
           id: c.id || c._id,
-          name: c.name
+          name: c.name,
+          isFreight: c.isFreight === true || c.is_freight === true
         }));
       } else {
         this.categoriesList = [];
@@ -116,6 +136,7 @@ export class Services implements OnInit {
             categoryId: s.categoryId,
             categoryName: cat?.name || 'Geral',
             icon: s.icon || 'fa-briefcase',
+            vehicleType: s.vehicleType || s.vehicle_type || '',
             createdAt: s.createdAt || s.created_at || new Date().toISOString()
           };
         });
@@ -195,6 +216,11 @@ export class Services implements OnInit {
     return cat ? cat.name : 'Categoria Geral';
   }
 
+  get isCurrentCategoryFreight(): boolean {
+    const cat = this.categoriesList.find(c => c.id === this.formData.categoryId);
+    return cat ? !!cat.isFreight : false;
+  }
+
   openCreateModal() {
     if (this.categoriesList.length === 0) {
       this.toastr.warning('Cadastre ao menos uma categoria antes de adicionar serviços.');
@@ -204,7 +230,8 @@ export class Services implements OnInit {
       id: '',
       name: '',
       categoryId: this.categoriesList[0]?.id || '',
-      icon: 'fa-briefcase'
+      icon: 'fa-briefcase',
+      vehicleType: ''
     };
     this.iconSearchTerm = '';
     this.selectedIconCategory = 'Todas';
@@ -213,7 +240,10 @@ export class Services implements OnInit {
 
   openEditModal(item: ServiceItem) {
     this.modalMode = 'edit';
-    this.formData = { ...item };
+    this.formData = {
+      ...item,
+      vehicleType: item.vehicleType || ''
+    };
     this.iconSearchTerm = '';
     this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
@@ -229,25 +259,34 @@ export class Services implements OnInit {
       return;
     }
 
+    if (this.isCurrentCategoryFreight && !this.formData.vehicleType) {
+      this.toastr.warning('O Tipo de Veículo é obrigatório para categorias de frete.');
+      return;
+    }
+
     this.isSaving = true;
     this.cdr.detectChanges();
 
     try {
+      const vehicleVal = this.isCurrentCategoryFreight ? this.formData.vehicleType : (this.formData.vehicleType || null);
+
       if (this.modalMode === 'create') {
-        const payload = {
+        const payload: any = {
           name: this.formData.name,
           categoryId: this.formData.categoryId,
-          icon: this.formData.icon
+          icon: this.formData.icon,
+          vehicleType: vehicleVal
         };
 
         await api.post('/api/services', payload);
         this.toastr.success('Serviço cadastrado com sucesso!');
       } else {
-        const payload = {
+        const payload: any = {
           id: this.formData.id,
           name: this.formData.name,
           categoryId: this.formData.categoryId,
-          icon: this.formData.icon
+          icon: this.formData.icon,
+          vehicleType: vehicleVal
         };
 
         await api.put('/api/services', payload);
@@ -256,8 +295,9 @@ export class Services implements OnInit {
 
       this.closeModal();
       await this.loadData();
-    } catch {
-      this.toastr.error('Erro ao salvar serviço.');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Erro ao salvar serviço.';
+      this.toastr.error(msg);
     } finally {
       this.isSaving = false;
       this.cdr.detectChanges();

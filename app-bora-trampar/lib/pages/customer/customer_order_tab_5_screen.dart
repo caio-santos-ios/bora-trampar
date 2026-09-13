@@ -248,7 +248,7 @@ class _CustomerOrderTab5ScreenState extends State<CustomerOrderTab5Screen> {
           ).format(widget.orderRequest.scheduledDate!)
         : 'Hoje, ${DateFormat("dd 'de' MMMM 'de' yyyy", 'pt_BR').format(DateTime.now())}';
 
-    final servicePrice = widget.orderRequest.servicePrice;
+    // final servicePrice = widget.orderRequest.servicePrice;
     final creditApplied = widget.orderRequest.creditApplied;
     final amountToPay = widget.orderRequest.amountToPay;
     final remainingCredit = widget.orderRequest.remainingCredit;

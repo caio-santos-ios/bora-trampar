@@ -13,7 +13,7 @@ namespace api_bora_trampar.src.Services
 {
     public class AppointmentService(
         IAppointmentRepository repository,
-        IUserRepository userRepository, IUserService userService, INotificationService notificationService, IPaymentService paymentService, IHubContext<AppointmentHub> hub) : IAppointmentService
+        IUserRepository userRepository, IUserService userService, INotificationService notificationService, IPaymentService paymentService, ISettingsService settingsService, IHubContext<AppointmentHub> hub) : IAppointmentService
     {
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync(GetAllRequest request)
         {
@@ -199,6 +199,12 @@ namespace api_bora_trampar.src.Services
 
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
+                ResponseApi<PlatformSettings> platformSettings = await settingsService.GetAsync();
+
+                decimal percent = platformSettings.Data is not null ? platformSettings.Data.PlatformFeePercentage : 10;
+                decimal value = entity.TotalPrice * percent / 100;
+                entity.PlatformValue = value;
+
                 Appointment? appointment = await repository.CreateAsync(entity);
                 if (appointment is null) return new(null, 400, "Falha ao criar agendamento");
 
@@ -227,7 +233,6 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
-
 
         public async Task<ResponseApi<Appointment?>> UpdateAsync(UpdateAppointmentRequest request)
         {
@@ -400,6 +405,9 @@ namespace api_bora_trampar.src.Services
 
                 if (appointment.Status == "Finish")
                 {
+
+
+
                     await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
                     await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
 

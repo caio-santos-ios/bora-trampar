@@ -12,5 +12,8 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("icon")]
         public string Icon { get; set; } = string.Empty;
+
+        [BsonElement("vehicle_type")]
+        public string? VehicleType { get; set; }
     }
 }

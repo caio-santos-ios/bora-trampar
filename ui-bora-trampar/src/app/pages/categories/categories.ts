@@ -13,6 +13,7 @@ export interface CategoryItem {
   name: string;
   icon: string;
   description?: string;
+  isFreight?: boolean;
   servicesCount?: number;
   createdAt?: string;
 }
@@ -44,7 +45,8 @@ export class Categories implements OnInit {
     id: '',
     name: '',
     icon: 'fa-hammer',
-    description: ''
+    description: '',
+    isFreight: false
   };
 
   categoryToDelete: CategoryItem | null = null;
@@ -129,6 +131,7 @@ export class Categories implements OnInit {
         name: cat.name,
         icon: cat.icon || 'fa-layer-group',
         description: cat.description || '',
+        isFreight: cat.isFreight === true || cat.is_freight === true,
         servicesCount: cat.servicesCount || 0,
         createdAt: cat.createdAt || cat.created_at || new Date().toISOString()
       }));
@@ -206,7 +209,8 @@ export class Categories implements OnInit {
       id: '',
       name: '',
       icon: 'fa-hammer',
-      description: ''
+      description: '',
+      isFreight: false
     };
     this.iconSearchTerm = '';
     this.selectedIconCategory = 'Todas';
@@ -215,7 +219,10 @@ export class Categories implements OnInit {
 
   openEditModal(item: CategoryItem) {
     this.modalMode = 'edit';
-    this.formData = { ...item };
+    this.formData = {
+      ...item,
+      isFreight: item.isFreight ?? false
+    };
     this.iconSearchTerm = '';
     this.selectedIconCategory = 'Todas';
     this.isModalOpen = true;
@@ -239,7 +246,8 @@ export class Categories implements OnInit {
         const payload = {
           name: this.formData.name,
           icon: this.formData.icon,
-          description: this.formData.description
+          description: this.formData.description,
+          isFreight: this.formData.isFreight ?? false
         };
 
         await api.post('/api/categories', payload);
@@ -249,7 +257,8 @@ export class Categories implements OnInit {
           id: this.formData.id,
           name: this.formData.name,
           icon: this.formData.icon,
-          description: this.formData.description
+          description: this.formData.description,
+          isFreight: this.formData.isFreight ?? false
         };
 
         await api.put('/api/categories', payload);

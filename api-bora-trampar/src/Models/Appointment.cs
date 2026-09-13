@@ -50,6 +50,9 @@ namespace api_bora_trampar.src.Models
         [BsonElement("total_price")]
         public decimal TotalPrice { get; set; }
 
+        [BsonElement("platform_value")]
+        public decimal PlatformValue { get; set; }
+
         [BsonElement("asaas_payment_id")]
         public string AsaasPaymentId { get; set; } = string.Empty;
     }
