@@ -56,7 +56,12 @@
                 <i class="fa-solid" [ngClass]="item.icon"></i>
               </div>
             </td>
-            <td><strong class="cat-name">{{ item.name }}</strong></td>
+            <td>
+              <strong class="cat-name">{{ item.name }}</strong>
+              <span class="badge-freight" *ngIf="item.isFreight" title="Categoria de Frete/Transporte">
+                <i class="fa-solid fa-truck"></i> Frete
+              </span>
+            </td>
             <td><span class="desc-text">{{ item.description || '-' }}</span></td>
             <td><span class="count-badge">{{ item.servicesCount || 0 }} serviços</span></td>
             <td>{{ global.formatDate(item.createdAt || '') }}</td>
@@ -87,6 +92,9 @@
               <i class="fa-solid" [ngClass]="item.icon"></i>
             </div>
             <strong>{{ item.name }}</strong>
+            <span class="badge-freight sm" *ngIf="item.isFreight">
+              <i class="fa-solid fa-truck"></i> Frete
+            </span>
           </div>
           <span class="count-badge">{{ item.servicesCount || 0 }} serv.</span>
         </div>
@@ -177,6 +185,22 @@
             name="name"
             required
           />
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="formData.isFreight"
+              name="isFreight"
+            />
+            <span class="checkbox-text">
+              <i class="fa-solid fa-truck"></i> Categoria de Frete / Transporte
+            </span>
+          </label>
+          <small class="form-hint">
+            Ao marcar como frete, os serviços cadastrados nesta categoria exigirão obrigatoriamente a definição do Tipo de Veículo.
+          </small>
         </div>
 
         <div class="form-group">

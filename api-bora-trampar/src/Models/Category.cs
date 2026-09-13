@@ -12,5 +12,8 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("icon")]
         public string Icon { get; set; } = string.Empty;
+
+        [BsonElement("is_freight")]
+        public bool IsFreight { get; set; } = false;
     }
 }

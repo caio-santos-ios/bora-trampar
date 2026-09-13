@@ -13,5 +13,6 @@ namespace api_bora_trampar.src.Requests
         [Display(Order = 2)]
         public string Icon { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public bool IsFreight { get; set; } = false;
     }
 }

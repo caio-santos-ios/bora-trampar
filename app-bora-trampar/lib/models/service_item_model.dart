@@ -8,6 +8,7 @@ class ServiceItemModel {
   final String icon;
   final IconData? iconData;
   final double basePrice;
+  final String? vehicleType;
 
   const ServiceItemModel({
     required this.id,
@@ -16,6 +17,7 @@ class ServiceItemModel {
     this.icon = '',
     this.iconData,
     this.basePrice = 150.0,
+    this.vehicleType,
   });
 
   factory ServiceItemModel.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class ServiceItemModel {
       icon: rawIcon,
       iconData: FontAwesomeHelper.getIcon(rawIcon, fallbackText: name),
       basePrice: (json['basePrice'] ?? json['price'] ?? 150.0).toDouble(),
+      vehicleType: json['vehicleType']?.toString() ?? json['vehicle_type']?.toString(),
     );
   }
 
