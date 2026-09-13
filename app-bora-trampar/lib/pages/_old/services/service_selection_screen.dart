@@ -55,13 +55,8 @@ class _ServiceSelectionScreenState extends State<ServiceSelectionScreen> {
 
   void _toggleService(ServiceItemModel service) {
     setState(() {
-      if (_selectedServiceIds.contains(service.id)) {
-        if (_selectedServiceIds.length > 1) {
-          _selectedServiceIds.remove(service.id);
-        }
-      } else {
-        _selectedServiceIds.add(service.id);
-      }
+      _selectedServiceIds.clear();
+      _selectedServiceIds.add(service.id);
     });
   }
 

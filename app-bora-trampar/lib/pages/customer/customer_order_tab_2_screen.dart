@@ -57,13 +57,8 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
 
   void _toggleService(ServiceItemModel service) {
     setState(() {
-      if (_selectedServiceIds.contains(service.id)) {
-        if (_selectedServiceIds.length > 1) {
-          _selectedServiceIds.remove(service.id);
-        }
-      } else {
-        _selectedServiceIds.add(service.id);
-      }
+      _selectedServiceIds.clear();
+      _selectedServiceIds.add(service.id);
     });
   }
 
@@ -143,15 +138,6 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
             children: [
               AppStepper(totalSteps: 4, currentStep: 2),
               const SizedBox(height: 12),
-              if (_isLoading) ...[
-                Expanded(
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primaryGold,
-                    ),
-                  ),
-                ),
-              ],
               ...[
                 GestureDetector(
                   onTap: () => Navigator.of(context).pop(),
@@ -212,6 +198,15 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                 ),
               ],
               const SizedBox(height: 15),
+              if (_isLoading) ...[
+                Expanded(
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                ),
+              ],
               if (!_isLoading) _buildServices(),
             ],
           ),
@@ -290,7 +285,7 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                                     )
                                     ? AppColors.primaryGold
                                     : Colors.transparent,
-                                borderRadius: BorderRadius.circular(6),
+                                shape: BoxShape.circle,
                                 border: Border.all(
                                   color:
                                       _selectedServiceIds.contains(
@@ -350,7 +345,7 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Serviços selecionados',
+                          'Serviço selecionado',
                           style: GoogleFonts.inter(
                             color: AppColors.textPrimary,
                             fontSize: 13,
@@ -358,7 +353,12 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                           ),
                         ),
                         Text(
-                          '$selectedCount serviço${selectedCount > 1 ? 's' : ''}',
+                          _services
+                              .firstWhere(
+                                (s) => _selectedServiceIds.contains(s.id),
+                                orElse: () => _services.first,
+                              )
+                              .name,
                           style: GoogleFonts.inter(
                             color: AppColors.textSecondary,
                             fontSize: 12,
