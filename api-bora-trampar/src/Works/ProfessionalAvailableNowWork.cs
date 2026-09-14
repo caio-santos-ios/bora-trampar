@@ -73,6 +73,8 @@ namespace api_bora_trampar.src.Works
                         {
                             profileProfessional.IsAvailableNow = true;
                         }
+
+                        await context.ProfileProfessionals.ReplaceOneAsync(x => x.Id.Equals(profileProfessional.Id), profileProfessional);
                     }
                 }
                 catch (Exception ex)

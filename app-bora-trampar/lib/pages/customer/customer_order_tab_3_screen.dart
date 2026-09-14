@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_4_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,6 +15,7 @@ import '../../core/widgets/bora_trampa_logo.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../models/order_request_model.dart';
 import '../../core/utils/location_helper.dart';
+import '../../repositories/address/address_repository.dart';
 
 class CustomerOrderTab3Screen extends StatefulWidget {
   final OrderRequestModel orderRequest;
@@ -19,13 +23,19 @@ class CustomerOrderTab3Screen extends StatefulWidget {
   const CustomerOrderTab3Screen({super.key, required this.orderRequest});
 
   @override
-  State<CustomerOrderTab3Screen> createState() => _CustomerOrderTab3ScreenState();
+  State<CustomerOrderTab3Screen> createState() =>
+      _CustomerOrderTab3ScreenState();
 }
 
 class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
   final TextEditingController _descController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+
+  final _addressRepository = AddressRepository();
+  List<AddressSuggestion> _addressSuggestions = [];
+  bool _isSearchingAddress = false;
+  Timer? _debounceTimer;
 
   bool _useCurrentLocation = true;
   LocationResult? _detectedLocation;
@@ -54,11 +64,54 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _descController.dispose();
     _notesController.dispose();
     _addressController.dispose();
     _timeController.dispose();
     super.dispose();
+  }
+
+  void _onAddressChanged(String value) {
+    try {
+      _debounceTimer?.cancel();
+      if (value.trim().length < 3) {
+        setState(() {
+          _addressSuggestions = [];
+          _isSearchingAddress = false;
+        });
+        return;
+      }
+      setState(() => _isSearchingAddress = true);
+      _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
+        final results = await _addressRepository.searchAddresses(value);
+
+        if (!mounted) return;
+        setState(() {
+          _addressSuggestions = results;
+          _isSearchingAddress = false;
+        });
+      });
+    } on DioException catch (err) {
+      if (mounted) UtilService.normalizeError(context, err);
+    } finally {
+      setState(() {
+        _isSearchingAddress = false;
+      });
+    }
+  }
+
+  void _selectSuggestion(AddressSuggestion s) {
+    _addressController.text = s.description;
+    FocusScope.of(context).unfocus();
+    setState(() => _addressSuggestions = []);
+
+    if (s.latitude != null && s.longitude != null) {
+      widget.orderRequest.customerLatitude = s.latitude!;
+      widget.orderRequest.customerLongitude = s.longitude!;
+    }
+    if (s.city != null) widget.orderRequest.customerCity = s.city!;
+    if (s.state != null) widget.orderRequest.customerState = s.state!;
   }
 
   Future<void> _pickPhoto() async {
@@ -87,18 +140,30 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                   ),
                   const SizedBox(height: 16),
                   ListTile(
-                    leading: const Icon(Icons.photo_library_outlined, color: AppColors.primaryGold),
+                    leading: const Icon(
+                      Icons.photo_library_outlined,
+                      color: AppColors.primaryGold,
+                    ),
                     title: Text(
                       'Galeria de Fotos',
-                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     onTap: () => Navigator.of(context).pop(ImageSource.gallery),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.camera_alt_outlined, color: AppColors.primaryGold),
+                    leading: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppColors.primaryGold,
+                    ),
                     title: Text(
                       'Tirar Foto com a Câmera',
-                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     onTap: () => Navigator.of(context).pop(ImageSource.camera),
                   ),
@@ -123,7 +188,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
           SnackBar(
             content: Text(
               'Reinicie o aplicativo para sincronizar o plugin de fotos.',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             backgroundColor: AppColors.cardElevated,
           ),
@@ -226,7 +294,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'Não foi possível obter a localização GPS. Digite seu endereço.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.cardElevated,
         ),
@@ -240,7 +311,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'Por favor, descreva o que precisa ser feito no serviço.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -253,7 +327,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'Por favor, informe o endereço onde o serviço será realizado.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -266,7 +343,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'A data do agendamento é obrigatória. Selecione uma data.',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -280,7 +360,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'O horário do agendamento é obrigatório. Informe um horário (Ex: 09:00).',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -291,7 +374,8 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
     final timeParts = rawTime.split(':');
     final hour = timeParts.isNotEmpty ? int.tryParse(timeParts[0]) : null;
     final minute = timeParts.length > 1 ? int.tryParse(timeParts[1]) : null;
-    final isValidTime = rawTime.length == 5 &&
+    final isValidTime =
+        rawTime.length == 5 &&
         timeParts.length == 2 &&
         hour != null &&
         hour >= 0 &&
@@ -305,7 +389,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
         SnackBar(
           content: Text(
             'Por favor, informe um horário válido no formato HH:mm (Ex: 09:00).',
-            style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           backgroundColor: AppColors.errorRed,
         ),
@@ -322,7 +409,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
           SnackBar(
             content: Text(
               'O horário selecionado já passou para a data de hoje. Escolha um horário futuro.',
-              style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600),
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             backgroundColor: AppColors.errorRed,
           ),
@@ -368,7 +458,8 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => CustomerOrderTab4Screen(orderRequest: widget.orderRequest),
+        builder: (context) =>
+            CustomerOrderTab4Screen(orderRequest: widget.orderRequest),
       ),
     );
   }
@@ -384,7 +475,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
@@ -402,7 +496,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                 SnackBar(
                   content: Text(
                     'Central de Ajuda Bora Trampar',
-                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.inter(
+                      color: AppColors.textDark,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   backgroundColor: AppColors.primaryGold,
                 ),
@@ -434,7 +531,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,7 +555,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                                   TextSpan(text: 'Conte mais sobre\no que '),
                                   TextSpan(
                                     text: 'você precisa',
-                                    style: TextStyle(color: AppColors.primaryGold),
+                                    style: TextStyle(
+                                      color: AppColors.primaryGold,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -473,7 +575,11 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const BoraTrampaLogo(size: 34, showSubtitle: false, isHorizontal: false),
+                      const BoraTrampaLogo(
+                        size: 34,
+                        showSubtitle: false,
+                        isHorizontal: false,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 18),
@@ -505,7 +611,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                serviceName.isNotEmpty ? serviceName : 'Serviço Selecionado',
+                                serviceName.isNotEmpty
+                                    ? serviceName
+                                    : 'Serviço Selecionado',
                                 style: GoogleFonts.inter(
                                   color: AppColors.textPrimary,
                                   fontSize: 15,
@@ -552,10 +660,16 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                         controller: _descController,
                         maxLines: 4,
                         maxLength: 500,
-                        style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Descreva o serviço que você precisa...',
-                          hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                          hintStyle: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 14,
+                          ),
                           counterText: '',
                           filled: true,
                           fillColor: AppColors.cardBackground,
@@ -567,7 +681,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                         right: 12,
                         child: Text(
                           '${_descController.text.length}/500',
-                          style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
+                          style: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ],
@@ -608,7 +725,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                                   color: AppColors.cardBackground,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppColors.primaryGold.withValues(alpha: 0.8),
+                                    color: AppColors.primaryGold.withValues(
+                                      alpha: 0.8,
+                                    ),
                                     width: 1.2,
                                   ),
                                 ),
@@ -664,7 +783,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                                     height: 90,
                                     decoration: BoxDecoration(
                                       color: AppColors.cardBackground,
-                                      border: Border.all(color: AppColors.cardBorder),
+                                      border: Border.all(
+                                        color: AppColors.cardBorder,
+                                      ),
                                     ),
                                     child: Image.file(
                                       File(_photos[i]),
@@ -702,7 +823,11 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                               ],
                             ),
                           ),
-                        for (int k = _photos.length + (_photos.length < 3 ? 1 : 0); k < 3; k++)
+                        for (
+                          int k = _photos.length + (_photos.length < 3 ? 1 : 0);
+                          k < 3;
+                          k++
+                        )
                           Padding(
                             padding: const EdgeInsets.only(right: 12),
                             child: Container(
@@ -732,12 +857,17 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                     onTap: _fetchCurrentLocation,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                          color: _useCurrentLocation
+                              ? AppColors.primaryGold
+                              : AppColors.cardBorder,
                         ),
                       ),
                       child: Row(
@@ -810,7 +940,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                                color: _useCurrentLocation
+                                    ? AppColors.primaryGold
+                                    : AppColors.cardBorder,
                                 width: 2,
                               ),
                             ),
@@ -836,12 +968,17 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                     onTap: () => setState(() => _useCurrentLocation = false),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                          color: !_useCurrentLocation
+                              ? AppColors.primaryGold
+                              : AppColors.cardBorder,
                         ),
                       ),
                       child: Row(
@@ -880,7 +1017,9 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: !_useCurrentLocation ? AppColors.primaryGold : AppColors.cardBorder,
+                                color: !_useCurrentLocation
+                                    ? AppColors.primaryGold
+                                    : AppColors.cardBorder,
                                 width: 2,
                               ),
                             ),
@@ -905,14 +1044,182 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                     const SizedBox(height: 10),
                     TextField(
                       controller: _addressController,
-                      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                      autofocus: false,
+                      style: GoogleFonts.inter(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
                       decoration: InputDecoration(
-                        hintText: 'Rua, número, bairro e cidade...',
-                        hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                        hintText: 'Digite o endereço ou local...',
+                        hintStyle: GoogleFonts.inter(
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                        ),
                         filled: true,
                         fillColor: AppColors.cardBackground,
+                        prefixIcon: const Icon(
+                          Icons.search_rounded,
+                          color: AppColors.primaryGold,
+                          size: 20,
+                        ),
+                        suffixIcon: _isSearchingAddress
+                            ? const Padding(
+                                padding: EdgeInsets.all(14),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryGold,
+                                  ),
+                                ),
+                              )
+                            : _addressController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: AppColors.textMuted,
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  _addressController.clear();
+                                  setState(() => _addressSuggestions = []);
+                                },
+                              )
+                            : null,
                       ),
+                      onChanged: _onAddressChanged,
                     ),
+                    if (_isSearchingAddress) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                color: AppColors.primaryGold,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Buscando endereços...',
+                              style: GoogleFonts.inter(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (_addressSuggestions.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.cardElevated,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: AppColors.primaryGold.withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (
+                                int i = 0;
+                                i < _addressSuggestions.length;
+                                i++
+                              ) ...[
+                                if (i > 0)
+                                  const Divider(
+                                    height: 1,
+                                    thickness: 1,
+                                    color: AppColors.cardBorder,
+                                  ),
+                                InkWell(
+                                  onTap: () =>
+                                      _selectSuggestion(_addressSuggestions[i]),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 2),
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryGold
+                                                .withValues(alpha: 0.15),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.location_on_rounded,
+                                            color: AppColors.primaryGold,
+                                            size: 16,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _addressSuggestions[i].title,
+                                                style: GoogleFonts.inter(
+                                                  color: AppColors.textPrimary,
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                _addressSuggestions[i]
+                                                    .description,
+                                                style: GoogleFonts.inter(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                  fontSize: 12,
+                                                  height: 1.3,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.north_west_rounded,
+                                          color: AppColors.textMuted,
+                                          size: 14,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 24),
                   Row(
@@ -948,13 +1255,18 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                               onTap: _pickDate,
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 14,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.cardBackground,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: _selectedDate != null
-                                        ? AppColors.primaryGold.withValues(alpha: 0.6)
+                                        ? AppColors.primaryGold.withValues(
+                                            alpha: 0.6,
+                                          )
                                         : AppColors.cardBorder,
                                   ),
                                 ),
@@ -1029,18 +1341,31 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                                 FilteringTextInputFormatter.digitsOnly,
                                 HoraInputFormatter(),
                               ],
-                              style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 13),
+                              style: GoogleFonts.inter(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
+                              ),
                               decoration: InputDecoration(
                                 hintText: '09:00',
-                                hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13),
+                                hintStyle: GoogleFonts.inter(
+                                  color: AppColors.textMuted,
+                                  fontSize: 13,
+                                ),
                                 prefixIcon: IconButton(
-                                  icon: const Icon(Icons.access_time_rounded, color: AppColors.primaryGold, size: 18),
+                                  icon: const Icon(
+                                    Icons.access_time_rounded,
+                                    color: AppColors.primaryGold,
+                                    size: 18,
+                                  ),
                                   onPressed: _pickTime,
                                   tooltip: 'Selecionar horário',
                                 ),
                                 filled: true,
                                 fillColor: AppColors.cardBackground,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -1064,10 +1389,16 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                         controller: _notesController,
                         maxLines: 3,
                         maxLength: 300,
-                        style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontSize: 14,
+                        ),
                         decoration: InputDecoration(
                           hintText: 'Alguma informação importante?',
-                          hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
+                          hintStyle: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 14,
+                          ),
                           counterText: '',
                           filled: true,
                           fillColor: AppColors.cardBackground,
@@ -1079,7 +1410,10 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                         right: 12,
                         child: Text(
                           '${_notesController.text.length}/300',
-                          style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 11),
+                          style: GoogleFonts.inter(
+                            color: AppColors.textMuted,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ],

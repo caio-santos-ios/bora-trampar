@@ -96,4 +96,53 @@ class AddressRepository {
     }
     return null;
   }
+
+  Future<List<AddressSuggestion>> searchAddresses(String query) async {
+    if (query.trim().length < 3) return [];
+    final response = await _api.client.get(
+      '/api/addresses/search',
+      queryParameters: {'q': query},
+    );
+
+    return response.statusCode == 200 ? (response.data["result"]["data"] as List).map((e) => AddressSuggestion.fromJson(e)).toList() : [];
+  }
 }
+
+class AddressSuggestion {
+  final String title;
+  final String description;
+  final double? latitude;
+  final double? longitude;
+  final String? city;
+  final String? state;
+
+  AddressSuggestion({
+    required this.title,
+    required this.description,
+    this.latitude,
+    this.longitude,
+    this.city,
+    this.state,
+  });
+
+  factory AddressSuggestion.fromJson(Map<String, dynamic> json) {
+    final title = (json['address'] ?? json['name'] ?? '').toString();
+    final full = (json['fullAddress'] ?? json['description'] ?? json['formattedAddress'] ?? title).toString();
+
+    double? parseCoord(dynamic val) {
+      if (val == null) return null;
+      if (val is num) return val.toDouble();
+      return double.tryParse(val.toString());
+    }
+
+    return AddressSuggestion(
+      title: title.isNotEmpty ? title : full,
+      description: full.isNotEmpty ? full : title,
+      latitude: parseCoord(json['lat'] ?? json['latitude']),
+      longitude: parseCoord(json['lon'] ?? json['lng'] ?? json['longitude']),
+      city: json['city']?.toString(),
+      state: json['state']?.toString(),
+    );
+  }
+}
+

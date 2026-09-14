@@ -102,15 +102,35 @@ namespace api_bora_trampar.src.Services
 
                     foreach (var item in results)
                     {
-                        JsonElement address = item.GetProperty("address");
+                        var addressElem = item.TryGetProperty("address", out var addrProp) ? addrProp : default;
+
+                        string road = addressElem.ValueKind != JsonValueKind.Undefined && addressElem.TryGetProperty("road", out var r) ? r.GetString() ?? "" : "";
+                        string suburb = addressElem.ValueKind != JsonValueKind.Undefined && (addressElem.TryGetProperty("suburb", out var sub) || addressElem.TryGetProperty("neighbourhood", out sub)) ? sub.GetString() ?? "" : "";
+                        string city = addressElem.ValueKind != JsonValueKind.Undefined && (addressElem.TryGetProperty("city", out var c) || addressElem.TryGetProperty("town", out c) || addressElem.TryGetProperty("municipality", out c)) ? c.GetString() ?? "" : "";
+                        string state = addressElem.ValueKind != JsonValueKind.Undefined && addressElem.TryGetProperty("state", out var s) ? s.GetString() ?? "" : "";
+                        string postcode = addressElem.ValueKind != JsonValueKind.Undefined && addressElem.TryGetProperty("postcode", out var pc) ? pc.GetString() ?? "" : "";
+                        
+                        string displayName = item.TryGetProperty("display_name", out var dn) ? dn.GetString() ?? "" : "";
+                        string name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
+
+                        var parts = new List<string>();
+                        if (!string.IsNullOrWhiteSpace(road)) parts.Add(road);
+                        if (!string.IsNullOrWhiteSpace(suburb)) parts.Add(suburb);
+                        if (!string.IsNullOrWhiteSpace(city)) parts.Add(city);
+                        if (!string.IsNullOrWhiteSpace(state)) parts.Add(state);
+                        if (!string.IsNullOrWhiteSpace(postcode)) parts.Add(postcode);
+
+                        string fullAddress = parts.Count > 0 ? string.Join(", ", parts) : displayName;
 
                         addresses.Add(new
                         {
-                            addressId = item.GetProperty("osm_id").GetInt64(),
-                            address = item.GetProperty("name").GetString(),
-                            fullAddress = $"{address.GetProperty("road")}, {address.GetProperty("suburb")}, {address.GetProperty("city")}, {address.GetProperty("postcode")}",
-                            lat = item.GetProperty("lat").GetString(),
-                            lon = item.GetProperty("lon").GetString(),
+                            addressId = item.TryGetProperty("osm_id", out var osmId) ? osmId.GetInt64() : 0,
+                            address = !string.IsNullOrWhiteSpace(name) ? name : (parts.Count > 0 ? parts[0] : fullAddress),
+                            fullAddress = fullAddress,
+                            lat = item.TryGetProperty("lat", out var latProp) ? latProp.GetString() : null,
+                            lon = item.TryGetProperty("lon", out var lonProp) ? lonProp.GetString() : null,
+                            city = city,
+                            state = state
                         });
                     }
                 }

@@ -47,7 +47,8 @@ namespace api_bora_trampar.src.Works
             {
                 try
                 {
-                    System.Console.WriteLine(appointment.Status);
+                    appointment.Status = "Finish";
+                    await context.Appointments.ReplaceOneAsync(x => x.Id.Equals(appointment), appointment);
                 }
                 catch (Exception ex)
                 {
