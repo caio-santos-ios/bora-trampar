@@ -21,6 +21,7 @@ export const ICON_CATEGORIES = [
   'Fretes & Mudanças',
   'Tecnologia & TI',
   'Cuidados & Saúde',
+  'Cozinha & Gastronomia',
   'Eventos & Gerais'
 ];
 
@@ -139,6 +140,26 @@ export const AVAILABLE_FONT_AWESOME_ICONS: IconOption[] = [
   { label: 'Banho & Tosa / Pets', value: 'fa-paw', category: 'Cuidados & Saúde', keywords: 'pet pata cachorro gato animal tosa banho passeador' },
   { label: 'Adestrador / Cães', value: 'fa-dog', category: 'Cuidados & Saúde', keywords: 'cachorro cao dog pet adestramento passear hotelzinho' },
   { label: 'Cuidados com Gatos', value: 'fa-cat', category: 'Cuidados & Saúde', keywords: 'gato felino pet sitter hotel cuidados' },
+
+  // Cozinha & Gastronomia
+  { label: 'Utensílios / Talheres', value: 'fa-utensils', category: 'Cozinha & Gastronomia', keywords: 'talheres garfo faca cozinha restaurante refeicao comida culinaria chef' },
+  { label: 'Kit de Cozinha', value: 'fa-kitchen-set', category: 'Cozinha & Gastronomia', keywords: 'cozinha kit utensilio panela espatula fogao gastronomia cook' },
+  { label: 'Liquidificador', value: 'fa-blender', category: 'Cozinha & Gastronomia', keywords: 'liquidificador mixer batedeira vitamina suco batida' },
+  { label: 'Fogão / Queimador', value: 'fa-fire-burner', category: 'Cozinha & Gastronomia', keywords: 'fogao queimador gas fogo cozinhar chama culinaria' },
+  { label: 'Prato / Bowl', value: 'fa-bowl-food', category: 'Cozinha & Gastronomia', keywords: 'prato bowl refeicao comida almoco jantar sopa' },
+  { label: 'Arroz / Bowl Oriental', value: 'fa-bowl-rice', category: 'Cozinha & Gastronomia', keywords: 'arroz bowl oriental japonesa sopa caldo' },
+  { label: 'Ovos / Café da Manhã', value: 'fa-egg', category: 'Cozinha & Gastronomia', keywords: 'ovo frigideira cafe manha omelete mexido estrelado' },
+  { label: 'Café / Bebida Quente', value: 'fa-mug-hot', category: 'Cozinha & Gastronomia', keywords: 'cafe cha chocolate quente caneca xicara bebida' },
+  { label: 'Vinho / Bebidas', value: 'fa-wine-glass', category: 'Cozinha & Gastronomia', keywords: 'vinho taca bebida alcoolica sommelier bar restaurante' },
+  { label: 'Pimenta / Condimentos', value: 'fa-pepper-hot', category: 'Cozinha & Gastronomia', keywords: 'pimenta condimento tempero picante especiaria culinaria' },
+  { label: 'Confeitaria / Cookies', value: 'fa-cookie', category: 'Cozinha & Gastronomia', keywords: 'biscoito cookie confeitaria doce sobremesa padaria' },
+  { label: 'Queijos & Frios', value: 'fa-cheese', category: 'Cozinha & Gastronomia', keywords: 'queijo frios charcutaria laticinios tabua mesa posta' },
+  { label: 'Pizza / Massas', value: 'fa-pizza-slice', category: 'Cozinha & Gastronomia', keywords: 'pizza massa fatia italiana pizzaiolo forno' },
+  { label: 'Hambúrguer / Lanches', value: 'fa-burger', category: 'Cozinha & Gastronomia', keywords: 'hamburguer lanche fast food burguer artesanal' },
+  { label: 'Frutos do Mar', value: 'fa-fish', category: 'Cozinha & Gastronomia', keywords: 'peixe frutos mar salmao atum marisco camarao culinaria' },
+  { label: 'Trigo / Padaria', value: 'fa-wheat-awn', category: 'Cozinha & Gastronomia', keywords: 'trigo padaria farinha pao bolo fermento cereal' },
+  { label: 'Frutas / Cítricos', value: 'fa-lemon', category: 'Cozinha & Gastronomia', keywords: 'limao citrico fruta vitamina sucos detox natural' },
+  { label: 'Verduras / Orgânicos', value: 'fa-carrot', category: 'Cozinha & Gastronomia', keywords: 'cenoura legume verdura organico salada vegano saudavel' },
 
   // Eventos & Gerais
   { label: 'Barman & Garçom', value: 'fa-champagne-glasses', category: 'Eventos & Gerais', keywords: 'tacas brinde festa evento garcom barman coquetel' },
