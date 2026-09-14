@@ -85,8 +85,6 @@ namespace api_bora_trampar.src.Services
             {
                 DailyWord? dailyWord = await repository.GetTodayAsync(audience);
                 if (dailyWord is null) return new(null, 200, "Nenhuma palavra do dia ativa encontrada para o momento");
-                System.Console.WriteLine(dailyWord.Title);
-                System.Console.WriteLine(dailyWord.Message);
 
                 return new(dailyWord, 200, "Palavra do dia de hoje obtida com sucesso");
             }

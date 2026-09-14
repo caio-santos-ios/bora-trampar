@@ -88,10 +88,12 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
             _status = TrackingStatus.declined;
           });
         } else if (status == "StartService") {
+          _countdownTimer?.cancel();
           setState(() {
             _status = TrackingStatus.startService;
           });
         } else if (status == "FinishProfessional") {
+          _countdownTimer?.cancel();
           setState(() {
             _status = TrackingStatus.finish;
           });
@@ -665,7 +667,7 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
       );
     }
 
-    if (!_isToday) {
+    if (!_isToday && _status == TrackingStatus.waiting) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
@@ -697,33 +699,39 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E190E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.bolt_rounded,
-            color: AppColors.primaryGold,
-            size: 20,
+    if (_status == TrackingStatus.waiting) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E190E),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: AppColors.primaryGold.withValues(alpha: 0.3),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Assim que o profissional aceitar, seu pedido será confirmado imediatamente.',
-              style: GoogleFonts.inter(
-                color: AppColors.textPrimary,
-                fontSize: 12,
+        ),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.bolt_rounded,
+              color: AppColors.primaryGold,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Assim que o profissional aceitar, seu pedido será confirmado imediatamente.',
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
+
+    return Container();
   }
 
   Widget _buildTimelineStepper() {
@@ -1032,7 +1040,9 @@ class _CustomerOrderTab7ScreenState extends State<CustomerOrderTab7Screen> {
   }
 
   Widget _buildBottomActionBar() {
-    if (_status == TrackingStatus.accepted || _status == TrackingStatus.startService || _status == TrackingStatus.finish) {
+    if (_status == TrackingStatus.accepted ||
+        _status == TrackingStatus.startService ||
+        _status == TrackingStatus.finish) {
       return Container(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
         decoration: const BoxDecoration(

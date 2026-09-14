@@ -216,8 +216,6 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
   }
 
   Widget _buildServices() {
-    final selectedCount = _selectedServiceIds.length;
-
     return Expanded(
       child: Column(
         children: [

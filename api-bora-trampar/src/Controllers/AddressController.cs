@@ -10,11 +10,17 @@ namespace api_bora_trampar.src.Controllers
     [Route("api/addresses")]
     public class AddressController(IAddressService service) : ControllerBase
     {
-        [AllowAnonymous]
         [HttpGet("{zipCode}")]
         public async Task<IActionResult> GetByZipCode(string zipCode)
         {
             ResponseApi<dynamic?> response = await service.GetByZipCodeAsync(zipCode);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
+        
+        [HttpGet("search")]
+        public async Task<IActionResult> GetSearch([FromQuery] string q)
+        {
+            ResponseApi<List<dynamic>> response = await service.GetSearchAsync(q);
             return StatusCode(response.StatusCode, new { response.Result });
         }
     }

@@ -80,5 +80,47 @@ namespace api_bora_trampar.src.Services
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
             }
         }
+        public async Task<ResponseApi<List<dynamic>>> GetSearchAsync(string search)
+        {
+            try
+            {
+                string[] array = search.Split(" ");
+                string nominatimUrl = $"https://nominatim.openstreetmap.org/search?q={string.Join("+", array)}&format=json&limit=10&addressdetails=1&countrycodes=br";
+
+                using var nominatimRequest = new HttpRequestMessage(HttpMethod.Get, nominatimUrl);
+
+                nominatimRequest.Headers.Add("User-Agent", "SeuApp/1.0 (seuemail@exemplo.com)");
+
+                HttpResponseMessage nominatimResponse = await httpClient.SendAsync(nominatimRequest);
+
+                List<dynamic> addresses = [];
+                if (nominatimResponse.IsSuccessStatusCode)
+                {
+                    string nominatimJson = await nominatimResponse.Content.ReadAsStringAsync();
+                    using var nominatimDoc = JsonDocument.Parse(nominatimJson);
+                    List<JsonElement> results = nominatimDoc.RootElement.EnumerateArray().ToList();
+
+                    foreach (var item in results)
+                    {
+                        JsonElement address = item.GetProperty("address");
+
+                        addresses.Add(new
+                        {
+                            addressId = item.GetProperty("osm_id").GetInt64(),
+                            address = item.GetProperty("name").GetString(),
+                            fullAddress = $"{address.GetProperty("road")}, {address.GetProperty("suburb")}, {address.GetProperty("city")}, {address.GetProperty("postcode")}",
+                            lat = item.GetProperty("lat").GetString(),
+                            lon = item.GetProperty("lon").GetString(),
+                        });
+                    }
+                }
+
+                return new(addresses, 200, "Endereços listados com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
     }
 }

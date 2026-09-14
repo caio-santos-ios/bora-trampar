@@ -369,7 +369,7 @@ class ProfessionalProfileScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                professional.region,
+                                professional.publicRegion,
                                 style: GoogleFonts.inter(
                                   color: AppColors.textPrimary,
                                   fontSize: 11,

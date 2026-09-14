@@ -12,6 +12,9 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("date")]
         public DateTime Date { get; set; }
+       
+        [BsonElement("professionalFinishAt")]
+        public DateTime ProfessionalFinishAt { get; set; }
 
         [BsonElement("hour")]
         public string Hour { get; set; } = string.Empty;

@@ -389,6 +389,7 @@ namespace api_bora_trampar.src.Services
                 if (appointment.Status == "StartService")
                 {
                     appointment.Status = "FinishProfessional";
+                    appointment.ProfessionalFinishAt = DateTime.Now;
                 }
                 else
                 {
@@ -405,9 +406,6 @@ namespace api_bora_trampar.src.Services
 
                 if (appointment.Status == "Finish")
                 {
-
-
-
                     await userService.UpdateWalletBalanceAsync(appointment.ProfessionalId, appointment.TotalPrice);
                     await hub.Clients.Group($"appointment-{appointment.Id}").SendAsync("AppointmentUpdated", new { appointment.Id, status = "Finish" });
 

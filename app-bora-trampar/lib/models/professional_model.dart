@@ -22,6 +22,7 @@ class ProfessionalModel {
   final List<ProfessionalServiceItemModel> servicesList;
   final List<ReviewModel> reviews;
   final String region;
+  final int serviceRadiusKm;
   final double? distanceKm;
   final List<dynamic>? workingHours;
   final Map<String, dynamic>? address;
@@ -47,10 +48,27 @@ class ProfessionalModel {
     this.servicesList = const [],
     required this.reviews,
     this.region = '',
+    this.serviceRadiusKm = 0,
     this.distanceKm,
     this.workingHours,
     this.address,
   });
+
+  /// Região pública: sempre exibe apenas "Cidade - UF | Raio de atendimento: X km".
+  /// Nunca expõe rua, bairro ou endereço completo.
+  String get publicRegion {
+    final addr = address;
+    final city = addr?['city']?.toString() ?? '';
+    final state = addr?['state']?.toString() ?? '';
+    final radius = serviceRadiusKm > 0 ? serviceRadiusKm : (addr?['serviceRadiusKm'] as num?)?.toInt() ?? 0;
+
+    if (city.isNotEmpty && state.isNotEmpty) {
+      final base = '$city - $state';
+      return radius > 0 ? '$base | Raio: $radius km' : base;
+    }
+    // fallback: usa region mas remove rua/bairro se possível
+    return region.isNotEmpty ? region : 'Localização não informada';
+  }
 
   factory ProfessionalModel.fromJson(Map<String, dynamic> json) {
     final rawServices = json['offeredServices'] ?? json['services'];
@@ -94,8 +112,10 @@ class ProfessionalModel {
 
     String region = json['region']?.toString() ?? '';
     Map<String, dynamic>? addressMap;
+    int serviceRadiusKm = 0;
     if (json['address'] is Map) {
       addressMap = Map<String, dynamic>.from(json['address'] as Map);
+      serviceRadiusKm = (addressMap['serviceRadiusKm'] ?? addressMap['service_radius_km'] as num?)?.toInt() ?? 0;
       if (region.isEmpty) {
         final city = addressMap['city']?.toString() ?? '';
         final state = addressMap['state']?.toString() ?? '';
@@ -139,11 +159,13 @@ class ProfessionalModel {
       servicesList: servicesList,
       reviews: const [],
       region: region,
+      serviceRadiusKm: serviceRadiusKm,
       distanceKm: distanceKm,
       workingHours: json['working_hours'] is List ? json['working_hours'] as List : (json['workingHours'] is List ? json['workingHours'] as List : null),
       address: addressMap,
     );
   }
+
 
   ProfessionalModel copyWith({
     String? id,
@@ -166,6 +188,7 @@ class ProfessionalModel {
     List<ProfessionalServiceItemModel>? servicesList,
     List<ReviewModel>? reviews,
     String? region,
+    int? serviceRadiusKm,
     double? distanceKm,
     List<dynamic>? workingHours,
     Map<String, dynamic>? address,
@@ -191,9 +214,11 @@ class ProfessionalModel {
       servicesList: servicesList ?? this.servicesList,
       reviews: reviews ?? this.reviews,
       region: region ?? this.region,
+      serviceRadiusKm: serviceRadiusKm ?? this.serviceRadiusKm,
       distanceKm: distanceKm ?? this.distanceKm,
       workingHours: workingHours ?? this.workingHours,
       address: address ?? this.address,
     );
   }
 }
+

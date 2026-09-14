@@ -71,6 +71,7 @@ namespace api_bora_trampar.src.Configuration
             
             builder.Services.AddHostedService<PushNotificationWork>();
             builder.Services.AddHostedService<ProfessionalAvailableNowWork>();
+            builder.Services.AddHostedService<AppointmentFinishWork>();
         }
     }
 }

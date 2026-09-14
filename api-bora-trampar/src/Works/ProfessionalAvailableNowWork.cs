@@ -49,7 +49,7 @@ namespace api_bora_trampar.src.Works
             {
                 try
                 {
-                    if(profileProfessional.DateAvailableNowManual?.Date == now.Date) continue;
+                    if (profileProfessional.DateAvailableNowManual?.Date == now.Date) continue;
 
                     ProfessionalWorkingDay? workingDay = profileProfessional.WorkingHours.Where(x => x.DayOfWeek == GetIndexWeek(now.DayOfWeek.ToString())).FirstOrDefault();
                     if (workingDay is not null)
@@ -58,18 +58,18 @@ namespace api_bora_trampar.src.Works
                         TimeSpan endHour = TimeSpan.Parse(workingDay.EndHour);
                         TimeSpan breakStart = TimeSpan.Parse(workingDay.BreakStart);
                         TimeSpan breakEnd = TimeSpan.Parse(workingDay.BreakEnd);
-                        
-                        if(timeBrasilia >= breakStart && timeBrasilia < breakEnd)
+
+                        if (timeBrasilia >= breakStart && timeBrasilia < breakEnd)
                         {
                             profileProfessional.IsAvailableNow = false;
                         }
 
-                        if(timeBrasilia < startHour && timeBrasilia > endHour)
+                        if (timeBrasilia < startHour && timeBrasilia > endHour)
                         {
                             profileProfessional.IsAvailableNow = false;
                         }
 
-                        if((timeBrasilia >= startHour && timeBrasilia < breakStart) || (timeBrasilia >= breakEnd && timeBrasilia < endHour))
+                        if ((timeBrasilia >= startHour && timeBrasilia < breakStart) || (timeBrasilia >= breakEnd && timeBrasilia < endHour))
                         {
                             profileProfessional.IsAvailableNow = true;
                         }
@@ -87,6 +87,12 @@ namespace api_bora_trampar.src.Works
             switch (week)
             {
                 case "Saturday": return 0;
+                case "Sunday": return 1;
+                case "Monday": return 2;
+                case "Tuesday": return 3;
+                case "Wednesday": return 4;
+                case "Thursday": return 5;
+                case "Friday": return 6;
                 default: return 0;
             }
         }

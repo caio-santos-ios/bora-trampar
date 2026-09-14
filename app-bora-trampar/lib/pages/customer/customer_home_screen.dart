@@ -34,7 +34,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final _dailyWordRepo = DailyWordRepository();
 
   List<CategoryModel> _categories = [];
-  ProfileProfessionalModel? _profile;
   UserModel? _user;
   DailyWordModel? _dailyWord;
   bool _isLoading = false;
@@ -52,13 +51,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       });
 
       final user = await _authService.getCurrentUser();
-      final profile = await _profileRepo.getMe();
       final categories = await _categoryRepo.getCategories();
       final dailyWord = await _dailyWordRepo.getTodayWord(audience: 'customer');
 
       setState(() {
         _user = user;
-        _profile = profile;
         _categories = categories;
         _dailyWord = dailyWord;
       });
@@ -154,16 +151,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if ((_profile?.identityVerificationStatus
-                                .toLowerCase() ==
-                            'approved')) ...[
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.verified_rounded,
-                            color: AppColors.primaryGold,
-                            size: 20,
-                          ),
-                        ],
                       ],
                     ),
                     const SizedBox(height: 4),
