@@ -205,6 +205,44 @@ class FontAwesomeHelper {
     'fa-cat': FontAwesomeIcons.cat,
     'cat': FontAwesomeIcons.cat,
 
+    // Cozinha & Gastronomia
+    'fa-utensils': FontAwesomeIcons.utensils,
+    'utensils': FontAwesomeIcons.utensils,
+    'fa-kitchen-set': FontAwesomeIcons.kitchenSet,
+    'kitchen-set': FontAwesomeIcons.kitchenSet,
+    'fa-blender': FontAwesomeIcons.blender,
+    'blender': FontAwesomeIcons.blender,
+    'fa-fire-burner': FontAwesomeIcons.fireBurner,
+    'fire-burner': FontAwesomeIcons.fireBurner,
+    'fa-bowl-food': FontAwesomeIcons.bowlFood,
+    'bowl-food': FontAwesomeIcons.bowlFood,
+    'fa-bowl-rice': FontAwesomeIcons.bowlRice,
+    'bowl-rice': FontAwesomeIcons.bowlRice,
+    'fa-egg': FontAwesomeIcons.egg,
+    'egg': FontAwesomeIcons.egg,
+    'fa-mug-hot': FontAwesomeIcons.mugHot,
+    'mug-hot': FontAwesomeIcons.mugHot,
+    'fa-wine-glass': FontAwesomeIcons.wineGlass,
+    'wine-glass': FontAwesomeIcons.wineGlass,
+    'fa-pepper-hot': FontAwesomeIcons.pepperHot,
+    'pepper-hot': FontAwesomeIcons.pepperHot,
+    'fa-cookie': FontAwesomeIcons.cookie,
+    'cookie': FontAwesomeIcons.cookie,
+    'fa-cheese': FontAwesomeIcons.cheese,
+    'cheese': FontAwesomeIcons.cheese,
+    'fa-pizza-slice': FontAwesomeIcons.pizzaSlice,
+    'pizza-slice': FontAwesomeIcons.pizzaSlice,
+    'fa-burger': FontAwesomeIcons.burger,
+    'burger': FontAwesomeIcons.burger,
+    'fa-fish': FontAwesomeIcons.fish,
+    'fish': FontAwesomeIcons.fish,
+    'fa-wheat-awn': FontAwesomeIcons.wheatAwn,
+    'wheat-awn': FontAwesomeIcons.wheatAwn,
+    'fa-lemon': FontAwesomeIcons.lemon,
+    'lemon': FontAwesomeIcons.lemon,
+    'fa-carrot': FontAwesomeIcons.carrot,
+    'carrot': FontAwesomeIcons.carrot,
+
     // Eventos & Gerais
     'fa-champagne-glasses': FontAwesomeIcons.champagneGlasses,
     'champagne-glasses': FontAwesomeIcons.champagneGlasses,
@@ -312,6 +350,13 @@ class FontAwesomeHelper {
     }
     if (text.contains('saude') || text.contains('enferm') || text.contains('cuidador')) {
       return FontAwesomeIcons.heart;
+    }
+    if (text.contains('cozinha') || text.contains('gastronomia') || text.contains('culinaria') ||
+        text.contains('chef') || text.contains('cook') || text.contains('refei') || text.contains('comida')) {
+      return FontAwesomeIcons.utensils;
+    }
+    if (text.contains('event') || text.contains('festa') || text.contains('celebra') || text.contains('casamento')) {
+      return FontAwesomeIcons.champagneGlasses;
     }
 
     return defaultIcon;

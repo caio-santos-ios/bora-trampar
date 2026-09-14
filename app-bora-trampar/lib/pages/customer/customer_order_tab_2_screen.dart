@@ -3,6 +3,7 @@ import 'package:app_bora_trampar/core/widgets/app_stepper.dart';
 import 'package:app_bora_trampar/core/widgets/bora_trampa_logo.dart';
 import 'package:app_bora_trampar/core/widgets/primary_button.dart';
 import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
 import 'package:app_bora_trampar/models/service_item_model.dart';
@@ -254,8 +255,8 @@ class _CustomerOrderTab2ScreenState extends State<CustomerOrderTab2Screen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(
-                              stringToIcon(
+                            FaIcon(
+                              FontAwesomeHelper.getFaIcon(
                                 serviceItemModel.icon,
                                 fallbackText: serviceItemModel.name,
                               ),
