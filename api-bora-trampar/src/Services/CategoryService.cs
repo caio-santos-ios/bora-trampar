@@ -127,9 +127,13 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                Category? existed = await repository.GetByIdAsync(request.Id);
+                if(existed is null) return new(null, 404, "Categoria não encontrada");
+
                 Category entity = ObjectMapper.Map<UpdateCategoryRequest, Category>(request);
 
                 entity.UpdatedAt = DateTime.Now;
+                entity.CreatedAt = existed.CreatedAt;
                 Category? category = await repository.UpdateAsync(entity);
                 if (category is null) return new(null, 400, "Falha ao atualzar categoria");
 

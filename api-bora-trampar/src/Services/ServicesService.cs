@@ -108,6 +108,9 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                ServiceModel? existed = await repository.GetByIdAsync(request.Id);
+                if(existed is null) return new(null, 404, "Serviço não encontrado");
+
                 if (!string.IsNullOrWhiteSpace(request.CategoryId))
                 {
                     var category = await categoryRepository.GetByIdAsync(request.CategoryId);
@@ -120,6 +123,7 @@ namespace api_bora_trampar.src.Services
                 ServiceModel entity = ObjectMapper.Map<UpdateServicesRequest, ServiceModel>(request);
 
                 entity.UpdatedAt = DateTime.UtcNow;
+                entity.CreatedAt = existed.CreatedAt;
                 ServiceModel? service = await repository.UpdateAsync(entity);
                 if (service is null) return new(null, 400, "Falha ao atualizar serviço");
 
