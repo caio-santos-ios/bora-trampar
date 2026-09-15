@@ -1,3 +1,4 @@
+import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/pages/professional/professional_profile_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
@@ -56,7 +57,7 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
           .where((id) => id.isNotEmpty)
           .join(';');
 
-      final rawList = await _profileRepository.getProfessionalsAvailabilityRaw(
+      final professionals = await _profileRepository.getProfessionalsAvailabilityRaw(
         widget.orderRequest.scheduledDate ?? DateTime.now(),
         timeStr,
         widget.orderRequest.customerLatitude,
@@ -68,11 +69,12 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
 
       if (mounted) {
         setState(() {
-          _professionals = rawList;
+          _professionals = professionals;
           _proDistances = distances;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      print(e);
       if (mounted) {
         setState(() {
           _professionals = [];
@@ -109,13 +111,14 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
     return list;
   }
 
-  void _onSelectProfessional(ProfessionalModel professional) {   
+  void _onSelectProfessional(ProfessionalModel professional) {
+    print(professional.reviews);
     double price = 0;
     ProfessionalServiceItemModel? service = professional.servicesList
         .where((e) => e.serviceId == widget.orderRequest.selectedServices[0].id)
         .firstOrNull;
 
-    if(service != null) price = service.price;
+    if (service != null) price = service.price;
 
     widget.orderRequest.selectedProfessional = professional;
 
@@ -136,6 +139,7 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
     final locationText = widget.orderRequest.address.isNotEmpty
         ? widget.orderRequest.address.split('-').first.trim()
         : 'São Paulo, SP';
+    final serviceItem = widget.orderRequest.selectedServices[0];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -274,8 +278,8 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
                                   borderRadius: BorderRadius.circular(10),
                                   color: const Color(0xFF1F1C12),
                                 ),
-                                child: const Icon(
-                                  Icons.foundation_rounded,
+                                child: Icon(
+                                  FontAwesomeHelper.getIcon(serviceItem.icon),
                                   color: AppColors.primaryGold,
                                   size: 22,
                                 ),

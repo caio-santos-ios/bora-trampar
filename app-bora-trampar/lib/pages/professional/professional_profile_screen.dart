@@ -1,3 +1,4 @@
+import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_5_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
@@ -69,6 +70,8 @@ class ProfessionalProfileScreen extends StatelessWidget {
         : (professional.offeredServices.isNotEmpty
               ? professional.offeredServices
               : [orderRequest.serviceNamesDisplay]);
+
+    final serviceItem = orderRequest.selectedServices[0];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -239,8 +242,8 @@ class ProfessionalProfileScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(
-                                  Icons.foundation_rounded,
+                                Icon(
+                                  FontAwesomeHelper.getIcon(serviceItem.icon),
                                   color: AppColors.primaryGold,
                                   size: 16,
                                 ),
@@ -631,14 +634,14 @@ class ProfessionalProfileScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    rev.authorName,
+                                    "Cliente",
                                     style: GoogleFonts.inter(
                                       color: AppColors.textPrimary,
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  RatingStars(rating: rev.rating, starSize: 14),
+                                  RatingStars(rating: rev.point, starSize: 14),
                                 ],
                               ),
                               const SizedBox(height: 6),

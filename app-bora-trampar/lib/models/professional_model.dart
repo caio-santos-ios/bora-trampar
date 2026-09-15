@@ -157,7 +157,7 @@ class ProfessionalModel {
       bio: json['bio']?.toString() ?? '',
       offeredServices: serviceNames,
       servicesList: servicesList,
-      reviews: const [],
+      reviews: (json["reviews"] as List).map((e) => ReviewModel.fromJson(e)).toList(),
       region: region,
       serviceRadiusKm: serviceRadiusKm,
       distanceKm: distanceKm,

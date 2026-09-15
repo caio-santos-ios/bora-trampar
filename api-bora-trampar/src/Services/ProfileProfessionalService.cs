@@ -219,6 +219,14 @@ namespace api_bora_trampar.src.Services
                             })
                         }
                     }),
+
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "reviews"},
+                        {"localField", "user_id"},
+                        {"foreignField", "professional_id"},
+                        {"as", "reviews_lookup"}
+                    }),
                 ];
 
                 if (serviceList.Count > 0)
@@ -259,7 +267,8 @@ namespace api_bora_trampar.src.Services
                     {"as", "conflitos_agenda"}
                 }));
 
-                pipeline.Add(new("$match", new BsonDocument
+                pipeline.Add(
+                new("$match", new BsonDocument
                 {
                     { "conflitos_agenda", new BsonDocument("$size", 0) }
                 }));
@@ -306,6 +315,7 @@ namespace api_bora_trampar.src.Services
                     {"distanciaKm", 1},
                     {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })},
                     {"address", 1},
+                    {"reviews", "$reviews_lookup"}
                 }));
 
                 pipeline.Add(new("$sort", new BsonDocument { { "distanciaKm", 1 } }));

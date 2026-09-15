@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:app_bora_trampar/core/services/util_service.dart';
+import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_4_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:dio/dio.dart';
@@ -470,6 +471,7 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
     final formattedDate = _selectedDate != null
         ? DateFormat("dd 'de' MMMM", 'pt_BR').format(_selectedDate!)
         : 'Selecionar data';
+    final serviceItem = widget.orderRequest.selectedServices[0];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -599,8 +601,8 @@ class _CustomerOrderTab3ScreenState extends State<CustomerOrderTab3Screen> {
                             borderRadius: BorderRadius.circular(10),
                             color: const Color(0xFF1F1C12),
                           ),
-                          child: const Icon(
-                            Icons.foundation_rounded,
+                          child: Icon(
+                            FontAwesomeHelper.getIcon(serviceItem.icon),
                             color: AppColors.primaryGold,
                             size: 22,
                           ),

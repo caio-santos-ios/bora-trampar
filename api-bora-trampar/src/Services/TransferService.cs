@@ -3,17 +3,23 @@ using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models._Base;
 using api_bora_trampar.src.Models.Base;
+using api_bora_trampar.src.Models.Enums;
 using api_bora_trampar.src.Requests;
 using api_bora_trampar.src.Requests._Base;
 using api_bora_trampar.src.Requests.Asaas;
 using api_bora_trampar.src.Requests.Base;
+using api_bora_trampar.src.Requests.Notification;
 using api_bora_trampar.src.Utils;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace api_bora_trampar.src.Services
 {
-    public class TransferService(ITransferRepository repository, AppDbContext appDbContext, IAsaasService asaasService) : ITransferService
+    public class TransferService(
+        ITransferRepository repository,
+        AppDbContext appDbContext,
+        IAsaasService asaasService,
+        INotificationService notificationService) : ITransferService
     {
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request)
@@ -216,6 +222,18 @@ namespace api_bora_trampar.src.Services
                     u => u.Id == existed.UserId,
                     Builders<User>.Update.Set(u => u.WalletBalance, newBalance)
                 );
+
+                await notificationService.CreateAsync(new CreateNotificationRequest
+                {
+                    UserId = existed.UserId,
+                    Action = "transfer_success",
+                    Title = "Transferência realizada com sucesso! 💸",
+                    Message = $"Sua transferência via PIX no valor de R$ {existed.Amount:N2} foi realizada com sucesso.",
+                    Type = NotificationTypeEnum.Payment,
+                    Read = false,
+                    Send = false,
+                    SendAt = DateTime.UtcNow
+                });
 
                 return new(null, 200, "Transferência atualizada com sucesso");
             }
