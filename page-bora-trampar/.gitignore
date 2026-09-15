@@ -1,2 +1,7 @@
 .next/
 node_modules/
+
+# Angular UI
+page-bora-trampar/ui-bora-trampar/node_modules/
+page-bora-trampar/ui-bora-trampar/dist/
+page-bora-trampar/ui-bora-trampar/.angular/
