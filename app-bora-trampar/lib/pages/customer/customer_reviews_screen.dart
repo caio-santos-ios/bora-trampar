@@ -3,7 +3,7 @@ import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/main_app_bar.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
 import 'package:app_bora_trampar/pages/main/main_navigation_screen.dart';
-import 'package:app_bora_trampar/repositories/review_repository.dart';
+import 'package:app_bora_trampar/repositories/review/review_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';

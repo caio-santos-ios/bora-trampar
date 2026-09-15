@@ -114,29 +114,16 @@ class ProfileProfessionalRepository {
   Future<ProfileProfessionalModel?> saveProfile(
     ProfileProfessionalModel profile,
   ) async {
-    try {
-      final response = await _api.client.post(
-        '/api/profile-professionals',
-        data: profile.toJson(),
-      );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        dynamic res =
-            response.data['result'] ?? response.data['data'] ?? response.data;
-        if (res is Map && res['data'] != null) {
-          res = res['data'];
-        }
-        if (res is Map) {
-          return ProfileProfessionalModel.fromJson(
-            Map<String, dynamic>.from(res),
-          );
-        }
-      }
-      return null;
-    } on DioException catch (err) {
-      return null;
-    } catch (e) {
-      return null;
-    }
+    final response = await _api.client.post(
+      '/api/profile-professionals',
+      data: profile.toJson(),
+    );
+
+    return response.statusCode == 200
+        ? ProfileProfessionalModel.fromJson(
+            Map<String, dynamic>.from(response.data["result"]["data"]),
+          )
+        : null;
   }
 
   Future<bool> updateAvailability(bool isAvailable) async {
