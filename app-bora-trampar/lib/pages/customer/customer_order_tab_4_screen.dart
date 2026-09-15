@@ -74,7 +74,6 @@ class _CustomerOrderTab4ScreenState extends State<CustomerOrderTab4Screen> {
         });
       }
     } catch (e) {
-      print(e);
       if (mounted) {
         setState(() {
           _professionals = [];
