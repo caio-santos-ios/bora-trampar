@@ -38,7 +38,7 @@ namespace api_bora_trampar.src.Works
             DateTime now = DateTime.UtcNow;
 
             List<Appointment> appointments = await context.Appointments
-                .Find(x => !x.Deleted && x.Status == "FinishProfessional" && x.ProfessionalFinishAt <= now.AddDays(-2)) 
+                .Find(x => !x.Deleted && x.Status == "FinishProfessional" && x.ProfessionalFinishAt <= now.AddDays(-2))
                 .ToListAsync();
 
             if (appointments.Count == 0) return;
@@ -49,10 +49,35 @@ namespace api_bora_trampar.src.Works
                 {
                     appointment.Status = "Finish";
                     await context.Appointments.ReplaceOneAsync(x => x.Id.Equals(appointment), appointment);
+
+                    if (!string.IsNullOrWhiteSpace(appointment.ProfessionalId))
+                    {
+                        await context.Notifications.InsertOneAsync(new ()
+                        {
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = appointment.CreatedBy,
+                            Deleted = false,
+                            DeletedAt = null,
+                            Read = false,
+                            Send = false,
+                            SendAt = DateTime.Now,
+                            UpdatedAt = DateTime.Now,
+                            UpdatedBy = appointment.CreatedBy,
+                            DeletedBy = appointment.CreatedBy,
+                            Subtitle = "",
+                            AppointmentId = appointment.Id,
+                            Type = Models.Enums.NotificationTypeEnum.Service,
+                            Action = "service_confirmed",
+                            Title = "Serviço Concluído!",
+                            Message = "O serviço foi finalizado. O valor foi creditado em sua conta.",
+                            UserId = appointment.ProfessionalId
+                        });
+                    }
+                    _logger.LogInformation("Serviço finalizado com sucesso {Id}", appointment.Id);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Falha ao atualizar profissional disponivel {Id}", appointment.Id);
+                    _logger.LogError(ex, "Falha ao finalizar serviço {Id}", appointment.Id);
                 }
             }
         }

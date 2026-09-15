@@ -57,7 +57,7 @@ namespace api_bora_trampar.src.Works
 
                     if (string.IsNullOrWhiteSpace(token))
                     {
-                        await MarkAsSentAsync(context, notification.Id);
+                        await MarkAsSentAsync(context, notification.Id!);
                         continue;
                     }
 
