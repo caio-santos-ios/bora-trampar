@@ -295,7 +295,7 @@ class _ProfessionalFinancialHistoryScreenState
           )
         else
           ..._appointments
-              .where((a) => a.price != null && a.price! > 0)
+              .where((a) => a.price != null && a.price! > 0 && (a.status == "FinishProfessional" || a.status == "Finish"))
               .toList()
               .map((a) {
                 String st = a.status;

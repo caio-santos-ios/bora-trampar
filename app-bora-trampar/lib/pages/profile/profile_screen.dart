@@ -19,6 +19,7 @@ import 'edit_professional_profile_screen.dart';
 import 'edit_working_hours_screen.dart';
 import 'documents_verification_screen.dart';
 import 'edit_professional_address_screen.dart';
+import '../professional/professional_transfer_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -1395,6 +1396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final tiles = isProfessional
         ? [
             (Icons.edit_outlined, 'Editar Perfil Profissional', 'Profissão, bio e serviços', false),
+            (Icons.account_balance_wallet_outlined, 'Transferência ou Retirada de Saldo', 'Histórico de transferências e chave PIX', false),
             (Icons.location_on_outlined, 'Endereço e Raio de Atuação', 'Localização base e raio em km', false),
             (Icons.schedule_outlined, 'Horários de Disponibilidade', 'Dias e horários de atendimento', false),
             (Icons.verified_user_outlined, 'Documentos e Verificação', 'Status de aprovação de identidade', false),
@@ -1494,6 +1496,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (updated != null) {
                       await _loadData();
                     }
+                  } else if (title == 'Transferência ou Retirada de Saldo') {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ProfessionalTransferScreen(),
+                      ),
+                    );
+                    await _loadData();
                   }
                 },
                 leading: Container(

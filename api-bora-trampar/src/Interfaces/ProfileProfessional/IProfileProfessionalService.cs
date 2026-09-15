@@ -14,5 +14,6 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<bool>> UpdateAvailabilityAsync(string userId, bool isAvailable);
         Task<ResponseApi<ProfileProfessional?>> UpdateRatingAsync(string userId, int rating);
         Task<ResponseApi<bool>> SaveIdentityVerificationAsync(string userId, string docType, string docNumber, string frontUrl, string backUrl, string selfieUrl);
+        Task<ResponseApi<bool>> SavePixKeyAsync(string userId, string pixKeyType, string pixKey);
     }
 }

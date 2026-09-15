@@ -71,8 +71,8 @@ namespace api_bora_trampar.src.Controllers
         [HttpPost("check-payment")]
         public async Task<IActionResult> CheckPayment([FromBody] CheckPaymentRequest request)
         {
-            var token = Request.Headers["asaas-access-token"].ToString();
-            var expectedToken = Environment.GetEnvironmentVariable("ASAAS_WEBHOOK_TOKEN");
+            string token = Request.Headers["asaas-access-token"].ToString();
+            string expectedToken = Environment.GetEnvironmentVariable("ASAAS_WEBHOOK_TOKEN") ?? "";
 
             if (token != expectedToken)
                 return Unauthorized();

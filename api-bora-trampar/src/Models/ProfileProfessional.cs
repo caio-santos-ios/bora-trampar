@@ -97,6 +97,14 @@ namespace api_bora_trampar.src.Models
         [BsonElement("badges")]
         [JsonPropertyName("badges")]
         public List<string> Badges { get; set; } = [];
+
+        [BsonElement("pix_key_type")]
+        [JsonPropertyName("pixKeyType")]
+        public string PixKeyType { get; set; } = string.Empty;
+
+        [BsonElement("pix_key")]
+        [JsonPropertyName("pixKey")]
+        public string PixKey { get; set; } = string.Empty;
     }
 
     [BsonIgnoreExtraElements]

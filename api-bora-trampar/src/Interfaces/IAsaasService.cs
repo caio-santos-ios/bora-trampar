@@ -1,3 +1,6 @@
+using api_bora_trampar.src.Models.Base;
+using api_bora_trampar.src.Requests.Asaas;
+
 namespace api_bora_trampar.src.Interfaces
 {
     public interface IAsaasService
@@ -5,5 +8,6 @@ namespace api_bora_trampar.src.Interfaces
         Task<string> GetOrCreateCustomerAsync(string name, string cpfCnpj, string email, string phone);
         Task<(string paymentId, string qrCodeImage, string qrCodePayload)?> CreatePixPaymentAsync(string customerId, decimal value, string description);
         Task<bool> IsPaymentReceivedAsync(string paymentId);
+        Task<ResponseApi<dynamic?>> CreatePixTransferAsync(TransferPixRequest request);
     }
 }

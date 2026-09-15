@@ -17,28 +17,23 @@ class UtilService {
       }
 
       if (err.response != null) {
+        Map<String, dynamic> data = Map<String, dynamic>.from(err.response?.data);
+
+        String message = "";
+
+        if(data.containsKey("errors")) {
+          List<String> errors = (data["errors"] as List).map((e) => e["message"].toString()).toList();
+          message = errors[0];
+        } else {
+          message = err.response?.data["message"];
+        }
+
         Toastfy.show(
           context,
-          err.response?.data["message"],
+          message,
           status > 204 ? "warning" : "success",
         );
       }
     }
   }
-
-  // static Future<void> normalizeSetToken(Map<String, String> data) async {
-  //   await _storage.write(key: "token", value: data["token"]);
-  //   await _storage.write(key: "photo", value: data["photo"]);
-  //   await _storage.write(key: "name", value: data["name"]);
-  //   await _storage.write(key: "admin", value: data["admin"]);
-  // }
-
-  // static Future<String> normalizeGetToken() async {
-  //   return await _storage.read(key: "token") ?? "";
-  // }
-
-  // static Future<void> normalizeCleanToken() async {
-  //   await _storage.delete(key: "token");
-  //   await _storage.delete(key: "photo");
-  // }
 }

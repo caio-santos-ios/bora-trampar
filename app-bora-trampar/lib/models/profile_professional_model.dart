@@ -21,6 +21,8 @@ class ProfileProfessionalModel {
   final int reviewCount;
   final int completedServicesCount;
   final List<String> badges;
+  final String pixKeyType;
+  final String pixKey;
 
   ProfileProfessionalModel({
     this.id,
@@ -45,6 +47,8 @@ class ProfileProfessionalModel {
     this.reviewCount = 0,
     this.completedServicesCount = 0,
     this.badges = const [],
+    this.pixKeyType = '',
+    this.pixKey = '',
   });
 
   factory ProfileProfessionalModel.fromJson(Map json) {
@@ -129,6 +133,12 @@ class ProfileProfessionalModel {
               ?.map<String>((item) => item.toString())
               .toList() ??
           <String>[],
+      pixKeyType: map['pixKeyType']?.toString() ??
+          map['pix_key_type']?.toString() ??
+          '',
+      pixKey: map['pixKey']?.toString() ??
+          map['pix_key']?.toString() ??
+          '',
     );
   }
 
@@ -156,6 +166,8 @@ class ProfileProfessionalModel {
       'reviewCount': reviewCount,
       'completedServicesCount': completedServicesCount,
       'badges': badges,
+      'pixKeyType': pixKeyType,
+      'pixKey': pixKey,
     };
   }
 
@@ -182,6 +194,8 @@ class ProfileProfessionalModel {
     int? reviewCount,
     int? completedServicesCount,
     List<String>? badges,
+    String? pixKeyType,
+    String? pixKey,
   }) {
     return ProfileProfessionalModel(
       id: id ?? this.id,
@@ -206,6 +220,8 @@ class ProfileProfessionalModel {
       reviewCount: reviewCount ?? this.reviewCount,
       completedServicesCount: completedServicesCount ?? this.completedServicesCount,
       badges: badges ?? this.badges,
+      pixKeyType: pixKeyType ?? this.pixKeyType,
+      pixKey: pixKey ?? this.pixKey,
     );
   }
 }

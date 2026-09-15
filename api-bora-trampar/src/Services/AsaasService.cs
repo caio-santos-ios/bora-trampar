@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using api_bora_trampar.src.Interfaces;
+using api_bora_trampar.src.Models.Base;
+using api_bora_trampar.src.Requests.Asaas;
+using api_bora_trampar.src.Utils;
 
 namespace api_bora_trampar.src.Services
 {
@@ -13,7 +16,7 @@ namespace api_bora_trampar.src.Services
         public AsaasService()
         {
             _apiKey = Environment.GetEnvironmentVariable("ASAAS_API_KEY") ?? "";
-            _baseUrl = Environment.GetEnvironmentVariable("ASAAS_BASE_URL") ?? "https://sandbox.asaas.com/api/v3";
+            _baseUrl = Environment.GetEnvironmentVariable("ASAAS_BASE_URL") ?? "";
 
             if (string.IsNullOrEmpty(_apiKey))
             {
@@ -216,5 +219,43 @@ namespace api_bora_trampar.src.Services
                 return false;
             }
         }
+
+        #region TRANSFER
+        public async Task<ResponseApi<dynamic?>> CreatePixTransferAsync(TransferPixRequest request)
+        {
+            try
+            {
+                string pix = request.PixAddressKey;
+
+                if(request.PixAddressKeyType == "CPF" || request.PixAddressKeyType == "CNPJ")
+                {
+                    pix = CleanField.CleanDocument(pix);
+                }
+
+                HttpResponseMessage response = await _httpClient.PostAsJsonAsync("transfers", new
+                {
+                    value = request.Value,
+                    pixAddressKey = pix,
+                    pixAddressKeyType = request.PixAddressKeyType,
+                    description = request.Description
+                });
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    return new(null, 400, $"Falha ao fazer transferência - {error}");
+                }
+
+                string success = await response.Content.ReadAsStringAsync();
+                using var paymentDoc = JsonDocument.Parse(success);
+
+                return new(new { transferId = paymentDoc.RootElement.GetProperty("id").GetString() }, 200, "Saque solicitado com sucesso, aguardando processamento");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        #endregion
     }
 }

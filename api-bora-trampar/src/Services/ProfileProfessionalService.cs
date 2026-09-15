@@ -647,6 +647,46 @@ namespace api_bora_trampar.src.Services
             {
             }
         }
+
+        public async Task<ResponseApi<bool>> SavePixKeyAsync(string userId, string pixKeyType, string pixKey)
+        {
+            try
+            {
+                var proProfile = await appDbContext.ProfileProfessionals
+                    .Find(p => p.UserId == userId && !p.Deleted)
+                    .FirstOrDefaultAsync();
+
+                if (proProfile == null)
+                {
+                    proProfile = new ProfileProfessional
+                    {
+                        UserId = userId,
+                        PixKeyType = pixKeyType,
+                        PixKey = pixKey,
+                        CreatedBy = userId,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    await appDbContext.ProfileProfessionals.InsertOneAsync(proProfile);
+                }
+                else
+                {
+                    await appDbContext.ProfileProfessionals.UpdateOneAsync(
+                        p => p.Id == proProfile.Id,
+                        Builders<ProfileProfessional>.Update
+                            .Set(p => p.PixKeyType, pixKeyType)
+                            .Set(p => p.PixKey, pixKey)
+                            .Set(p => p.UpdatedAt, DateTime.UtcNow)
+                            .Set(p => p.UpdatedBy, userId)
+                    );
+                }
+
+                return new(true, 200, "Chave PIX atualizada com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(false, 500, $"Ocorreu um erro inesperado: {ex.Message}");
+            }
+        }
         #endregion
     }
 }

@@ -122,7 +122,6 @@ class NotificationService {
         _navigateToNotifications();
       });
 
-      // Atualiza token FCM no backend
       syncFcmToken();
     } catch (e) {
       debugPrint('[NotificationService] Erro ao inicializar notificaÃ§Ãµes: $e');
@@ -360,16 +359,13 @@ class NotificationService {
 
   Future<void> _handleAcceptAppointment(String appointmentId) async {
     try {
-      debugPrint('[NotificationService] Aceitando agendamento: $appointmentId');
       final success = await _appointmentRepo.acceptAppointment(appointmentId);
-      debugPrint('[NotificationService] Resultado acceptAppointment: $success');
       _showActionSnackBar(
         success ? 'Agendamento aceito com sucesso!' : 'Falha ao aceitar agendamento.',
         success ? AppColors.primaryGold : AppColors.errorRed,
         success ? AppColors.textDark : Colors.white,
       );
     } catch (e) {
-      debugPrint('[NotificationService] Erro ao aceitar agendamento: $e');
       _showActionSnackBar(
         'Erro ao processar agendamento.',
         AppColors.errorRed,
@@ -380,16 +376,13 @@ class NotificationService {
 
   Future<void> _handleDeclineAppointment(String appointmentId) async {
     try {
-      debugPrint('[NotificationService] Recusando agendamento: $appointmentId');
       final success = await _appointmentRepo.declineAppointment(appointmentId);
-      debugPrint('[NotificationService] Resultado declineAppointment: $success');
       _showActionSnackBar(
         success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
         AppColors.errorRed,
         Colors.white,
       );
     } catch (e) {
-      debugPrint('[NotificationService] Erro ao recusar agendamento: $e');
       _showActionSnackBar(
         'Erro ao recusar agendamento.',
         AppColors.errorRed,
@@ -447,7 +440,6 @@ class NotificationService {
     try {
       final token = await _messaging.getToken();
       if (token != null && token.isNotEmpty) {
-        debugPrint('[NotificationService] FCM Token obtido: $token');
         await _notificationRepo.updateFcmToken(token);
       }
     } catch (e) {

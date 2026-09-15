@@ -59,6 +59,9 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<IProfileProfessionalService, ProfileProfessionalService>();
             builder.Services.AddTransient<IProfileProfessionalRepository, ProfileProfessionalRepository>();
 
+            builder.Services.AddTransient<ITransferService, TransferService>();
+            builder.Services.AddTransient<ITransferRepository, TransferRepository>();
+
             builder.Services.AddTransient<INotificationService, NotificationService>();
             builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
 

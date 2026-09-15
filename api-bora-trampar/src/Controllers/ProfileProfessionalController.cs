@@ -93,6 +93,27 @@ namespace api_bora_trampar.src.Controllers
             );
             return StatusCode(response.StatusCode, new { response.Result, response.Message });
         }
+
+        [HttpPut("pix")]
+        public async Task<IActionResult> UpdatePixKey([FromBody] UpdatePixKeyRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.PixKey))
+            {
+                return BadRequest(new { message = "Informe a chave PIX e o tipo." });
+            }
+
+            string userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            ResponseApi<bool> response = await service.SavePixKeyAsync(userId, request.PixKeyType, request.PixKey);
+            return StatusCode(response.StatusCode, new { response.Result, response.Message });
+        }
+    }
+
+    public class UpdatePixKeyRequest
+    {
+        public string PixKeyType { get; set; } = string.Empty;
+        public string PixKey { get; set; } = string.Empty;
     }
 
     public class AvailabilityRequest
