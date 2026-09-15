@@ -1,6 +1,4 @@
-import 'package:dio/dio.dart';
 import '../../api/http_client_api.dart';
-
 class AddressResultModel {
   final String cep;
   final String street;
@@ -53,48 +51,9 @@ class AddressRepository {
   Future<AddressResultModel?> getAddressByCep(String rawCep) async {
     final cleanCep = rawCep.replaceAll(RegExp(r'\D'), '');
     if (cleanCep.length != 8) return null;
-
-    try {
-      final response = await _api.client.get('/api/addresses/$cleanCep');
-      if (response.statusCode == 200 && response.data != null) {
-        final result = response.data['result'] ?? response.data;
-        final data = result is Map ? (result['data'] ?? result) : response.data;
-        if (data is Map) {
-          return AddressResultModel.fromJson(Map<String, dynamic>.from(data));
-        }
-      }
-    } catch (_) {
-      // Fallback para BrasilAPI v2 caso ocorra instabilidade de rede na API interna
-      try {
-        final dio = Dio(
-          BaseOptions(
-            connectTimeout: const Duration(seconds: 6),
-            receiveTimeout: const Duration(seconds: 6),
-          ),
-        );
-        final bApiRes = await dio.get(
-          'https://brasilapi.com.br/api/cep/v2/$cleanCep',
-        );
-        if (bApiRes.statusCode == 200 &&
-            bApiRes.data is Map &&
-            bApiRes.data['type'] != 'service_error') {
-          final loc = bApiRes.data['location'];
-          final coords = loc is Map ? loc['coordinates'] as Map? : null;
-          final lat = double.tryParse(coords?['latitude']?.toString() ?? '');
-          final lon = double.tryParse(coords?['longitude']?.toString() ?? '');
-          return AddressResultModel(
-            cep: cleanCep,
-            street: bApiRes.data['street']?.toString() ?? '',
-            neighborhood: bApiRes.data['neighborhood']?.toString() ?? '',
-            city: bApiRes.data['city']?.toString() ?? '',
-            state: bApiRes.data['state']?.toString() ?? '',
-            latitude: lat,
-            longitude: lon,
-          );
-        }
-      } catch (_) {}
-    }
-    return null;
+    
+    final response = await _api.client.get('/api/addresses/$cleanCep');
+    return response.statusCode == 200 ? AddressResultModel.fromJson( response.data['result']['data']) : null;
   }
 
   Future<List<AddressSuggestion>> searchAddresses(String query) async {
