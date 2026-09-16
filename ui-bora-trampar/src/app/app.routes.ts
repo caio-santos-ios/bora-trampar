@@ -17,12 +17,11 @@ import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
 import { Confirmation } from './pages/confirmation/confirmation';
 import { AuthGuard } from './guards/auth-guard';
-import { Landing } from './pages/landing/landing';
 import { Terms } from './pages/terms/terms';
 import { Privacy } from './pages/privacy/privacy';
 
 export const routes: Routes = [
-  { path: '', component: Landing, pathMatch: 'full' },
+  { path: '', component: Login, pathMatch: 'full' },
   { path: 'termos-uso', component: Terms },
   { path: 'politica-privacidade', component: Privacy },
   { path: 'login', component: Login },

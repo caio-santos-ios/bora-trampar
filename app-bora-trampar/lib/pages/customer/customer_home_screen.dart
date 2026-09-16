@@ -7,14 +7,12 @@ import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
 import 'package:app_bora_trampar/models/daily_word_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
-import 'package:app_bora_trampar/models/profile_professional_model.dart';
 import 'package:app_bora_trampar/models/user_model.dart';
 import 'package:app_bora_trampar/pages/_old/categories/category_selection_screen.dart';
 import 'package:app_bora_trampar/pages/_old/services/service_selection_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:app_bora_trampar/repositories/daily_word/daily_word_repository.dart';
-import 'package:app_bora_trampar/repositories/profile/profile_professional_repository.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -29,7 +27,6 @@ class CustomerHomeScreen extends StatefulWidget {
 class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final _authService = AuthService();
 
-  final _profileRepo = ProfileProfessionalRepository();
   final _categoryRepo = CategoryRepository();
   final _dailyWordRepo = DailyWordRepository();
 
