@@ -2,7 +2,9 @@ import 'package:app_bora_trampar/pages/customer/customer_financial_scrren.dart';
 import 'package:app_bora_trampar/pages/customer/customer_home_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
 import 'package:app_bora_trampar/pages/professional/professional_financial_history_screen.dart';
+import 'package:app_bora_trampar/pages/professional/professional_freight_screen.dart';
 import 'package:app_bora_trampar/pages/professional/professional_schedule_screen.dart';
+import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/services/auth_service.dart';
@@ -32,6 +34,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   late int _currentIndex;
   bool _isCheckingAccess = true;
   bool _isProfessional = false;
+  bool _isFreight = false;
 
   @override
   void initState() {
@@ -44,6 +47,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final user = await AuthService().getCurrentUser();
     final role = (user?.role ?? '').toLowerCase();
     final isPro = role.contains('prof') || role.contains('prestador');
+
+    bool isFreightPro = false;
 
     if (isPro) {
       ProfileProfessionalModel? profile;
@@ -75,11 +80,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         );
         return;
       }
+
+      // Verifica se o profissional tem apenas/é freight
+      if (profile.isFreight) {
+        isFreightPro = true;
+      } else {
+        try {
+          final categories = await CategoryRepository().get();
+          final freightCatIds = categories
+              .where((c) => c.isFreight)
+              .map((c) => c.id.toLowerCase())
+              .toSet();
+
+          if (profile.services.isNotEmpty) {
+            final allFreight = profile.services.every(
+              (s) => freightCatIds.contains(s.categoryId.toLowerCase()) ||
+                     s.categoryName.toLowerCase().contains('frete') ||
+                     s.serviceName.toLowerCase().contains('frete'),
+            );
+            if (allFreight) {
+              isFreightPro = true;
+            }
+          }
+        } catch (_) {}
+      }
     }
 
     if (mounted) {
       setState(() {
         _isProfessional = isPro;
+        _isFreight = isFreightPro;
         _isCheckingAccess = false;
       });
     }
@@ -106,30 +136,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           : ProfessionalHomeScreen(),
       widget.role == "Customer"
           ? CustomerOrderScreen()
-          : ProfessionalScheduleScreen(),
+          : (_isFreight
+              ? const ProfessionalFreightScreen()
+              : ProfessionalScheduleScreen()),
       widget.role == "Customer"
           ? CustomerFinancialScrren()
           : ProfessionalFinancialHistoryScreen(),
       const ProfileScreen(),
     ];
 
-    final proNavItems = const [
-      BottomNavigationBarItem(
+    final proNavItems = [
+      const BottomNavigationBarItem(
         icon: Icon(Icons.home_outlined),
         activeIcon: Icon(Icons.home_rounded),
         label: 'Home',
       ),
       BottomNavigationBarItem(
-        icon: Icon(Icons.calendar_month_outlined),
-        activeIcon: Icon(Icons.calendar_month_rounded),
-        label: 'Agenda',
+        icon: Icon(
+          _isFreight ? Icons.local_shipping_outlined : Icons.calendar_month_outlined,
+        ),
+        activeIcon: Icon(
+          _isFreight ? Icons.local_shipping_rounded : Icons.calendar_month_rounded,
+        ),
+        label: _isFreight ? 'Fretes' : 'Agenda',
       ),
-      BottomNavigationBarItem(
+      const BottomNavigationBarItem(
         icon: Icon(Icons.account_balance_wallet_outlined),
         activeIcon: Icon(Icons.account_balance_wallet_rounded),
         label: 'Financeiro',
       ),
-      BottomNavigationBarItem(
+      const BottomNavigationBarItem(
         icon: Icon(Icons.person_outline_rounded),
         activeIcon: Icon(Icons.person_rounded),
         label: 'Perfil',

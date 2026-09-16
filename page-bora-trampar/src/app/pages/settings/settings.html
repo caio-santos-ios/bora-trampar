@@ -1,0 +1,109 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Configurações da Plataforma</h1>
+      <p class="page-subtitle">Parâmetros financeiros, taxas de intermediação, prazos de contestação e regras Pix</p>
+    </div>
+  </div>
+
+  <form (ngSubmit)="saveSettings()" class="settings-form">
+    <!-- Financial & Fees -->
+    <div class="card">
+      <h2 class="card-section-title"><i class="fa-solid fa-percent"></i> Taxas & Financeiro</h2>
+      <p class="card-section-sub">Defina o modelo de cobrança de comissão sobre os serviços transacionados via Pix</p>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Taxa de Intermediação da Plataforma (%)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="settings.platformFeePercentage"
+            name="platformFee"
+            min="0"
+            max="30"
+          />
+          <small class="help-text">Descontada automaticamente no cálculo do repasse líquido ao profissional.</small>
+        </div>
+
+        <div class="form-group">
+          <label>Tempo de Expiração da Cobrança Pix (Minutos)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="settings.pixExpirationMinutes"
+            name="pixExp"
+            min="5"
+            max="120"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Security & Disputes -->
+    <div class="card">
+      <h2 class="card-section-title"><i class="fa-solid fa-shield-halved"></i> Segurança & Mediação</h2>
+      <p class="card-section-sub">Políticas de retenção de valores e exigências de verificação documental</p>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Prazo de Análise de Contestação (Dias Úteis)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="settings.disputeRetentionDays"
+            name="disputeDays"
+            min="1"
+            max="30"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>E-mail Oficial de Suporte & Moderação</label>
+          <input
+            type="email"
+            class="form-control"
+            [(ngModel)]="settings.supportEmail"
+            name="supportEmail"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Integration Webhooks -->
+    <div class="card">
+      <h2 class="card-section-title"><i class="fa-solid fa-plug"></i> Provedor Pix & Webhooks</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Provedor Pix Conectado</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="settings.pixProvider"
+            name="pixProvider"
+            readonly
+          />
+        </div>
+
+        <div class="form-group">
+          <label>URL de Webhook Pix</label>
+          <input
+            type="text"
+            class="form-control"
+            [(ngModel)]="settings.pixWebhookUrl"
+            name="pixWebhook"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-primary" [disabled]="isSaving">
+        <i class="fa-solid fa-floppy-disk" *ngIf="!isSaving"></i>
+        <i class="fa-solid fa-spinner fa-spin" *ngIf="isSaving"></i>
+        <span>{{ isSaving ? 'Salvando...' : 'Salvar Todas as Configurações' }}</span>
+      </button>
+    </div>
+  </form>
+</div>

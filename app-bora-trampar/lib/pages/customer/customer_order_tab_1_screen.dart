@@ -1,5 +1,6 @@
 import 'package:app_bora_trampar/core/theme/app_colors.dart';
 import 'package:app_bora_trampar/core/widgets/bora_trampa_logo.dart';
+import 'package:app_bora_trampar/core/widgets/help_center_modal.dart';
 import 'package:app_bora_trampar/core/widgets/primary_button.dart';
 import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -107,20 +108,7 @@ class _CustomerOrderTab1ScreenState extends State<CustomerOrderTab1Screen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Central de Ajuda Bora Trampar',
-                    style: GoogleFonts.inter(
-                      color: AppColors.textDark,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  backgroundColor: AppColors.primaryGold,
-                ),
-              );
-            },
+            onPressed: () => showHelpCenterModal(context),
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,

@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_stepper.dart';
 import '../../../core/widgets/bora_trampa_logo.dart';
+import '../../../core/widgets/help_center_modal.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../models/order_request_model.dart';
 import '../../../core/utils/location_helper.dart';
@@ -397,17 +398,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         ),
         actions: [
           TextButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'Central de Ajuda Bora Trampar',
-                    style: GoogleFonts.inter(color: AppColors.textDark, fontWeight: FontWeight.w700),
-                  ),
-                  backgroundColor: AppColors.primaryGold,
-                ),
-              );
-            },
+            onPressed: () => showHelpCenterModal(context),
             icon: const Icon(
               Icons.help_outline_rounded,
               color: AppColors.primaryGold,

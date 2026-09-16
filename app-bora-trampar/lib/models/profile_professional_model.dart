@@ -23,6 +23,7 @@ class ProfileProfessionalModel {
   final List<String> badges;
   final String pixKeyType;
   final String pixKey;
+  final bool isFreight;
 
   ProfileProfessionalModel({
     this.id,
@@ -49,10 +50,24 @@ class ProfileProfessionalModel {
     this.badges = const [],
     this.pixKeyType = '',
     this.pixKey = '',
+    this.isFreight = false,
   });
 
   factory ProfileProfessionalModel.fromJson(Map json) {
     final map = Map<String, dynamic>.from(json);
+    final isFreightExplicit = map['isFreight'] == true || map['is_freight'] == true;
+    final servicesList = ((map['services'] ?? map['Services']) as List?) ?? [];
+    final hasFreightService = servicesList.any((s) {
+      if (s is Map) {
+        final cName = (s['categoryName'] ?? s['category_name'] ?? '').toString().toLowerCase();
+        final sName = (s['serviceName'] ?? s['service_name'] ?? '').toString().toLowerCase();
+        return cName.contains('frete') || sName.contains('frete') || s['isFreight'] == true || s['is_freight'] == true;
+      }
+      return false;
+    });
+    final professionStr = (map['profession'] ?? '').toString().toLowerCase();
+    final isFreightByProfession = professionStr.contains('frete') || professionStr.contains('guincho') || professionStr.contains('mudança');
+
     return ProfileProfessionalModel(
       id: map['id']?.toString() ?? map['_id']?.toString(),
       userId: map['userId']?.toString() ?? map['user_id']?.toString() ?? '',
@@ -139,12 +154,14 @@ class ProfileProfessionalModel {
       pixKey: map['pixKey']?.toString() ??
           map['pix_key']?.toString() ??
           '',
+      isFreight: isFreightExplicit || hasFreightService || isFreightByProfession,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       if (id != null) 'id': id,
+      'isFreight': isFreight,
       'userId': userId,
       'profession': profession,
       'bio': bio,
@@ -196,6 +213,7 @@ class ProfileProfessionalModel {
     List<String>? badges,
     String? pixKeyType,
     String? pixKey,
+    bool? isFreight,
   }) {
     return ProfileProfessionalModel(
       id: id ?? this.id,
@@ -222,6 +240,7 @@ class ProfileProfessionalModel {
       badges: badges ?? this.badges,
       pixKeyType: pixKeyType ?? this.pixKeyType,
       pixKey: pixKey ?? this.pixKey,
+      isFreight: isFreight ?? this.isFreight,
     );
   }
 }
