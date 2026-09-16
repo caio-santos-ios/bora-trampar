@@ -1,9 +1,0 @@
-{
-  "outputDirectory": "dist/ui-bora-trampar/browser",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
