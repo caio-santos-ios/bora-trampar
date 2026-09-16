@@ -1,33 +1,63 @@
 'use client';
 
-import Link from 'next/link';
 import { useState } from 'react';
 
-const features = [
-  ['01', 'Encontre oportunidades', 'Conecte profissionais e clientes em um só lugar, com clareza desde o primeiro contato.'],
-  ['02', 'Trabalhe com confiança', 'Perfis, serviços e verificações ajudam cada contratação a começar do jeito certo.'],
-  ['03', 'Acompanhe tudo', 'Tenha uma visão organizada dos atendimentos, pagamentos e da evolução do seu trabalho.'],
-];
-const faqs = [
-  ['O Bora Trampa é para quem?', 'Para profissionais que querem encontrar novos trabalhos e para clientes que procuram contratar com mais segurança e praticidade.'],
-  ['Como funciona a verificação?', 'O profissional envia os dados e documentos necessários. A plataforma analisa o cadastro e informa o status antes da liberação para atuar.'],
-  ['Preciso pagar para começar?', 'Você pode conhecer a plataforma e criar seu cadastro. As condições de uso aparecem de forma clara durante a jornada.'],
+const navItems = [
+  ['Visão geral', '⌂'],
+  ['Agendamentos', '▣'],
+  ['Profissionais', '♙'],
+  ['Clientes', '◎'],
+  ['Verificações', '✓'],
+  ['Contestações', '◈'],
+  ['Pagamentos', 'R$'],
 ];
 
-function Brand() { return <Link className="brand" href="/"><img src="/logo-bora-trampar-crop.png" alt="Bora Trampa" /></Link>; }
-function DashboardMockup() { return <div className="visual"><div className="orbit one" /><div className="orbit two" /><div className="dashboard"><div className="dash-top"><b>BT</b><span>Visão geral</span><i>CS</i></div><small>Bom dia, Caio</small><h3>Vamos trampar?</h3><div className="stats"><div><small>Trabalhos este mês</small><strong>24</strong><em>+18%</em></div><div><small>A receber</small><strong>R$ 3.840</strong><em>próximo: hoje</em></div></div><div className="dash-title">Próximos trabalhos <span>Ver todos ↗</span></div>{['Identidade visual|Hoje, 14:30 · Remoto|R$ 850','Manutenção elétrica|Amanhã, 09:00 · São Paulo|R$ 320','Fotografia de produto|18 set · Campinas|R$ 640'].map((row) => { const [title, sub, price] = row.split('|'); return <div className="job" key={title}><i>✦</i><div><b>{title}</b><small>{sub}</small></div><strong>{price}</strong></div>; })}</div><div className="floating rating">★ <b>4.9</b><small>avaliação média</small></div><div className="floating secure">✓ <b>Perfil verificado</b><small>Mais confiança para fechar</small></div></div>; }
+const appointments = [
+  ['Mariana Costa', 'Rafael Lima', 'Instalação elétrica', 'Hoje, 14:30', 'R$ 850', 'Confirmado'],
+  ['Studio Aurora', 'Camila Souza', 'Identidade visual', 'Hoje, 16:00', 'R$ 1.200', 'Em análise'],
+  ['João Mendes', 'Bruno Alves', 'Manutenção hidráulica', 'Amanhã, 09:00', 'R$ 320', 'Confirmado'],
+  ['Ateliê 21', 'Ana Martins', 'Fotografia de produto', '18 set, 10:30', 'R$ 640', 'Pendente'],
+];
+
+const categoryBars = [
+  ['Construção e manutenção', 68, '#fdbf0f'],
+  ['Design e criação', 54, '#38bdf8'],
+  ['Eventos e fotografia', 41, '#4ade80'],
+  ['Serviços gerais', 29, '#a78bfa'],
+];
+
+function Brand() {
+  return <div className="admin-brand"><img src="/logo-bora-trampar-crop.png" alt="Bora Trampa" /></div>;
+}
 
 export default function Home() {
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  return <main className="site-shell">
-    <nav className="nav"><Brand /><div className="nav-links"><a href="#como-funciona">Como funciona</a><a href="#para-quem">Para quem é</a><a href="#duvidas">Dúvidas</a></div><div className="nav-actions"><a href="#comece" className="login">Entrar</a><a className="button small" href="#comece">Criar conta <span>↗</span></a></div></nav>
-    <section className="hero section"><div className="hero-copy"><div className="eyebrow"><i /> Trabalho bom começa com conexão</div><h1>Seu próximo trabalho <em>começa aqui.</em></h1><p>Uma plataforma para quem faz acontecer. Encontre oportunidades, mostre seu trabalho e conecte-se com clientes que valorizam o que você faz.</p><div className="hero-actions"><a className="button" href="#comece">Quero trampar <span>↗</span></a><a className="under-link" href="#como-funciona">Entenda como funciona <span>↓</span></a></div><div className="hero-note"><span>J</span><span>M</span><span>R</span><p>Feito para profissionais reais<br /><b>que querem crescer</b></p></div></div><DashboardMockup /></section>
-    <div className="ticker">ENCONTRE OPORTUNIDADES <b>✳</b> MOSTRE SEU TALENTO <b>✳</b> FAÇA ACONTECER <b>✳</b> ENCONTRE OPORTUNIDADES <b>✳</b></div>
-    <section className="section intro" id="para-quem"><div className="eyebrow">Por que o Bora Trampa?</div><div className="intro-heading"><h2>Menos procura.<br /><em>Mais trabalho.</em></h2><p>O mercado está cheio de gente boa. O que faltava era um lugar que aproximasse talento e oportunidade de um jeito simples, seguro e direto.</p></div><div className="feature-grid">{features.map(([n, title, text]) => <article className="feature" key={n}><small>{n}</small><b>↗</b><h3>{title}</h3><p>{text}</p><a href="#comece">Saiba mais ↗</a></article>)}</div></section>
-    <section className="split section" id="como-funciona"><div><div className="eyebrow gold">Feito para a vida real</div><h2>Você faz o trabalho.<br /><em>A gente abre o caminho.</em></h2><p>Do primeiro cadastro ao trabalho entregue, o Bora Trampa tira o ruído da frente e deixa você focar no que sabe fazer melhor.</p><a className="button" href="#comece">Começar agora <span>↗</span></a></div><div className="steps">{[['01','Crie seu perfil','Conte quem você é, o que faz e mostre seus melhores trabalhos.'],['02','Encontre seu match','Descubra oportunidades que combinam com suas habilidades e sua rotina.'],['03','Feche e faça acontecer','Combine os detalhes, realize um bom trabalho e construa sua reputação.']].map(([n,t,p]) => <div className="step" key={n}><small>{n}</small><div><h3>{t}</h3><p>{p}</p></div><b>+</b></div>)}</div></section>
-    <section className="quote section"><strong>“</strong><blockquote>Trabalho bom não deveria depender de sorte. Deveria depender de conexão.</blockquote><p><span>A</span><b>Ana Martins<small>Profissional autônoma</small></b></p></section>
-    <section className="faq section" id="duvidas"><div className="eyebrow gold">Ainda ficou com dúvida?</div><div className="intro-heading"><h2>Perguntas que a gente<br /><em>ouve bastante.</em></h2><p>Se não encontrou o que procurava, fala com a gente. Estamos aqui para ajudar.</p></div><div className="faq-list">{faqs.map(([q,a], i) => <div className={`faq-item ${openFaq === i ? 'open' : ''}`} key={q}><button onClick={() => setOpenFaq(openFaq === i ? null : i)} aria-expanded={openFaq === i}><span>{q}</span><b>+</b></button><p>{a}</p></div>)}</div></section>
-    <section className="cta section" id="comece"><div className="eyebrow gold">Seu próximo passo</div><h2>Tem trabalho para fazer?<br /><em>Bora trampar.</em></h2><p>Crie seu perfil gratuitamente e comece a encontrar as oportunidades que combinam com você.</p><a className="button dark" href="mailto:contato@boratrampar.com.br?subject=Quero%20trampar">Quero fazer acontecer <span>↗</span></a></section>
-    <footer className="footer"><Brand /><p>Conexões que colocam o trabalho em movimento.</p><div><a href="#como-funciona">Como funciona</a><a href="#duvidas">Dúvidas</a><Link href="/termos-uso">Termos de uso</Link><Link href="/politica-privacidade">Privacidade</Link></div><small>© 2026 Bora Trampa. Feito no Brasil.</small></footer>
+  const [active, setActive] = useState('Visão geral');
+  const [period, setPeriod] = useState('Últimos 6 meses');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return <main className="admin-shell">
+    <aside className={`admin-sidebar ${menuOpen ? 'is-open' : ''}`}>
+      <div className="sidebar-top"><Brand /><button className="close-menu" onClick={() => setMenuOpen(false)}>×</button></div>
+      <div className="workspace"><span className="workspace-avatar">BT</span><div><b>Bora Trampa</b><small>Administração</small></div><span className="workspace-chevron">⌄</span></div>
+      <p className="nav-label">PLATAFORMA</p>
+      <nav className="admin-nav">{navItems.map(([label, icon]) => <button className={active === label ? 'active' : ''} key={label} onClick={() => { setActive(label); setMenuOpen(false); }}><span className="nav-icon">{icon}</span><span>{label}</span>{label === 'Verificações' && <em>12</em>}{label === 'Contestações' && <em className="red">3</em>}</button>)}</nav>
+      <div className="sidebar-spacer" />
+      <p className="nav-label">SISTEMA</p>
+      <nav className="admin-nav"><button className={active === 'Configurações' ? 'active' : ''} onClick={() => setActive('Configurações')}><span className="nav-icon">⚙</span><span>Configurações</span></button><button onClick={() => setActive('Ajuda')}><span className="nav-icon">?</span><span>Central de ajuda</span></button></nav>
+      <div className="admin-user"><span className="user-avatar">CS</span><div><b>Caio Santos</b><small>Administrador</small></div><span>•••</span></div>
+    </aside>
+
+    <section className="admin-content">
+      <header className="admin-header"><button className="mobile-menu" onClick={() => setMenuOpen(true)}>☰</button><div className="breadcrumb">Administração <span>/</span> <b>{active}</b></div><div className="header-tools"><button className="icon-button" aria-label="Notificações">♧<i>4</i></button><span className="header-divider" /><span className="header-date">Sexta-feira, 15 de setembro de 2026</span></div></header>
+      <div className="admin-main">
+        <div className="admin-title-row"><div><p className="admin-eyebrow">PAINEL ADMINISTRATIVO</p><h1>Visão geral da plataforma</h1><p className="admin-subtitle">Acompanhe operações, transações e a saúde do Bora Trampa em tempo real.</p></div><div className="title-actions"><button className="outline-button">↓ Exportar relatório</button><button className="primary-button" onClick={() => setActive('Verificações')}>Analisar pendências <span>12</span></button></div></div>
+        <div className="alert-strip"><span className="alert-symbol">!</span><div><b>12 profissionais aguardam verificação</b><small>Revise os documentos para liberar novos perfis na plataforma.</small></div><button onClick={() => setActive('Verificações')}>Ver pendências →</button></div>
+        <div className="admin-kpis"><article className="admin-kpi highlight"><div className="kpi-top"><span>Faturamento total Pix</span><i>↗ 18,4%</i></div><strong>R$ 48.320,00</strong><small>Volume acumulado · este mês</small><div className="sparkline gold"><span style={{height:'30%'}}/><span style={{height:'42%'}}/><span style={{height:'35%'}}/><span style={{height:'58%'}}/><span style={{height:'52%'}}/><span style={{height:'77%'}}/><span style={{height:'66%'}}/><span style={{height:'91%'}}/></div></article><article className="admin-kpi"><div className="kpi-top"><span>Agendamentos no mês</span><i className="positive">↗ 12,7%</i></div><strong>186</strong><small>vs. 165 no mês anterior</small><div className="kpi-mini-icon blue">▣</div></article><article className="admin-kpi"><div className="kpi-top"><span>Profissionais ativos</span><i className="positive">↗ 8,2%</i></div><strong>1.248</strong><small>932 verificados disponíveis</small><div className="kpi-mini-icon green">♙</div></article><article className="admin-kpi"><div className="kpi-top"><span>Índice de satisfação</span><i className="positive">↗ 2,1%</i></div><strong>4,86 <small className="out-of">/ 5</small></strong><small>Baseado em 426 avaliações</small><div className="rating-stars">★★★★★</div></article></div>
+        <div className="analytics-grid"><article className="admin-card revenue-card"><div className="card-heading"><div><h2>Evolução do faturamento</h2><p>Volume bruto transacionado via Pix</p></div><select value={period} onChange={e => setPeriod(e.target.value)}><option>Últimos 6 meses</option><option>Este ano</option><option>Últimos 30 dias</option></select></div><div className="chart-area"><div className="chart-y"><span>R$ 50k</span><span>R$ 40k</span><span>R$ 30k</span><span>R$ 20k</span><span>R$ 10k</span><span>R$ 0</span></div><div className="line-chart"><div className="grid-lines"><i/><i/><i/><i/><i/><i/></div><svg viewBox="0 0 700 250" preserveAspectRatio="none" aria-label="Gráfico de faturamento"><defs><linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="#fdbf0f" stopOpacity=".25"/><stop offset="100%" stopColor="#fdbf0f" stopOpacity="0"/></linearGradient></defs><path d="M0 206 C45 190, 70 192, 112 168 S180 180, 226 135 S293 145, 340 113 S410 126, 454 89 S520 104, 560 62 S635 79, 700 28 L700 250 L0 250 Z" fill="url(#areaFill)"/><path d="M0 206 C45 190, 70 192, 112 168 S180 180, 226 135 S293 145, 340 113 S410 126, 454 89 S520 104, 560 62 S635 79, 700 28" fill="none" stroke="#fdbf0f" strokeWidth="3" strokeLinecap="round"/><circle cx="700" cy="28" r="5" fill="#fdbf0f" stroke="#111" strokeWidth="3"/></svg><div className="chart-x"><span>Abr</span><span>Mai</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Set</span></div></div></div></article><article className="admin-card category-card"><div className="card-heading"><div><h2>Demanda por categoria</h2><p>Serviços contratados no período</p></div><button className="more-button">•••</button></div><div className="donut-wrap"><div className="donut"><div><strong>192</strong><small>solicitações</small></div></div></div><div className="category-list">{categoryBars.map(([name, value, color]) => <div className="category-row" key={name}><span><i style={{backgroundColor: String(color)}} />{name}</span><b>{value}%</b></div>)}</div></article></div>
+        <article className="admin-card table-card"><div className="card-heading"><div><h2>Agendamentos recentes</h2><p>Últimas solicitações recebidas na plataforma</p></div><button className="outline-button small-button" onClick={() => setActive('Agendamentos')}>Ver todos →</button></div><div className="data-table"><div className="table-row table-head"><span>CLIENTE</span><span>PROFISSIONAL</span><span>SERVIÇO</span><span>DATA E HORÁRIO</span><span>VALOR</span><span>STATUS</span></div>{appointments.map(row => <div className="table-row" key={row[0]}><span className="person-cell"><i>{row[0].split(' ').map(n => n[0]).join('').slice(0,2)}</i>{row[0]}</span><span>{row[1]}</span><span>{row[2]}</span><span>{row[3]}</span><span><b>{row[4]}</b></span><span><em className={`status ${row[5].toLowerCase().replace(' ','-')}`}><i/> {row[5]}</em></span></div>)}</div></article>
+        <div className="bottom-grid"><article className="admin-card activity-card"><div className="card-heading"><div><h2>Atividade recente</h2><p>Movimentações importantes</p></div><button className="more-button">•••</button></div><div className="activity-list"><div><i className="activity-icon yellow">✓</i><p><b>Nova verificação enviada</b><small>Lucas Ferreira · há 8 min</small></p><span>→</span></div><div><i className="activity-icon blue">R$</i><p><b>Pagamento confirmado</b><small>Agendamento #BT-2048 · há 24 min</small></p><span>→</span></div><div><i className="activity-icon purple">★</i><p><b>Nova avaliação recebida</b><small>5 estrelas · há 1 hora</small></p><span>→</span></div></div></article><article className="admin-card quick-card"><p className="admin-eyebrow">ATENÇÃO DA SEMANA</p><h2>O que precisa da sua atenção?</h2><div className="quick-line"><span className="quick-number">12</span><p><b>verificações pendentes</b><small>Documentos aguardando análise</small></p><button onClick={() => setActive('Verificações')}>→</button></div><div className="quick-line"><span className="quick-number red-number">03</span><p><b>contestações abertas</b><small>Precisam de uma resposta</small></p><button onClick={() => setActive('Contestações')}>→</button></div></article></div>
+        <footer className="admin-footer"><span>© 2026 Bora Trampa · Painel administrativo</span><span>Dados atualizados há menos de 5 min · <b className="online-dot"/> Operacional</span></footer>
+      </div>
+    </section>
   </main>;
 }

@@ -1,0 +1,241 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Gestão de Agendamentos</h1>
+      <p class="page-subtitle">Acompanhamento operacional de pedidos, prestadores, clientes e status</p>
+    </div>
+  </div>
+
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por cliente, profissional ou serviço..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button class="status-tab tab-all" [class.active]="filterStatus === 'all'" (click)="filterStatus = 'all'; onFilterChange()">
+          <span>Todos</span>
+          <span class="tab-badge">{{ getStatusCount('all') }}</span>
+        </button>
+        <button class="status-tab tab-confirmed" [class.active]="filterStatus === 'confirmed'" (click)="filterStatus = 'confirmed'; onFilterChange()">
+          <span>Confirmados</span>
+          <span class="tab-badge">{{ getStatusCount('confirmed') }}</span>
+        </button>
+        <button class="status-tab tab-in-progress" [class.active]="filterStatus === 'in_progress'" (click)="filterStatus = 'in_progress'; onFilterChange()">
+          <span>Em Execução</span>
+          <span class="tab-badge">{{ getStatusCount('in_progress') }}</span>
+        </button>
+        <button class="status-tab tab-completed" [class.active]="filterStatus === 'completed'" (click)="filterStatus = 'completed'; onFilterChange()">
+          <span>Concluídos</span>
+          <span class="tab-badge">{{ getStatusCount('completed') }}</span>
+        </button>
+        <button class="status-tab tab-pending-pix" [class.active]="filterStatus === 'pending_pix'" (click)="filterStatus = 'pending_pix'; onFilterChange()">
+          <span>Pendente Pix</span>
+          <span class="tab-badge">{{ getStatusCount('pending_pix') }}</span>
+        </button>
+        <button class="status-tab tab-disputed" [class.active]="filterStatus === 'disputed'" (click)="filterStatus = 'disputed'; onFilterChange()">
+          <span>Contestados</span>
+          <span class="tab-badge">{{ getStatusCount('disputed') }}</span>
+        </button>
+        <button class="status-tab tab-cancelled" [class.active]="filterStatus === 'cancelled'" (click)="filterStatus = 'cancelled'; onFilterChange()">
+          <span>Cancelados</span>
+          <span class="tab-badge">{{ getStatusCount('cancelled') }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading [isLoading]="isLoading"></app-loading>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Profissional</th>
+            <th>Serviço</th>
+            <th>Data Agendada</th>
+            <th>Valor Bruto</th>
+            <th>Status</th>
+            <th style="text-align: right;">Detalhes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paginatedList">
+            <td>
+              <div class="cell-main">{{ item.customerName }}</div>
+              <div class="cell-sub" *ngIf="item.customerPhone">{{ item.customerPhone }}</div>
+            </td>
+            <td>
+              <div class="cell-main">{{ item.professionalName }}</div>
+              <div class="cell-sub" *ngIf="item.professionalPhone">{{ item.professionalPhone }}</div>
+            </td>
+            <td><strong>{{ item.serviceName }}</strong></td>
+            <td>{{ (item.date | date : 'dd/MM/yyyy') || item.date }} às {{ item.hour }}</td>
+            <td><strong class="gold-text">{{ global.formatCurrency(item.total_price || item.totalPrice || item.value || 0) }}</strong></td>
+            <td>
+              <span class="status-badge" [ngClass]="item.status">
+                {{ item.statusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-primary btn-sm" (click)="viewDetails(item)">
+                <i class="fa-solid fa-eye"></i>
+                <span>Ver Pedido</span>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="7" class="empty-state-cell">
+              <i class="fa-solid fa-folder-open empty-icon"></i>
+              <p>Nenhum agendamento encontrado para estes filtros.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-cards-view">
+      <div class="mobile-data-card" *ngFor="let item of paginatedList">
+        <div class="mobile-card-header">
+          <div class="mobile-card-title-wrap">
+            <div class="mobile-service-title">{{ item.serviceName }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.status">{{ item.statusLabel }}</span>
+        </div>
+        <div class="mobile-card-body">
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Cliente</span>
+            <span class="mobile-card-field-value">{{ item.customerName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Profissional</span>
+            <span class="mobile-card-field-value">{{ item.professionalName }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Data e Hora</span>
+            <span class="mobile-card-field-value">{{ (item.date | date : 'dd/MM/yyyy') || item.date }} às {{ item.hour }}</span>
+          </div>
+          <div class="mobile-card-field">
+            <span class="mobile-card-field-label">Valor</span>
+            <span class="mobile-card-field-value gold-text">{{ global.formatCurrency(item.value) }}</span>
+          </div>
+        </div>
+        <div class="mobile-card-actions">
+          <button class="btn-primary btn-sm" (click)="viewDetails(item)">
+            <i class="fa-solid fa-eye"></i> Ver Pedido
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagination-container" *ngIf="totalPages > 1 || totalCount > 0">
+      <div class="pagination-text">
+        Exibindo <strong>{{ startIndex }}</strong> a <strong>{{ endIndex }}</strong> de <strong>{{ totalCount }}</strong> registros
+      </div>
+      <div class="pagination-nav">
+        <button class="page-btn" (click)="goToPage(1)" [disabled]="currentPage === 1" title="Primeira página">
+          &laquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1" title="Página anterior">
+          &lsaquo;
+        </button>
+        <button
+          *ngFor="let page of visiblePages"
+          class="page-btn"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+        <button class="page-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages" title="Próxima página">
+          &rsaquo;
+        </button>
+        <button class="page-btn" (click)="goToPage(totalPages)" [disabled]="currentPage === totalPages" title="Última página">
+          &raquo;
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="isDetailsModalOpen && selectedItem">
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <div>
+          <h2>Detalhes do Agendamento</h2>
+          <span class="protocol-sub">Criado em {{ (selectedItem.createdAt | date : 'dd/MM/yyyy HH:mm') || selectedItem.createdAt }}</span>
+        </div>
+        <button class="btn-close" (click)="closeDetailsModal()">&times;</button>
+      </div>
+
+      <div class="details-body">
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-briefcase"></i> Serviço & Execução</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Serviço Solicitado</label>
+              <span>{{ selectedItem.serviceName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Data & Horário</label>
+              <span>{{ (selectedItem.date | date : 'dd/MM/yyyy') || selectedItem.date }} às {{ selectedItem.hour }}</span>
+            </div>
+            <div class="info-item">
+              <label>Endereço de Atendimento</label>
+              <span>{{ selectedItem.address }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status Atual</label>
+              <span class="status-badge" [ngClass]="selectedItem.status">{{ selectedItem.statusLabel }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-users"></i> Partes Envolvidas</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Cliente</label>
+              <span>{{ selectedItem.customerName }}<ng-container *ngIf="selectedItem.customerPhone"> ({{ selectedItem.customerPhone }})</ng-container></span>
+            </div>
+            <div class="info-item">
+              <label>Profissional</label>
+              <span>{{ selectedItem.professionalName }}<ng-container *ngIf="selectedItem.professionalPhone"> ({{ selectedItem.professionalPhone }})</ng-container></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h3><i class="fa-solid fa-money-bill-wave"></i> Cobrança Pix</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Valor Total do Pedido</label>
+              <span class="gold-text" style="font-size: 18px; font-weight: 800;">
+                {{ global.formatCurrency(selectedItem.value) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <label>Status do Pix</label>
+              <span>{{ selectedItem.paymentMethod }}</span>
+            </div>
+            <div class="info-item" *ngIf="selectedItem.pixTxId">
+              <label>Código da Transação Pix</label>
+              <code>{{ selectedItem.pixTxId }}</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
