@@ -22,7 +22,7 @@ import { Terms } from './pages/terms/terms';
 import { Privacy } from './pages/privacy/privacy';
 
 export const routes: Routes = [
-  { path: '', component: Landing, pathMatch: 'full' },
+  { path: '', component: Login, pathMatch: 'full' },
   { path: 'termos-uso', component: Terms },
   { path: 'politica-privacidade', component: Privacy },
   { path: 'login', component: Login },
