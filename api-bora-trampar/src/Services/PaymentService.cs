@@ -15,7 +15,6 @@ namespace api_bora_trampar.src.Services
 {
     public class PaymentService(IPaymentRepository repository, IAppointmentRepository appointmentRepository, IUserService userService, IAsaasService asaasService, INotificationService notificationService, IHubContext<AppointmentHub> hub) : IPaymentService
     {
-        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
         public async Task<ResponseApi<List<dynamic>>> GetAllAsync()
         {
             try
@@ -81,13 +80,6 @@ namespace api_bora_trampar.src.Services
 
         public async Task<ResponseApi<Payment?>> CreateAsync(CreatePaymentRequest request)
         {
-            string lockKey = !string.IsNullOrEmpty(request.AppointmentId)
-                ? request.AppointmentId
-                : (!string.IsNullOrEmpty(request.CreatedBy) ? request.CreatedBy : "global_payment_lock");
-
-            var semaphore = _locks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
-            await semaphore.WaitAsync();
-
             try
             {
                 Payment entity = ObjectMapper.Map<CreatePaymentRequest, Payment>(request);
@@ -99,6 +91,8 @@ namespace api_bora_trampar.src.Services
                     if (appointment is not null && !string.IsNullOrEmpty(appointment.CustomerId))
                     {
                         userId = appointment.CustomerId;
+                        entity.CustomerId = appointment.CustomerId;
+                        entity.ProfessionalId = appointment.ProfessionalId;
                     }
                 }
 
@@ -157,10 +151,6 @@ namespace api_bora_trampar.src.Services
             catch (Exception ex)
             {
                 return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
-            }
-            finally
-            {
-                semaphore.Release();
             }
         }
 
@@ -357,7 +347,6 @@ namespace api_bora_trampar.src.Services
                     await repository.UpdateAsync(payment);
                 }
 
-                // Reembolsar o valor total do agendamento (cobre Pix + wallet_balance utilizado)
                 decimal refundAmount = appointment.TotalPrice > 0 ? appointment.TotalPrice : (payment?.Value ?? 0);
                 if (refundAmount > 0)
                 {

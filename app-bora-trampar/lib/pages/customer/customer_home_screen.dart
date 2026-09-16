@@ -9,8 +9,8 @@ import 'package:app_bora_trampar/models/daily_word_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
 import 'package:app_bora_trampar/models/user_model.dart';
 import 'package:app_bora_trampar/pages/_old/categories/category_selection_screen.dart';
-import 'package:app_bora_trampar/pages/_old/services/service_selection_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_order_tab_2_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:app_bora_trampar/repositories/daily_word/daily_word_repository.dart';
 import 'package:dio/dio.dart';
@@ -240,9 +240,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ServiceSelectionScreen(
+                      builder: (_) => CustomerOrderTab2Screen(
                         orderRequest: OrderRequestModel(selectedCategory: cat),
-                        category: cat,
+                        selectedCategory: cat,
                       ),
                     ),
                   );
@@ -351,138 +351,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ],
           ),
         ),
-        // if (_nearbyPros.isNotEmpty) ...[
-        //   const SizedBox(height: 28),
-        //   Text(
-        //     'Profissionais na sua Região',
-        //     style: GoogleFonts.inter(
-        //       fontSize: 17,
-        //       fontWeight: FontWeight.w700,
-        //       color: AppColors.textPrimary,
-        //     ),
-        //   ),
-        //   const SizedBox(height: 14),
-        //   ..._nearbyPros.take(3).map((pro) {
-        //     return Container(
-        //       margin: const EdgeInsets.only(bottom: 12),
-        //       padding: const EdgeInsets.all(16),
-        //       decoration: BoxDecoration(
-        //         color: AppColors.cardBackground,
-        //         borderRadius: BorderRadius.circular(16),
-        //         border: Border.all(color: AppColors.cardBorder),
-        //       ),
-        //       child: Row(
-        //         children: [
-        //           CircleAvatar(
-        //             radius: 24,
-        //             backgroundColor: AppColors.cardElevated,
-        //             backgroundImage: pro.avatarUrl.isNotEmpty
-        //                 ? NetworkImage(pro.avatarUrl)
-        //                 : null,
-        //             child: pro.avatarUrl.isEmpty
-        //                 ? Text(
-        //                     pro.name.isNotEmpty ? pro.name[0] : 'P',
-        //                     style: GoogleFonts.inter(
-        //                       color: AppColors.primaryGold,
-        //                       fontWeight: FontWeight.w700,
-        //                     ),
-        //                   )
-        //                 : null,
-        //           ),
-        //           const SizedBox(width: 14),
-        //           Expanded(
-        //             child: Column(
-        //               crossAxisAlignment: CrossAxisAlignment.start,
-        //               children: [
-        //                 Text(
-        //                   pro.name,
-        //                   style: GoogleFonts.inter(
-        //                     fontSize: 15,
-        //                     fontWeight: FontWeight.w700,
-        //                     color: AppColors.textPrimary,
-        //                   ),
-        //                 ),
-        //                 const SizedBox(height: 2),
-        //                 Text(
-        //                   pro.role,
-        //                   style: GoogleFonts.inter(
-        //                     fontSize: 12,
-        //                     color: AppColors.textSecondary,
-        //                   ),
-        //                 ),
-        //                 const SizedBox(height: 4),
-        //                 Row(
-        //                   children: [
-        //                     const Icon(
-        //                       Icons.star_rounded,
-        //                       color: AppColors.primaryGold,
-        //                       size: 14,
-        //                     ),
-        //                     const SizedBox(width: 2),
-        //                     Text(
-        //                       pro.rating > 0
-        //                           ? pro.rating.toStringAsFixed(1)
-        //                           : '--',
-        //                       style: GoogleFonts.inter(
-        //                         fontSize: 11,
-        //                         fontWeight: FontWeight.w700,
-        //                         color: AppColors.textPrimary,
-        //                       ),
-        //                     ),
-        //                     const SizedBox(width: 8),
-        //                     Text(
-        //                       '${pro.completedServicesCount} diárias',
-        //                       style: GoogleFonts.inter(
-        //                         fontSize: 11,
-        //                         color: AppColors.textMuted,
-        //                       ),
-        //                     ),
-        //                   ],
-        //                 ),
-        //               ],
-        //             ),
-        //           ),
-        //           ElevatedButton(
-        //             onPressed: () {
-        //               Navigator.push(
-        //                 context,
-        //                 MaterialPageRoute(
-        //                   builder: (_) => ProfessionalProfileScreen(
-        //                     professional: pro,
-        //                     orderRequest: OrderRequestModel(
-        //                       selectedCategory: _categories.isNotEmpty
-        //                           ? _categories.first
-        //                           : null,
-        //                     ),
-        //                   ),
-        //                 ),
-        //               );
-        //             },
-        //             style: ElevatedButton.styleFrom(
-        //               backgroundColor: AppColors.primaryGold,
-        //               foregroundColor: AppColors.textDark,
-        //               shape: RoundedRectangleBorder(
-        //                 borderRadius: BorderRadius.circular(8),
-        //               ),
-        //               padding: const EdgeInsets.symmetric(
-        //                 horizontal: 12,
-        //                 vertical: 8,
-        //               ),
-        //               minimumSize: Size.zero,
-        //             ),
-        //             child: Text(
-        //               'Ver Perfil',
-        //               style: GoogleFonts.inter(
-        //                 fontSize: 11,
-        //                 fontWeight: FontWeight.w800,
-        //               ),
-        //             ),
-        //           ),
-        //         ],
-        //       ),
-        //     );
-        //   }),
-        // ],
       ],
     );
   }

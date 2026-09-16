@@ -27,5 +27,11 @@ namespace api_bora_trampar.src.Models
 
         [BsonElement("qr_code_payload")]
         public string QrCodePayload { get; set; } = string.Empty;
+
+        [BsonElement("professional_id")]
+        public string ProfessionalId { get; set; } = string.Empty;
+
+        [BsonElement("customer_id")]
+        public string CustomerId { get; set; } = string.Empty;
     }
 }

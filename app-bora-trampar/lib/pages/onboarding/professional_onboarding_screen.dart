@@ -990,7 +990,7 @@ class _ProfessionalOnboardingScreenState
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
-                  CepInputFormatter(),
+                  CepInputFormatter(ponto: false),
                 ],
                 onChanged: (val) {
                   if (val.replaceAll(RegExp(r'\D'), '').length == 8) {

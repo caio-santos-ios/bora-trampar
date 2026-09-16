@@ -23,7 +23,7 @@ class ProfessionalFreightScreen extends StatefulWidget {
 
 class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
     with SingleTickerProviderStateMixin {
-  final FreightOrderRepository _freightRepo = FreightOrderRepository();
+  final _freightRepo = FreightOrderRepository();
 
   late TabController _tabController;
   List<FreightOrderModel> _availableOrders = [];

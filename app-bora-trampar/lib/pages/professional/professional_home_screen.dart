@@ -85,19 +85,16 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     final user = await AuthService().getCurrentUser();
-    final role = (user?.role ?? '').toLowerCase();
-    final isPro = role.contains('prof') || role.contains('prestador');
 
-    ProfileProfessionalModel? profile;
-    List<AppointmentModel> appointments = [];
-    final dailyWord = await _dailyWordRepo.getTodayWord(audience: 'professional');
+    final dailyWord = await _dailyWordRepo.getTodayWord(
+      audience: 'professional',
+    );
 
-    if (isPro) {
-      profile = await _profileRepo.getMe();
-      appointments = await _appointmentRepo.getAppointments();
-    } else {
-      appointments = await _appointmentRepo.getAppointments();
-    }
+    ProfileProfessionalModel? profile = await _profileRepo.getMe();
+    String query =
+        "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+    List<AppointmentModel> appointments = await _appointmentRepo
+        .getAppointments(query: query);
 
     if (mounted) {
       setState(() {
@@ -1515,7 +1512,9 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 8),
                           ),
                           child: Text(
-                            _isFinishLoading ? 'Finalizando...' : 'Finalizar Trampo',
+                            _isFinishLoading
+                                ? 'Finalizando...'
+                                : 'Finalizar Trampo',
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,

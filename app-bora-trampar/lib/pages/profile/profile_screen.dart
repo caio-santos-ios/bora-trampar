@@ -950,7 +950,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (email.isNotEmpty) _buildInfoRow(Icons.email_outlined, email),
               if (whatsapp.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                _buildInfoRow(Icons.phone_outlined, whatsapp),
+                _buildInfoRow(Icons.phone_outlined, UtilBrasilFields.obterTelefone(whatsapp)),
               ],
               if (experienceYears > 0) ...[
                 const SizedBox(height: 8),

@@ -1,3 +1,4 @@
+import 'package:app_bora_trampar/core/services/storage_service.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -27,6 +28,8 @@ class _ProfessionalFinancialHistoryScreenState
   final PaymentRepository _paymentRepo = PaymentRepository();
   final AppointmentRepository _appointmentRepo = AppointmentRepository();
 
+  final _storageService = StorageService();
+
   bool _isLoading = true;
   bool _hideBalance = false;
   List<PaymentModel> _payments = [];
@@ -41,8 +44,10 @@ class _ProfessionalFinancialHistoryScreenState
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
 
-    final payments = await _paymentRepo.getPayments();
-    final appointments = await _appointmentRepo.getAppointments();
+    String query = "professional_id=${_storageService.getCurrentUser().id}";
+
+    final payments = await _paymentRepo.getPayments(query: "$query&orderBy=date");
+    final appointments = await _appointmentRepo.getAppointments(query: query);
 
     if (mounted) {
       setState(() {
@@ -295,7 +300,12 @@ class _ProfessionalFinancialHistoryScreenState
           )
         else
           ..._appointments
-              .where((a) => a.price != null && a.price! > 0 && (a.status == "FinishProfessional" || a.status == "Finish"))
+              .where(
+                (a) =>
+                    a.price != null &&
+                    a.price! > 0 &&
+                    (a.status == "FinishProfessional" || a.status == "Finish"),
+              )
               .toList()
               .map((a) {
                 String st = a.status;
@@ -359,7 +369,7 @@ class _ProfessionalFinancialHistoryScreenState
                       "${p.status ?? ""}-${p.appointmentStatus ?? ""}",
                     ),
                     isIncome: true,
-                    hasIsIncome: true
+                    hasIsIncome: true,
                   ),
                 ),
               ),
@@ -509,9 +519,8 @@ class _ProfessionalFinancialHistoryScreenState
     required String status,
     required Color statusColor,
     required bool isIncome,
-    required bool hasIsIncome
+    required bool hasIsIncome,
   }) {
-    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -525,21 +534,31 @@ class _ProfessionalFinancialHistoryScreenState
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: !hasIsIncome ? AppColors.cardElevated : isIncome
+              color: !hasIsIncome
+                  ? AppColors.cardElevated
+                  : isIncome
                   ? AppColors.success.withValues(alpha: 0.12)
                   : AppColors.cardElevated,
               shape: BoxShape.circle,
               border: Border.all(
-                color: !hasIsIncome ? AppColors.cardElevated : isIncome
+                color: !hasIsIncome
+                    ? AppColors.cardElevated
+                    : isIncome
                     ? AppColors.success.withValues(alpha: 0.4)
                     : AppColors.cardBorder,
               ),
             ),
             child: Icon(
-              !hasIsIncome ? Icons.lock_clock_outlined : isIncome
+              !hasIsIncome
+                  ? Icons.lock_clock_outlined
+                  : isIncome
                   ? Icons.arrow_upward_rounded
                   : Icons.arrow_downward_rounded,
-              color: !hasIsIncome ? AppColors.primaryGold : isIncome ? AppColors.success : AppColors.primaryGold,
+              color: !hasIsIncome
+                  ? AppColors.primaryGold
+                  : isIncome
+                  ? AppColors.success
+                  : AppColors.primaryGold,
               size: 20,
             ),
           ),
@@ -581,7 +600,11 @@ class _ProfessionalFinancialHistoryScreenState
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${!hasIsIncome ? '=' : isIncome ? '+' : '-'} $amount',
+                '${!hasIsIncome
+                    ? '='
+                    : isIncome
+                    ? '+'
+                    : '-'} $amount',
                 style: GoogleFonts.inter(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,

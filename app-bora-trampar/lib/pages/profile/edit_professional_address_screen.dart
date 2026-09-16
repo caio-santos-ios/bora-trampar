@@ -584,7 +584,7 @@ class _EditProfessionalAddressScreenState
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      CepInputFormatter(),
+                      CepInputFormatter(ponto: false),
                     ],
                     style: GoogleFonts.inter(color: AppColors.textPrimary),
                     decoration: InputDecoration(

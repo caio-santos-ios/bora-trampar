@@ -5,23 +5,9 @@ import '../../models/payment_model.dart';
 class PaymentRepository {
   final HttpClientApi _api = HttpClientApi();
 
-  Future<List<PaymentModel>> getPayments() async {
-    try {
-      final response = await _api.client.get('/api/payments');
-
-      if (response.statusCode == 200 && response.data != null) {
-        dynamic res = response.data['result']['data'];
-        
-        if (res is List) {
-          return res.map((item) => PaymentModel.fromJson(item as Map<String, dynamic>)).toList();
-        }
-      }
-      return [];
-    } on DioException {
-      return [];
-    } catch (e) {
-      return [];
-    }
+  Future<List<PaymentModel>> getPayments({String query = ""}) async {
+    final response = await _api.client.get('/api/payments?$query');
+    return response.statusCode == 200 ? (response.data["result"]["data"] as List).map((e) => PaymentModel.fromJson(e)).toList() : [];
   }
 
   Future<PaymentModel?> getPaymentById(String id) async {
