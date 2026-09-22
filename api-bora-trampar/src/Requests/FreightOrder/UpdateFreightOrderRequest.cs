@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Requests.Base;
 
 namespace api_bora_trampar.src.Requests
@@ -9,8 +10,8 @@ namespace api_bora_trampar.src.Requests
         [Display(Order = 1)]
         public string Id { get; set; } = string.Empty;
 
-        public string OriginAddress { get; set; } = string.Empty;
-        public string DestinationAddress { get; set; } = string.Empty;
+        public Address OriginAddress { get; set; } = new();
+        public Address DestinationAddress { get; set; } = new();
         public string Description { get; set; } = string.Empty;
         public string VehicleType { get; set; } = string.Empty;
         public double Price { get; set; }

@@ -161,7 +161,6 @@ namespace api_bora_trampar.src.Services
                 FreightOrder entity = ObjectMapper.Map<CreateFreightOrderRequest, FreightOrder>(request);
 
                 entity.CustomerId = customerId;
-                entity.CustomerName = customerName;
                 entity.Status = "Pending";
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
@@ -187,10 +186,7 @@ namespace api_bora_trampar.src.Services
                 FreightOrder? existed = await repository.GetByIdAsync(request.Id);
                 if (existed is null) return new(null, 404, "Pedido de frete não encontrado");
 
-                if (!string.IsNullOrWhiteSpace(request.OriginAddress)) existed.OriginAddress = request.OriginAddress;
-                if (!string.IsNullOrWhiteSpace(request.DestinationAddress)) existed.DestinationAddress = request.DestinationAddress;
                 if (!string.IsNullOrWhiteSpace(request.Description)) existed.Description = request.Description;
-                if (!string.IsNullOrWhiteSpace(request.VehicleType)) existed.VehicleType = request.VehicleType;
                 if (request.Price > 0) existed.Price = request.Price;
                 if (!string.IsNullOrWhiteSpace(request.Status)) existed.Status = request.Status;
                 if (!string.IsNullOrWhiteSpace(request.ProfessionalId)) existed.ProfessionalId = request.ProfessionalId;
@@ -220,7 +216,6 @@ namespace api_bora_trampar.src.Services
                     return new(null, 400, "Este frete já foi aceito por outro profissional ou não está mais disponível.");
 
                 existed.ProfessionalId = professionalId;
-                existed.ProfessionalName = professionalName;
                 existed.Status = "Accepted";
                 existed.UpdatedAt = DateTime.UtcNow;
 
