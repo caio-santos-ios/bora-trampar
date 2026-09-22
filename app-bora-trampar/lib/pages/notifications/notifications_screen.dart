@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../repositories/notification/notification_repository.dart';
-import '../../repositories/appointment/appointment_repository.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -18,7 +17,6 @@ class NotificationsScreen extends StatefulWidget {
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationRepository _repository = NotificationRepository();
-  final AppointmentRepository _appointmentRepository = AppointmentRepository();
 
   final _storageService = StorageService();
 
@@ -26,8 +24,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final List<String> _filters = ['Todas', 'Serviços', 'Pagamentos'];
   List<AppNotification> _notifications = [];
   bool _isLoading = true;
-  final Map<String, String> _appointmentActionStatus = {};
-  final Set<String> _processingActionIds = {};
 
   @override
   void initState() {
@@ -72,114 +68,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         }
       });
     }
-  }
-
-  Future<void> _handleAcceptAppointment(AppNotification item) async {
-    final appointmentId = item.appointmentId;
-    if (appointmentId == null || appointmentId.isEmpty) return;
-    if (_processingActionIds.contains(appointmentId)) return;
-
-    setState(() => _processingActionIds.add(appointmentId));
-    final success = await _appointmentRepository.acceptAppointment(
-      appointmentId,
-    );
-    if (mounted) {
-      setState(() {
-        _processingActionIds.remove(appointmentId);
-        if (success) {
-          _appointmentActionStatus[appointmentId] = 'accepted';
-        }
-      });
-      _markAsRead(item);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success
-                ? 'Agendamento aceito com sucesso!'
-                : 'Falha ao aceitar agendamento.',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              color: success ? AppColors.textDark : Colors.white,
-            ),
-          ),
-          backgroundColor: success ? AppColors.primaryGold : AppColors.errorRed,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleDeclineAppointment(AppNotification item) async {
-    final appointmentId = item.appointmentId;
-    if (appointmentId == null || appointmentId.isEmpty) return;
-    if (_processingActionIds.contains(appointmentId)) return;
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Rejeitar Agendamento',
-          style: GoogleFonts.inter(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Tem certeza de que deseja recusar este agendamento?',
-          style: GoogleFonts.inter(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(
-              'Cancelar',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.errorRed,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(
-              'Sim, recusar',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-
-    setState(() => _processingActionIds.add(appointmentId));
-    final success = await _appointmentRepository.declineAppointment(
-      appointmentId,
-    );
-    if (mounted) {
-      setState(() {
-        _processingActionIds.remove(appointmentId);
-        if (success) {
-          _appointmentActionStatus[appointmentId] = 'declined';
-        }
-      });
-      _markAsRead(item);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Agendamento recusado.' : 'Falha ao recusar agendamento.',
-            style: GoogleFonts.inter(
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: success ? AppColors.errorRed : AppColors.cardBorder,
-        ),
-      );
-    }
-  }
+  } 
 
   Future<void> _markAllAsRead() async {
     final unreadList = _notifications.where((n) => !n.read).toList();
