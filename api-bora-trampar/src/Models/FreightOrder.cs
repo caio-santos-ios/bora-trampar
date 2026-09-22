@@ -8,26 +8,20 @@ namespace api_bora_trampar.src.Models
         [BsonElement("customer_id")]
         public string CustomerId { get; set; } = string.Empty;
 
-        [BsonElement("customer_name")]
-        public string CustomerName { get; set; } = string.Empty;
-
         [BsonElement("professional_id")]
         public string ProfessionalId { get; set; } = string.Empty;
 
-        [BsonElement("professional_name")]
-        public string ProfessionalName { get; set; } = string.Empty;
-
+        [BsonElement("vehicle_id")]
+        public string VehicleId { get; set; } = string.Empty;
+        
         [BsonElement("origin_address")]
-        public string OriginAddress { get; set; } = string.Empty;
+        public Address OriginAddress { get; set; } = new();
 
         [BsonElement("destination_address")]
-        public string DestinationAddress { get; set; } = string.Empty;
+        public Address DestinationAddress { get; set; } = new();
 
         [BsonElement("description")]
         public string Description { get; set; } = string.Empty;
-
-        [BsonElement("vehicle_type")]
-        public string VehicleType { get; set; } = string.Empty;
 
         [BsonElement("price")]
         public double Price { get; set; } = 0.0;
