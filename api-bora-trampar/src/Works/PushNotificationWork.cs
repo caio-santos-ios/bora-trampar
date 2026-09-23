@@ -66,9 +66,11 @@ namespace api_bora_trampar.src.Works
 
                     if (FirebaseAdmin.FirebaseApp.DefaultInstance != null)
                     {
-                        var message = new Message
+                        Message message = new()
                         {
+                            #pragma warning disable CS0618
                             Token = token,
+                            #pragma warning restore CS0618
                             Notification = new FirebaseAdmin.Messaging.Notification
                             {
                                 Title = notification.Title ?? "",

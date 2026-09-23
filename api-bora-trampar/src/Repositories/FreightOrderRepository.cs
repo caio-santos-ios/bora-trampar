@@ -20,13 +20,10 @@ namespace api_bora_trampar.src.Repositories
             {
                 id = c.Id,
                 customerId = c.CustomerId,
-                customerName = c.CustomerName,
                 professionalId = c.ProfessionalId,
-                professionalName = c.ProfessionalName,
                 originAddress = c.OriginAddress,
                 destinationAddress = c.DestinationAddress,
                 description = c.Description,
-                vehicleType = c.VehicleType,
                 price = c.Price,
                 status = c.Status,
                 notes = c.Notes,
