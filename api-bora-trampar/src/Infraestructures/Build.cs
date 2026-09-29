@@ -65,6 +65,9 @@ namespace api_bora_trampar.src.Configuration
             builder.Services.AddTransient<IFreightOrderService, FreightOrderService>();
             builder.Services.AddTransient<IFreightOrderRepository, FreightOrderRepository>();
 
+            builder.Services.AddTransient<IVehicleService, VehicleService>();
+            builder.Services.AddTransient<IVehicleRepository, VehicleRepository>();
+
             builder.Services.AddTransient<INotificationService, NotificationService>();
             builder.Services.AddTransient<INotificationRepository, NotificationRepository>();
 

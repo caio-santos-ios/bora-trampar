@@ -310,10 +310,7 @@ namespace api_bora_trampar.src.Services
             try
             {
                 User? user = await authRepository.GetByEmailAsync(request.Email);
-                if (user is null)
-                {
-                    return new(null, 200, "Se o e-mail estiver cadastrado, um link de recuperação foi enviado.");
-                }
+                if (user is null) return new(null, 404, "E-mail inválido.");
 
                 string resetToken = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLower();
                 user.PasswordResetToken = resetToken;

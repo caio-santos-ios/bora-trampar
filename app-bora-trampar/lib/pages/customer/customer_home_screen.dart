@@ -9,6 +9,7 @@ import 'package:app_bora_trampar/models/daily_word_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
 import 'package:app_bora_trampar/models/user_model.dart';
 import 'package:app_bora_trampar/pages/_old/categories/category_selection_screen.dart';
+import 'package:app_bora_trampar/pages/customer/customer_freight_route_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_1_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_2_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
@@ -237,15 +238,24 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             children: filteredCategories.take(4).map((cat) {
               return InkWell(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CustomerOrderTab2Screen(
-                        orderRequest: OrderRequestModel(selectedCategory: cat),
-                        selectedCategory: cat,
+                  if (cat.isFreight) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const CustomerFreightRouteScreen(),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CustomerOrderTab2Screen(
+                          orderRequest: OrderRequestModel(selectedCategory: cat),
+                          selectedCategory: cat,
+                        ),
+                      ),
+                    );
+                  }
                 },
                 borderRadius: BorderRadius.circular(16),
                 child: Container(

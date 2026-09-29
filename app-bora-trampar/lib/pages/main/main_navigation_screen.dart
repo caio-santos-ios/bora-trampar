@@ -4,6 +4,7 @@ import 'package:app_bora_trampar/pages/customer/customer_order_screen.dart';
 import 'package:app_bora_trampar/pages/professional/professional_financial_history_screen.dart';
 import 'package:app_bora_trampar/pages/professional/professional_freight_screen.dart';
 import 'package:app_bora_trampar/pages/professional/professional_schedule_screen.dart';
+import 'package:app_bora_trampar/pages/vehicle/vehicle_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -81,7 +82,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         return;
       }
 
-      // Verifica se o profissional tem apenas/é freight
       if (profile.isFreight) {
         isFreightPro = true;
       } else {
@@ -94,9 +94,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
           if (profile.services.isNotEmpty) {
             final allFreight = profile.services.every(
-              (s) => freightCatIds.contains(s.categoryId.toLowerCase()) ||
-                     s.categoryName.toLowerCase().contains('frete') ||
-                     s.serviceName.toLowerCase().contains('frete'),
+              (s) =>
+                  freightCatIds.contains(s.categoryId.toLowerCase()) ||
+                  s.categoryName.toLowerCase().contains('frete') ||
+                  s.serviceName.toLowerCase().contains('frete'),
             );
             if (allFreight) {
               isFreightPro = true;
@@ -153,10 +154,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       ),
       BottomNavigationBarItem(
         icon: Icon(
-          _isFreight ? Icons.local_shipping_outlined : Icons.calendar_month_outlined,
+          _isFreight
+              ? Icons.local_shipping_outlined
+              : Icons.calendar_month_outlined,
         ),
         activeIcon: Icon(
-          _isFreight ? Icons.local_shipping_rounded : Icons.calendar_month_rounded,
+          _isFreight
+              ? Icons.local_shipping_rounded
+              : Icons.calendar_month_rounded,
         ),
         label: _isFreight ? 'Fretes' : 'Agenda',
       ),

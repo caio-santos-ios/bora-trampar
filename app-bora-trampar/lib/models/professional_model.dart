@@ -3,11 +3,14 @@ import 'review_model.dart';
 
 class ProfessionalModel {
   final String id;
+  final String profileId;
   final String name;
   final String role;
   final String avatarUrl;
+  final String profileImageUrl;
   final bool isVerified;
   final bool isAvailable;
+  final bool isFreight;
   final double rating;
   final int reviewCount;
   final int completedServicesCount;
@@ -22,6 +25,8 @@ class ProfessionalModel {
   final List<ProfessionalServiceItemModel> servicesList;
   final List<ReviewModel> reviews;
   final String region;
+  final String city;
+  final String state;
   final int serviceRadiusKm;
   final double? distanceKm;
   final List<dynamic>? workingHours;
@@ -29,11 +34,14 @@ class ProfessionalModel {
 
   const ProfessionalModel({
     required this.id,
+    this.profileId = '',
     required this.name,
     required this.role,
     required this.avatarUrl,
+    this.profileImageUrl = '',
     this.isVerified = false,
     this.isAvailable = true,
+    this.isFreight = false,
     required this.rating,
     required this.reviewCount,
     required this.completedServicesCount,
@@ -48,6 +56,8 @@ class ProfessionalModel {
     this.servicesList = const [],
     required this.reviews,
     this.region = '',
+    this.city = '',
+    this.state = '',
     this.serviceRadiusKm = 0,
     this.distanceKm,
     this.workingHours,
@@ -138,13 +148,27 @@ class ProfessionalModel {
     final reviewCount = (json['reviewCount'] ?? json['review_count'] as num?)?.toInt() ?? 0;
     final completedCount = (json['completedServicesCount'] ?? json['completed_services_count'] as num?)?.toInt() ?? 0;
 
+    final cityStr = addressMap?['city']?.toString() ?? '';
+    final stateStr = addressMap?['state']?.toString() ?? '';
+    final profileId = json['profileId']?.toString() ?? json['profile_id']?.toString() ?? '';
+    final profileImageUrl = json['profileImageUrl']?.toString() ??
+        json['profile_image_url']?.toString() ??
+        json['avatarUrl']?.toString() ??
+        json['photo']?.toString() ??
+        json['photoUrl']?.toString() ??
+        '';
+    final isFreight = json['isFreight'] == true || json['is_freight'] == true;
+
     return ProfessionalModel(
       id: json['id']?.toString() ?? json['_id']?.toString() ?? '',
+      profileId: profileId,
       name: json['name']?.toString() ?? 'Profissional',
       role: json['profession']?.toString() ?? json['role']?.toString() ?? 'Profissional',
       avatarUrl: json['avatarUrl']?.toString() ?? json['photo']?.toString() ?? json['photoUrl']?.toString() ?? '',
+      profileImageUrl: profileImageUrl,
       isVerified: json['isVerified'] == true,
       isAvailable: json['isAvailable'] == null ? true : json['isAvailable'] == true,
+      isFreight: isFreight,
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
       reviewCount: reviewCount,
       completedServicesCount: completedCount,
@@ -159,6 +183,8 @@ class ProfessionalModel {
       servicesList: servicesList,
       reviews: (json["reviews"] as List).map((e) => ReviewModel.fromJson(e)).toList(),
       region: region,
+      city: cityStr,
+      state: stateStr,
       serviceRadiusKm: serviceRadiusKm,
       distanceKm: distanceKm,
       workingHours: json['working_hours'] is List ? json['working_hours'] as List : (json['workingHours'] is List ? json['workingHours'] as List : null),
@@ -169,11 +195,14 @@ class ProfessionalModel {
 
   ProfessionalModel copyWith({
     String? id,
+    String? profileId,
     String? name,
     String? role,
     String? avatarUrl,
+    String? profileImageUrl,
     bool? isVerified,
     bool? isAvailable,
+    bool? isFreight,
     double? rating,
     int? reviewCount,
     int? completedServicesCount,
@@ -188,6 +217,8 @@ class ProfessionalModel {
     List<ProfessionalServiceItemModel>? servicesList,
     List<ReviewModel>? reviews,
     String? region,
+    String? city,
+    String? state,
     int? serviceRadiusKm,
     double? distanceKm,
     List<dynamic>? workingHours,
@@ -195,11 +226,14 @@ class ProfessionalModel {
   }) {
     return ProfessionalModel(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       name: name ?? this.name,
       role: role ?? this.role,
       avatarUrl: avatarUrl ?? this.avatarUrl,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       isVerified: isVerified ?? this.isVerified,
       isAvailable: isAvailable ?? this.isAvailable,
+      isFreight: isFreight ?? this.isFreight,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
       completedServicesCount: completedServicesCount ?? this.completedServicesCount,
@@ -214,6 +248,8 @@ class ProfessionalModel {
       servicesList: servicesList ?? this.servicesList,
       reviews: reviews ?? this.reviews,
       region: region ?? this.region,
+      city: city ?? this.city,
+      state: state ?? this.state,
       serviceRadiusKm: serviceRadiusKm ?? this.serviceRadiusKm,
       distanceKm: distanceKm ?? this.distanceKm,
       workingHours: workingHours ?? this.workingHours,

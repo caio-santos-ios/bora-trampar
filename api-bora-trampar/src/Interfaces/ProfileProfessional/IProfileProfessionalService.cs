@@ -10,6 +10,7 @@ namespace api_bora_trampar.src.Interfaces
         Task<ResponseApi<ProfileProfessional?>> GetByIdAsync(string id);
         Task<ResponseApi<List<ProfileProfessional>>> GetAllAsync();
         Task<ResponseApi<List<dynamic>>> GetProfessionalAvailabilityAsync(DateTime date, string hour, double latitude, double longitude, string serviceIds);
+        Task<ResponseApi<List<dynamic>>> GetProfessionalFreightAvailabilityAsync(DateTime date, string hour, double latitude, double longitude, string serviceIds);
         Task<ResponseApi<ProfileProfessional?>> SaveAsync(CreateProfileProfessionalRequest request, string userId);
         Task<ResponseApi<bool>> UpdateAvailabilityAsync(string userId, bool isAvailable);
         Task<ResponseApi<ProfileProfessional?>> UpdateRatingAsync(string userId, int rating);

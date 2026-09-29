@@ -109,7 +109,7 @@ namespace api_bora_trampar.src.Services
                         string city = addressElem.ValueKind != JsonValueKind.Undefined && (addressElem.TryGetProperty("city", out var c) || addressElem.TryGetProperty("town", out c) || addressElem.TryGetProperty("municipality", out c)) ? c.GetString() ?? "" : "";
                         string state = addressElem.ValueKind != JsonValueKind.Undefined && addressElem.TryGetProperty("state", out var s) ? s.GetString() ?? "" : "";
                         string postcode = addressElem.ValueKind != JsonValueKind.Undefined && addressElem.TryGetProperty("postcode", out var pc) ? pc.GetString() ?? "" : "";
-                        
+
                         string displayName = item.TryGetProperty("display_name", out var dn) ? dn.GetString() ?? "" : "";
                         string name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "";
 
@@ -136,6 +136,72 @@ namespace api_bora_trampar.src.Services
                 }
 
                 return new(addresses, 200, "Endereços listados com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<dynamic?>> GetDistanceAsync(string profile, string lonOrigin, string latOrigin, string lonDestination, string latDestination)
+        {
+            try
+            {
+                string osrmUrl = $"https://router.project-osrm.org/route/v1/{profile}/" +
+                    $"{lonOrigin.Replace(",", ".")},{latOrigin.Replace(",", ".")};" +
+                    $"{lonDestination.Replace(",", ".")},{latDestination.Replace(",", ".")}" +
+                    "?overview=full&geometries=geojson";
+
+                using var osrmRequest = new HttpRequestMessage(HttpMethod.Get, osrmUrl);
+
+                osrmRequest.Headers.Add("User-Agent", "BoraTrampar/1.0 (contato@boratrampar.com.br)");
+
+                HttpResponseMessage osrmResponse = await httpClient.SendAsync(osrmRequest);
+
+                if (!osrmResponse.IsSuccessStatusCode)
+                {
+                    return new(null, (int)osrmResponse.StatusCode, "Não foi possível calcular a rota entre os endereços informados");
+                }
+
+                string osrmJson = await osrmResponse.Content.ReadAsStringAsync();
+                using var osrmDoc = JsonDocument.Parse(osrmJson);
+                var root = osrmDoc.RootElement;
+
+                string code = root.TryGetProperty("code", out var codeProp) ? codeProp.GetString() ?? "" : "";
+                if (!code.Equals("Ok", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new(null, 404, "Nenhuma rota encontrada entre os endereços informados");
+                }
+
+                var routes = root.GetProperty("routes");
+                if (routes.GetArrayLength() == 0)
+                {
+                    return new(null, 404, "Nenhuma rota encontrada entre os endereços informados");
+                }
+
+                var firstRoute = routes[0];
+                double distanceMeters = firstRoute.GetProperty("distance").GetDouble();
+                double durationSeconds = firstRoute.GetProperty("duration").GetDouble();
+
+                List<double[]> geometryCoordinates = [];
+                if (firstRoute.TryGetProperty("geometry", out var geometryProp) &&
+                    geometryProp.TryGetProperty("coordinates", out var coordsProp))
+                {
+                    foreach (var coord in coordsProp.EnumerateArray())
+                    {
+                        geometryCoordinates.Add([coord[0].GetDouble(), coord[1].GetDouble()]);
+                    }
+                }
+
+                dynamic result = new
+                {
+                    distanceMeters,
+                    distanceKm = Math.Round(distanceMeters / 1000.0, 2),
+                    durationSeconds,
+                    durationMinutes = Math.Round(durationSeconds / 60.0, 1),
+                    geometry = geometryCoordinates
+                };
+
+                return new(result, 200, "Distância calculada com sucesso");
             }
             catch (Exception ex)
             {

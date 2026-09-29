@@ -143,7 +143,7 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                int diaSemanaIndex = ((int)date.DayOfWeek + 6) % 7;
+                int dayWeekIndex = ((int)date.DayOfWeek + 6) % 7;
                 List<string> serviceList = string.IsNullOrWhiteSpace(serviceIds)
                     ? []
                     : serviceIds.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
@@ -200,7 +200,197 @@ namespace api_bora_trampar.src.Services
                                     {
                                         { "input", "$working_hours" },
                                         { "as", "wh" },
-                                        { "cond", new BsonDocument("$eq", new BsonArray { "$$wh.day_of_week", diaSemanaIndex }) }
+                                        { "cond", new BsonDocument("$eq", new BsonArray { "$$wh.day_of_week", dayWeekIndex }) }
+                                    })
+                                ))},
+                                { "in", new BsonDocument("$and", new BsonArray
+                                    {
+                                        new BsonDocument("$eq", new BsonArray { "$$diaAtual.is_active", true }),
+                                        new BsonDocument("$lte", new BsonArray { "$$diaAtual.start_hour", hour }),
+                                        new BsonDocument("$gte", new BsonArray { "$$diaAtual.end_hour", hour }),
+                                        new BsonDocument("$or", new BsonArray
+                                            {
+                                                new BsonDocument("$eq", new BsonArray { "$$diaAtual.break_start", BsonNull.Value }),
+                                                new BsonDocument("$lt", new BsonArray { hour, "$$diaAtual.break_start" }),
+                                                new BsonDocument("$gte", new BsonArray { hour, "$$diaAtual.break_end" })
+                                            })
+                                    })
+                                }
+                            })
+                        }
+                    }),
+
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "reviews"},
+                        {"localField", "user_id"},
+                        {"foreignField", "professional_id"},
+                        {"as", "reviews_lookup"}
+                    }),
+                ];
+
+                if (serviceList.Count > 0)
+                {
+                    pipeline.Add(new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$setIsSubset", new BsonArray
+                            {
+                                new BsonArray(serviceList),
+                                new BsonDocument("$map", new BsonDocument
+                                {
+                                    {"input", "$services"},
+                                    {"as", "s"},
+                                    {"in", "$$s.service_id"}
+                                })
+                            })
+                        }
+                    }));
+                }
+
+                pipeline.Add(new("$lookup", new BsonDocument
+                {
+                    {"from", "appointments"},
+                    {"let", new BsonDocument { { "profId", "$user_id" } }},
+                    {"pipeline", new BsonArray
+                        {
+                            new BsonDocument("$match", new BsonDocument("$expr",
+                                new BsonDocument("$and", new BsonArray
+                                {
+                                    new BsonDocument("$eq", new BsonArray { "$professional_id", "$$profId" }),
+                                    new BsonDocument("$eq", new BsonArray { "$date", date }),
+                                    new BsonDocument("$eq", new BsonArray { "$hour", hour }),
+                                    new BsonDocument("$eq", new BsonArray { "$status", "confirmed" })
+                                })
+                            ))
+                        }
+                    },
+                    {"as", "conflitos_agenda"}
+                }));
+
+                pipeline.Add(
+                new("$match", new BsonDocument
+                {
+                    { "conflitos_agenda", new BsonDocument("$size", 0) }
+                }));
+
+                pipeline.Add(new("$project", new BsonDocument
+                {
+                    {"_id", 0},
+                    {"id", new BsonDocument("$toString", "$user_lookup._id")},
+                    {"name", "$user_lookup.name"},
+                    {"role", "$user_lookup.role"},
+                    {"avatarUrl", new BsonDocument("$ifNull", new BsonArray {
+                        "$user_lookup.photo",
+                        new BsonDocument("$ifNull", new BsonArray {
+                            "$photo",
+                            new BsonDocument("$ifNull", new BsonArray {
+                                new BsonDocument("$arrayElemAt", new BsonArray { "$portfolio_photos", 0 }),
+                                ""
+                            })
+                        })
+                    })},
+                    {"profession", 1},
+                    {"bio", new BsonDocument("$ifNull", new BsonArray { "$bio", "" })},
+                    {"services", new BsonDocument("$map", new BsonDocument
+                    {
+                        {"input", new BsonDocument("$ifNull", new BsonArray { "$services", new BsonArray() })},
+                        {"as", "s"},
+                        {"in", new BsonDocument
+                            {
+                                {"category_id", "$$s.category_id"},
+                                {"category_name", "$$s.category_name"},
+                                {"service_id", "$$s.service_id"},
+                                {"service_name", "$$s.service_name"},
+                                {"price", new BsonDocument("$toDouble", new BsonDocument("$ifNull", new BsonArray { "$$s.price", 0.0 }))},
+                                {"price_type", "$$s.price_type"},
+                                {"estimated_minutes", "$$s.estimated_minutes"},
+                                {"description", "$$s.description"}
+                            }
+                        }
+                    })},
+                    {"rating", new BsonDocument("$ifNull", new BsonArray { "$rating", 5.0 })},
+                    {"review_count", new BsonDocument("$ifNull", new BsonArray { "$review_count", 0 })},
+                    {"completed_services_count", new BsonDocument("$ifNull", new BsonArray { "$completed_services_count", 0 })},
+                    {"badges", new BsonDocument("$ifNull", new BsonArray { "$badges", new BsonArray() })},
+                    {"distanciaKm", 1},
+                    {"working_hours", new BsonDocument("$ifNull", new BsonArray { "$working_hours", "$workingHours" })},
+                    {"address", 1},
+                    {"reviews", "$reviews_lookup"}
+                }));
+
+                pipeline.Add(new("$sort", new BsonDocument { { "distanciaKm", 1 } }));
+
+                var list = await repository.GetAllAsync(pipeline);
+
+                return new(list, 200, "Profissionais listados com sucesso");
+            }
+            catch (Exception ex)
+            {
+                return new(null, 500, $"Ocorreu um erro inesperado. Por favor, tente novamente mais tarde - {ex.Message}");
+            }
+        }
+        public async Task<ResponseApi<List<dynamic>>> GetProfessionalFreightAvailabilityAsync(DateTime date, string hour, double latitude, double longitude, string serviceIds)
+        {
+            try
+            {
+                int dayWeekIndex = ((int)date.DayOfWeek + 6) % 7;
+                List<string> serviceList = string.IsNullOrWhiteSpace(serviceIds)
+                    ? []
+                    : serviceIds.Split(';', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+
+                List<BsonDocument> pipeline =
+                [
+                    new("$geoNear", new BsonDocument
+                    {
+                        { "near", new BsonDocument
+                            {
+                                { "type", "Point" },
+                                { "coordinates", new BsonArray { longitude, latitude } }
+                            }
+                        },
+                        { "distanceField", "distanciaMetros" },
+                        { "spherical", true },
+                        { "key", "address.location" }
+                    }),
+                    new("$addFields", new BsonDocument("distanciaKm",
+                        new BsonDocument("$divide", new BsonArray { "$distanciaMetros", 1000 })) ),
+                    new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$lte", new BsonArray { "$distanciaKm", "$address.service_radius_km" }) }
+                    }),
+                    new("$lookup", new BsonDocument
+                    {
+                        {"from", "users"},
+                        {"let", new BsonDocument("userId", "$user_id")},
+                        {"pipeline", new BsonArray
+                            {
+                                new BsonDocument("$match", new BsonDocument("$expr",
+                                    new BsonDocument("$eq", new BsonArray { new BsonDocument("$toString", "$_id"), "$$userId" })
+                                ))
+                            }
+                        },
+                        {"as", "user_lookup"}
+                    }),
+                    new("$unwind", "$user_lookup"),
+                    new("$match", new BsonDocument
+                    {
+                        {"user_lookup.deleted", false},
+                        {"user_lookup.blocked", false},
+                        {"user_lookup.confirm_account", true},
+                        {"is_available_now", true},
+                        {"user_lookup.role", "Professional"}
+                    }),
+
+                    new("$match", new BsonDocument
+                    {
+                        { "$expr", new BsonDocument("$let", new BsonDocument
+                            {
+                                { "vars", new BsonDocument("diaAtual", new BsonDocument("$first",
+                                    new BsonDocument("$filter", new BsonDocument
+                                    {
+                                        { "input", "$working_hours" },
+                                        { "as", "wh" },
+                                        { "cond", new BsonDocument("$eq", new BsonArray { "$$wh.day_of_week", dayWeekIndex }) }
                                     })
                                 ))},
                                 { "in", new BsonDocument("$and", new BsonArray

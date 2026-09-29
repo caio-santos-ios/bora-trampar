@@ -6,6 +6,7 @@ import 'package:app_bora_trampar/core/utils/font_awesome_helper.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:app_bora_trampar/models/category_model.dart';
 import 'package:app_bora_trampar/models/order_request_model.dart';
+import 'package:app_bora_trampar/pages/customer/customer_freight_route_screen.dart';
 import 'package:app_bora_trampar/pages/customer/customer_order_tab_2_screen.dart';
 import 'package:app_bora_trampar/repositories/category/category_repository.dart';
 import 'package:flutter/material.dart';
@@ -70,6 +71,16 @@ class _CustomerOrderTab1ScreenState extends State<CustomerOrderTab1Screen> {
             ),
           ),
           backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedCategory!.isFreight) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const CustomerFreightRouteScreen(),
         ),
       );
       return;

@@ -50,6 +50,13 @@ namespace api_bora_trampar.src.Controllers
             ResponseApi<List<dynamic>> response = await service.GetProfessionalAvailabilityAsync(date, hour, latitude, longitude, serviceIds);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+        
+        [HttpGet("professional-freight-availability")]
+        public async Task<IActionResult> GetProfessionalFreightAvailability([FromQuery] DateTime date, [FromQuery] string hour, [FromQuery] double latitude, [FromQuery] double longitude, [FromQuery] string serviceIds)
+        {
+            ResponseApi<List<dynamic>> response = await service.GetProfessionalFreightAvailabilityAsync(date, hour, latitude, longitude, serviceIds);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
 
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] CreateProfileProfessionalRequest request)

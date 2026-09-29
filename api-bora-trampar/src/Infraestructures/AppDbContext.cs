@@ -38,5 +38,6 @@ namespace api_bora_trampar.src.Configuration
         public IMongoCollection<DailyWord> DailyWords => Database.GetCollection<DailyWord>("daily_words");
         public IMongoCollection<Transfer> Transfers => Database.GetCollection<Transfer>("transfers");
         public IMongoCollection<FreightOrder> FreightOrders => Database.GetCollection<FreightOrder>("freight_orders");
+        public IMongoCollection<Vehicle> Vehicles => Database.GetCollection<Vehicle>("vehicles");
     }
 }

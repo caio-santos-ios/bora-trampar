@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Requests.Base;
 
@@ -12,8 +12,13 @@ namespace api_bora_trampar.src.Requests
 
         public Address OriginAddress { get; set; } = new();
         public Address DestinationAddress { get; set; } = new();
-        public string Description { get; set; } = string.Empty;
+        public string CargoType { get; set; } = string.Empty;
+        public double CargoWeight { get; set; }
+        public double DistanceKm { get; set; }
+        public string DurationLabel { get; set; } = string.Empty;
+        public DateTime? ScheduledDate { get; set; }
         public string VehicleType { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public double Price { get; set; }
         public string Status { get; set; } = string.Empty;
         public string ProfessionalId { get; set; } = string.Empty;

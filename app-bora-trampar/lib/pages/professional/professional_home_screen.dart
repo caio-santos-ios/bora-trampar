@@ -72,8 +72,9 @@ class _ProfessionalHomeScreen extends State<ProfessionalHomeScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
+    DateTime today = DateTime.now();
     String query =
-        "professional_id=${_storageService.getCurrentUser().id}&orderBy=date";
+        "professional_id=${_storageService.getCurrentUser().id}&gte\$and\$date\$date=$today&orderBy=date";
     final fresh = await _appointmentRepo.getAppointments(query: query);
     if (mounted && fresh.isNotEmpty) {
       setState(() {

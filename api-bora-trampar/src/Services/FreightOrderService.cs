@@ -1,4 +1,4 @@
-﻿using api_bora_trampar.src.Configuration;
+using api_bora_trampar.src.Configuration;
 using api_bora_trampar.src.Interfaces;
 using api_bora_trampar.src.Models;
 using api_bora_trampar.src.Models._Base;
@@ -14,6 +14,19 @@ namespace api_bora_trampar.src.Services
 {
     public class FreightOrderService(IFreightOrderRepository repository, AppDbContext appDbContext) : IFreightOrderService
     {
+        private static BsonDocument AddressProjection(string field) =>
+            new()
+            {
+                { "street", $"${field}.street" },
+                { "number", $"${field}.number" },
+                { "neighborhood", $"${field}.neighborhood" },
+                { "city", $"${field}.city" },
+                { "state", $"${field}.state" },
+                { "zipCode", $"${field}.zip_code" },
+                { "latitude", $"${field}.latitude" },
+                { "longitude", $"${field}.longitude" },
+            };
+
         #region READ
         public async Task<ResponseApi<PaginationApi<List<dynamic>>>> GetAllAsync(GetAllRequest request)
         {
@@ -36,18 +49,22 @@ namespace api_bora_trampar.src.Services
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
-                        {"customerId", new BsonDocument("$ifNull", new BsonArray { "$customerId", "$customer_id", "" })},
-                        {"customerName", new BsonDocument("$ifNull", new BsonArray { "$customerName", "$customer_name", "" })},
-                        {"professionalId", new BsonDocument("$ifNull", new BsonArray { "$professionalId", "$professional_id", "" })},
-                        {"professionalName", new BsonDocument("$ifNull", new BsonArray { "$professionalName", "$professional_name", "" })},
-                        {"originAddress", new BsonDocument("$ifNull", new BsonArray { "$originAddress", "$origin_address", "" })},
-                        {"destinationAddress", new BsonDocument("$ifNull", new BsonArray { "$destinationAddress", "$destination_address", "" })},
+                        {"customerId", new BsonDocument("$ifNull", new BsonArray { "$customer_id", "" })},
+                        {"professionalId", new BsonDocument("$ifNull", new BsonArray { "$professional_id", "" })},
+                        {"vehicleId", new BsonDocument("$ifNull", new BsonArray { "$vehicle_id", "" })},
+                        {"originAddress", AddressProjection("origin_address")},
+                        {"destinationAddress", AddressProjection("destination_address")},
+                        {"cargoType", new BsonDocument("$ifNull", new BsonArray { "$cargo_type", "" })},
+                        {"cargoWeight", new BsonDocument("$ifNull", new BsonArray { "$cargo_weight", 0.0 })},
+                        {"distanceKm", new BsonDocument("$ifNull", new BsonArray { "$distance_km", 0.0 })},
+                        {"durationLabel", new BsonDocument("$ifNull", new BsonArray { "$duration_label", "" })},
+                        {"scheduledDate", "$scheduled_date"},
+                        {"vehicleType", new BsonDocument("$ifNull", new BsonArray { "$vehicle_type", "" })},
                         {"description", 1},
-                        {"vehicleType", new BsonDocument("$ifNull", new BsonArray { "$vehicleType", "$vehicle_type", "" })},
                         {"price", 1},
                         {"status", 1},
                         {"notes", 1},
-                        {"created_at", 1}
+                        {"createdAt", "$created_at"}
                     })
                 ];
 
@@ -78,18 +95,21 @@ namespace api_bora_trampar.src.Services
                     {
                         {"_id", 0},
                         {"id", new BsonDocument("$toString", "$_id")},
-                        {"customerId", new BsonDocument("$ifNull", new BsonArray { "$customerId", "$customer_id", "" })},
-                        {"customerName", new BsonDocument("$ifNull", new BsonArray { "$customerName", "$customer_name", "" })},
-                        {"professionalId", new BsonDocument("$ifNull", new BsonArray { "$professionalId", "$professional_id", "" })},
-                        {"professionalName", new BsonDocument("$ifNull", new BsonArray { "$professionalName", "$professional_name", "" })},
-                        {"originAddress", new BsonDocument("$ifNull", new BsonArray { "$originAddress", "$origin_address", "" })},
-                        {"destinationAddress", new BsonDocument("$ifNull", new BsonArray { "$destinationAddress", "$destination_address", "" })},
+                        {"customerId", new BsonDocument("$ifNull", new BsonArray { "$customer_id", "" })},
+                        {"professionalId", new BsonDocument("$ifNull", new BsonArray { "$professional_id", "" })},
+                        {"originAddress", AddressProjection("origin_address")},
+                        {"destinationAddress", AddressProjection("destination_address")},
+                        {"cargoType", new BsonDocument("$ifNull", new BsonArray { "$cargo_type", "" })},
+                        {"cargoWeight", new BsonDocument("$ifNull", new BsonArray { "$cargo_weight", 0.0 })},
+                        {"distanceKm", new BsonDocument("$ifNull", new BsonArray { "$distance_km", 0.0 })},
+                        {"durationLabel", new BsonDocument("$ifNull", new BsonArray { "$duration_label", "" })},
+                        {"scheduledDate", "$scheduled_date"},
+                        {"vehicleType", new BsonDocument("$ifNull", new BsonArray { "$vehicle_type", "" })},
                         {"description", 1},
-                        {"vehicleType", new BsonDocument("$ifNull", new BsonArray { "$vehicleType", "$vehicle_type", "" })},
                         {"price", 1},
                         {"status", 1},
                         {"notes", 1},
-                        {"created_at", 1}
+                        {"createdAt", "$created_at"}
                     })
                 ];
 
@@ -186,6 +206,12 @@ namespace api_bora_trampar.src.Services
                 FreightOrder? existed = await repository.GetByIdAsync(request.Id);
                 if (existed is null) return new(null, 404, "Pedido de frete não encontrado");
 
+                if (!string.IsNullOrWhiteSpace(request.CargoType)) existed.CargoType = request.CargoType;
+                if (request.CargoWeight > 0) existed.CargoWeight = request.CargoWeight;
+                if (request.DistanceKm > 0) existed.DistanceKm = request.DistanceKm;
+                if (!string.IsNullOrWhiteSpace(request.DurationLabel)) existed.DurationLabel = request.DurationLabel;
+                if (request.ScheduledDate.HasValue) existed.ScheduledDate = request.ScheduledDate;
+                if (!string.IsNullOrWhiteSpace(request.VehicleType)) existed.VehicleType = request.VehicleType;
                 if (!string.IsNullOrWhiteSpace(request.Description)) existed.Description = request.Description;
                 if (request.Price > 0) existed.Price = request.Price;
                 if (!string.IsNullOrWhiteSpace(request.Status)) existed.Status = request.Status;

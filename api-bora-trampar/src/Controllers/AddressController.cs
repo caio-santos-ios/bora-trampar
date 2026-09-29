@@ -23,5 +23,12 @@ namespace api_bora_trampar.src.Controllers
             ResponseApi<List<dynamic>> response = await service.GetSearchAsync(q);
             return StatusCode(response.StatusCode, new { response.Result });
         }
+        
+        [HttpGet("distance")]
+        public async Task<IActionResult> GetDistance([FromQuery] string profile, [FromQuery] string lonOrigin, [FromQuery] string latOrigin, [FromQuery] string lonDestination, [FromQuery] string latDestination)
+        {
+            ResponseApi<dynamic?> response = await service.GetDistanceAsync(profile, lonOrigin, latOrigin, lonDestination, latDestination);
+            return StatusCode(response.StatusCode, new { response.Result });
+        }
     }
 }

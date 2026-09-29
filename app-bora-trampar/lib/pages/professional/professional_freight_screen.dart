@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:app_bora_trampar/core/services/util_service.dart';
 import 'package:app_bora_trampar/core/widgets/toastfy_widget.dart';
+import 'package:app_bora_trampar/pages/vehicle/vehicle_screen.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -192,6 +193,19 @@ class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
                         color: AppColors.textPrimary,
                       ),
                     ),
+                    if (order.cargoType.isNotEmpty || order.cargoWeight > 0) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Carga: ${[
+                          if (order.cargoType.isNotEmpty) order.cargoType,
+                          if (order.cargoWeight > 0) "${order.cargoWeight.toStringAsFixed(0)} kg",
+                        ].join(" - ")}',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -275,6 +289,33 @@ class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
       body: SafeArea(
         child: Column(
           children: [
+            InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const VehiclesScreen()),
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_shipping_outlined, color: AppColors.primaryGold, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Meus Veículos',
+                        style: GoogleFonts.inter(
+                          color: AppColors.primaryGold,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right_rounded, color: AppColors.primaryGold, size: 18),
+                  ],
+                ),
+              ),
+            ),
             Container(
               color: AppColors.cardBackground,
               child: TabBar(
@@ -490,7 +531,7 @@ class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  order.originAddress,
+                  order.originAddress.toString(),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textPrimary,
@@ -511,7 +552,7 @@ class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  order.destinationAddress,
+                  order.destinationAddress.toString(),
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     color: AppColors.textPrimary,
@@ -521,6 +562,63 @@ class _ProfessionalFreightScreenState extends State<ProfessionalFreightScreen>
               ),
             ],
           ),
+          if (order.cargoType.isNotEmpty || order.cargoWeight > 0) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (order.cargoType.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElevated,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.inventory_2_rounded,
+                            color: AppColors.primaryGold, size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          order.cargoType,
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (order.cargoType.isNotEmpty && order.cargoWeight > 0)
+                  const SizedBox(width: 8),
+                if (order.cargoWeight > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardElevated,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.scale_rounded,
+                            color: AppColors.primaryGold, size: 12),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${order.cargoWeight.toStringAsFixed(0)} kg',
+                          style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
           if (order.description.isNotEmpty) ...[
             const SizedBox(height: 10),
             Text(

@@ -65,6 +65,61 @@ class AddressRepository {
 
     return response.statusCode == 200 ? (response.data["result"]["data"] as List).map((e) => AddressSuggestion.fromJson(e)).toList() : [];
   }
+
+  Future<RouteDistance?> getDistance({
+    required double originLat,
+    required double originLon,
+    required double destinationLat,
+    required double destinationLon,
+    String profile = 'driving',
+  }) async {
+    final response = await _api.client.get(
+      '/api/addresses/distance',
+      queryParameters: {
+        'latOrigin': originLat.toString(),
+        'lonOrigin': originLon.toString(),
+        'latDestination': destinationLat.toString(),
+        'lonDestination': destinationLon.toString(),
+        'profile': profile,
+      },
+    );
+
+    return response.statusCode == 200 && response.data['result']?['data'] != null
+        ? RouteDistance.fromJson(Map<String, dynamic>.from(response.data['result']['data']))
+        : null;
+  }
+}
+
+class RouteDistance {
+  final double distanceKm;
+  final double durationMinutes;
+  final List<List<double>> geometry; // [lon, lat]
+
+  RouteDistance({
+    required this.distanceKm,
+    required this.durationMinutes,
+    this.geometry = const [],
+  });
+
+  factory RouteDistance.fromJson(Map<String, dynamic> json) {
+    return RouteDistance(
+      distanceKm: (json['distanceKm'] as num?)?.toDouble() ?? 0.0,
+      durationMinutes: (json['durationMinutes'] as num?)?.toDouble() ?? 0.0,
+      geometry: ((json['geometry'] as List?) ?? [])
+          .map((c) => (c as List).map((v) => (v as num).toDouble()).toList())
+          .toList(),
+    );
+  }
+
+  String get distanceLabel => distanceKm < 1
+      ? '${(distanceKm * 1000).round()} m'
+      : '${distanceKm.toStringAsFixed(1).replaceAll('.', ',')} km';
+
+  String get durationLabel {
+    final total = durationMinutes.round();
+    if (total < 60) return '$total min';
+    return '${total ~/ 60} h ${total % 60} min';
+  }
 }
 
 class AddressSuggestion {
@@ -104,4 +159,3 @@ class AddressSuggestion {
     );
   }
 }
-
