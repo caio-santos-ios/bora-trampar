@@ -11,10 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace api_bora_trampar.src.Controllers
 {
     [ApiController]
+    [Authorize]
     [Route("api/payments")]
     public class PaymentController(IPaymentService service) : ControllerBase
     {
-        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -68,6 +68,7 @@ namespace api_bora_trampar.src.Controllers
             return StatusCode(response.StatusCode, new { response.Result });
         }
 
+        [AllowAnonymous]
         [HttpPost("check-payment")]
         public async Task<IActionResult> CheckPayment([FromBody] CheckPaymentRequest request)
         {

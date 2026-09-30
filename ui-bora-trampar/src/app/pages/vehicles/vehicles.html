@@ -1,0 +1,351 @@
+<div class="page-container">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Aprovação de Veículos</h1>
+      <p class="page-subtitle">Moderação de veículos cadastrados por prestadores e motoristas de frete</p>
+    </div>
+  </div>
+
+  <div class="card filters-card">
+    <div class="filters-wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Buscar por motorista, placa, marca, modelo ou tipo..."
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <div class="status-filter-group">
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'all'"
+          (click)="filterStatus = 'all'; onFilterChange()"
+        >
+          Todos ({{ vehicles.length }})
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'pending'"
+          (click)="filterStatus = 'pending'; onFilterChange()"
+        >
+          Pendentes
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'approved'"
+          (click)="filterStatus = 'approved'; onFilterChange()"
+        >
+          Aprovados
+        </button>
+        <button
+          class="filter-chip"
+          [class.active]="filterStatus === 'rejected'"
+          (click)="filterStatus = 'rejected'; onFilterChange()"
+        >
+          Reprovados
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <app-loading [isLoading]="isLoading"></app-loading>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="table-responsive desktop-table-view">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Motorista / Prestador</th>
+            <th>Veículo</th>
+            <th>Placa</th>
+            <th>Capacidade</th>
+            <th>Fotos / Doc</th>
+            <th>Status</th>
+            <th style="text-align: right;">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of paginatedList">
+            <td>
+              <div class="pro-cell">
+                <div class="avatar-circle">{{ item.professionalName[0] }}</div>
+                <div>
+                  <div class="pro-name">{{ item.professionalName }}</div>
+                  <div class="pro-sub">{{ item.professionalPhone }} • {{ item.professionalEmail }}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--text-main);">
+                {{ item.brand }} {{ item.model }} ({{ item.year }})
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                <i class="fa-solid fa-truck" style="color: var(--accent-primary);"></i> {{ item.vehicleType }}
+                <span *ngIf="item.isDefault" class="badge-default">Padrão</span>
+              </div>
+            </td>
+            <td>
+              <span class="plate-badge">{{ item.plateNumber || 'Sem placa' }}</span>
+            </td>
+            <td>
+              <span *ngIf="item.approximateCapacityKg > 0">{{ item.approximateCapacityKg }} kg</span>
+              <span *ngIf="item.approximateCapacityKg <= 0" style="color: var(--text-muted);">-</span>
+            </td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <span class="doc-pill" *ngIf="item.photoUrl" (click)="openImagePreview(item.photoUrl)" title="Ver foto">
+                  <i class="fa-solid fa-image"></i> Foto
+                </span>
+                <span class="doc-pill" *ngIf="item.documentUrl" (click)="openImagePreview(item.documentUrl)" title="Ver CRLV">
+                  <i class="fa-solid fa-file-lines"></i> Doc
+                </span>
+                <span *ngIf="!item.photoUrl && !item.documentUrl" style="color: var(--text-muted); font-size: 12px;">Pendente</span>
+              </div>
+            </td>
+            <td>
+              <span class="status-badge" [ngClass]="item.approvalStatus.toLowerCase()">
+                {{ item.approvalStatusLabel }}
+              </span>
+            </td>
+            <td style="text-align: right;">
+              <button class="btn-primary btn-sm" (click)="openDetails(item)">
+                <i class="fa-solid fa-eye"></i>
+                <span>Analisar</span>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="filteredList.length === 0">
+            <td colspan="7" class="empty-state-cell">
+              <i class="fa-solid fa-truck empty-icon"></i>
+              <p>Nenhum veículo encontrado para os filtros selecionados.</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile view -->
+    <div class="mobile-cards-view">
+      <div class="vehicle-mobile-card" *ngFor="let item of paginatedList">
+        <div class="card-mobile-header">
+          <div>
+            <div class="mobile-pro-name">{{ item.professionalName }}</div>
+            <div class="mobile-sub">{{ item.vehicleType }} • {{ item.plateNumber }}</div>
+          </div>
+          <span class="status-badge" [ngClass]="item.approvalStatus.toLowerCase()">
+            {{ item.approvalStatusLabel }}
+          </span>
+        </div>
+        <div class="card-mobile-body">
+          <div style="margin-bottom: 6px;">
+            <strong>Veículo:</strong> {{ item.brand }} {{ item.model }} ({{ item.year }})
+          </div>
+          <div *ngIf="item.approximateCapacityKg > 0" style="margin-bottom: 6px;">
+            <strong>Capacidade:</strong> {{ item.approximateCapacityKg }} kg
+          </div>
+        </div>
+        <div class="card-mobile-footer">
+          <button class="btn-primary btn-sm" style="width: 100%;" (click)="openDetails(item)">
+            <i class="fa-solid fa-eye"></i> Analisar Veículo
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="filteredList.length === 0" class="empty-state-cell">
+        <i class="fa-solid fa-truck empty-icon"></i>
+        <p>Nenhum veículo encontrado.</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-bar" *ngIf="totalPages > 1">
+      <button class="btn-page" [disabled]="currentPage === 1" (click)="currentPage = currentPage - 1">
+        <i class="fa-solid fa-chevron-left"></i> Anterior
+      </button>
+      <span>Página {{ currentPage }} de {{ totalPages }}</span>
+      <button class="btn-page" [disabled]="currentPage === totalPages" (click)="currentPage = currentPage + 1">
+        Próxima <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Detalhes do Veículo -->
+  <div class="modal-backdrop" *ngIf="isModalOpen" (click)="closeDetails()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">Detalhes do Veículo</h2>
+          <p class="modal-subtitle">Avalie as informações e fotos antes de autorizar o veículo</p>
+        </div>
+        <button class="btn-close" (click)="closeDetails()">&times;</button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedItem">
+        <!-- Motorista Info -->
+        <div class="info-section">
+          <h3 class="section-title"><i class="fa-solid fa-user"></i> Motorista / Prestador</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Nome:</label>
+              <span>{{ selectedItem.professionalName }}</span>
+            </div>
+            <div class="info-item">
+              <label>Telefone / WhatsApp:</label>
+              <span>{{ selectedItem.professionalPhone }}</span>
+            </div>
+            <div class="info-item">
+              <label>E-mail:</label>
+              <span>{{ selectedItem.professionalEmail }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Veículo Info -->
+        <div class="info-section">
+          <h3 class="section-title"><i class="fa-solid fa-truck"></i> Dados do Veículo</h3>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Tipo de Veículo:</label>
+              <span class="highlight-text">{{ selectedItem.vehicleType }}</span>
+            </div>
+            <div class="info-item">
+              <label>Marca / Modelo:</label>
+              <span>{{ selectedItem.brand }} {{ selectedItem.model }}</span>
+            </div>
+            <div class="info-item">
+              <label>Ano de Fabricação:</label>
+              <span>{{ selectedItem.year || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Placa:</label>
+              <span class="plate-badge">{{ selectedItem.plateNumber || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Capacidade de Carga:</label>
+              <span>{{ selectedItem.approximateCapacityKg ? selectedItem.approximateCapacityKg + ' kg' : '-' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Dimensões da Caçamba / Baú:</label>
+              <span>{{ selectedItem.dimensions || '-' }}</span>
+            </div>
+            <div class="info-item">
+              <label>Status Atual:</label>
+              <span class="status-badge" [ngClass]="selectedItem.approvalStatus.toLowerCase()">
+                {{ selectedItem.approvalStatusLabel }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="selectedItem.approvalNotes">
+              <label>Observações / Motivo:</label>
+              <span style="color: var(--text-muted);">{{ selectedItem.approvalNotes }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fotos / Documentos -->
+        <div class="info-section">
+          <h3 class="section-title"><i class="fa-solid fa-images"></i> Fotos e Documentos</h3>
+          <div class="media-grid">
+            <div class="media-card">
+              <label>Foto do Veículo</label>
+              <div class="media-thumb" *ngIf="selectedItem.photoUrl" (click)="openImagePreview(selectedItem.photoUrl)">
+                <img [src]="selectedItem.photoUrl" alt="Foto do Veículo" />
+                <div class="thumb-overlay"><i class="fa-solid fa-magnifying-glass-plus"></i> Ampliar</div>
+              </div>
+              <div class="no-media" *ngIf="!selectedItem.photoUrl">
+                <i class="fa-solid fa-image"></i>
+                <span>Nenhuma foto enviada</span>
+              </div>
+            </div>
+
+            <div class="media-card">
+              <label>Documento do Veículo (CRLV)</label>
+              <div class="media-thumb" *ngIf="selectedItem.documentUrl" (click)="openImagePreview(selectedItem.documentUrl)">
+                <img [src]="selectedItem.documentUrl" alt="Documento do Veículo" />
+                <div class="thumb-overlay"><i class="fa-solid fa-magnifying-glass-plus"></i> Ampliar</div>
+              </div>
+              <div class="no-media" *ngIf="!selectedItem.documentUrl">
+                <i class="fa-solid fa-file-circle-xmark"></i>
+                <span>Nenhum documento enviado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" *ngIf="selectedItem">
+        <button class="btn-outline" (click)="closeDetails()">Fechar</button>
+        <button
+          class="btn-danger"
+          *ngIf="selectedItem.approvalStatus !== 'Rejected'"
+          (click)="openActionModal('reject')"
+        >
+          <i class="fa-solid fa-ban"></i> Reprovar Veículo
+        </button>
+        <button
+          class="btn-success"
+          *ngIf="selectedItem.approvalStatus !== 'Approved'"
+          (click)="openActionModal('approve')"
+        >
+          <i class="fa-solid fa-check"></i> Aprovar Veículo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ação (Aprovar / Reprovar com Justificativa) -->
+  <div class="modal-backdrop" *ngIf="isActionModalOpen" (click)="closeActionModal()">
+    <div class="modal-container modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">
+          {{ actionType === 'approve' ? 'Confirmar Aprovação' : 'Reprovar Veículo' }}
+        </h2>
+        <button class="btn-close" (click)="closeActionModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom: 16px; color: var(--text-muted); font-size: 14px;">
+          {{ actionType === 'approve'
+            ? 'Tem certeza de que deseja aprovar este veículo? Ele será habilitado para realizar fretes na plataforma.'
+            : 'Informe o motivo da reprovação deste veículo. O prestador será informado para providenciar a regularização.'
+          }}
+        </p>
+
+        <div class="form-group">
+          <label class="form-label">
+            {{ actionType === 'approve' ? 'Observações internas (opcional):' : 'Motivo da reprovação (obrigatório):' }}
+          </label>
+          <textarea
+            class="form-control"
+            rows="3"
+            placeholder="Ex: Documento ilegível, placa divergente, modelo aprovado com ressalvas..."
+            [(ngModel)]="actionJustification"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="closeActionModal()">Cancelar</button>
+        <button
+          [class]="actionType === 'approve' ? 'btn-success' : 'btn-danger'"
+          (click)="confirmAction()"
+          [disabled]="isLoading"
+        >
+          {{ actionType === 'approve' ? 'Confirmar Aprovação' : 'Confirmar Reprovação' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Zoom Imagem -->
+  <div class="modal-backdrop image-preview-backdrop" *ngIf="previewImageUrl" (click)="closeImagePreview()">
+    <div class="image-preview-container" (click)="$event.stopPropagation()">
+      <button class="btn-close-preview" (click)="closeImagePreview()">&times;</button>
+      <img [src]="previewImageUrl" alt="Visualização em tamanho real" />
+    </div>
+  </div>
+</div>

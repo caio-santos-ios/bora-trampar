@@ -24,10 +24,10 @@ class TransferRepository {
 
   Future<TransferModel?> create(Object data) async {
     final response = await _api.client.post('/api/transfers', data: data);
-    return (response.statusCode == 200 || response.statusCode == 201) &&
-            response.data != null &&
-            response.data["result"] != null
-        ? TransferModel.fromJson(response.data["result"])
+    final result = response.data?["result"];
+    final map = result is Map && result["data"] != null ? result["data"] : result;
+    return (response.statusCode == 200 || response.statusCode == 201) && map is Map
+        ? TransferModel.fromJson(Map<String, dynamic>.from(map))
         : null;
   }
 

@@ -83,7 +83,9 @@ class FreightAddress {
 class FreightOrderModel {
   final String id;
   final String customerId;
+  final String customerName;
   final String professionalId;
+  final String professionalName;
   final String vehicleId;
   final FreightAddress originAddress;
   final FreightAddress destinationAddress;
@@ -102,7 +104,9 @@ class FreightOrderModel {
   const FreightOrderModel({
     required this.id,
     this.customerId = '',
+    this.customerName = '',
     this.professionalId = '',
+    this.professionalName = '',
     this.vehicleId = '',
     this.originAddress = const FreightAddress(),
     this.destinationAddress = const FreightAddress(),
@@ -150,10 +154,16 @@ class FreightOrderModel {
     return FreightOrderModel(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       customerId: (json['customerId'] ?? json['customer_id'] ?? '').toString(),
+      customerName:
+          (json['customerName'] ?? json['customer_name'] ?? '').toString(),
       professionalId:
           (json['professionalId'] ?? json['professional_id'] ?? '').toString(),
+      professionalName:
+          (json['professionalName'] ?? json['professional_name'] ?? '')
+              .toString(),
       vehicleId: (json['vehicleId'] ?? json['vehicle_id'] ?? '').toString(),
-      originAddress: parseAddress(json['originAddress'] ?? json['origin_address']),
+      originAddress:
+          parseAddress(json['originAddress'] ?? json['origin_address']),
       destinationAddress:
           parseAddress(json['destinationAddress'] ?? json['destination_address']),
       cargoType: (json['cargoType'] ?? json['cargo_type'] ?? '').toString(),
@@ -187,7 +197,9 @@ class FreightOrderModel {
   Map<String, dynamic> toJson() => {
         'id': id,
         'customerId': customerId,
+        'customerName': customerName,
         'professionalId': professionalId,
+        'professionalName': professionalName,
         'vehicleId': vehicleId,
         'originAddress': originAddress.toJson(),
         'destinationAddress': destinationAddress.toJson(),

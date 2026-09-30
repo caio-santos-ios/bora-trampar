@@ -181,6 +181,7 @@ namespace api_bora_trampar.src.Services
                 FreightOrder entity = ObjectMapper.Map<CreateFreightOrderRequest, FreightOrder>(request);
 
                 entity.CustomerId = customerId;
+                entity.CustomerName = customerName;
                 entity.Status = "Pending";
                 entity.CreatedAt = DateTime.UtcNow;
                 entity.UpdatedAt = DateTime.UtcNow;
@@ -242,6 +243,7 @@ namespace api_bora_trampar.src.Services
                     return new(null, 400, "Este frete já foi aceito por outro profissional ou não está mais disponível.");
 
                 existed.ProfessionalId = professionalId;
+                existed.ProfessionalName = professionalName;
                 existed.Status = "Accepted";
                 existed.UpdatedAt = DateTime.UtcNow;
 

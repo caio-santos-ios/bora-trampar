@@ -1,4 +1,4 @@
-﻿import '../../api/http_client_api.dart';
+import '../../api/http_client_api.dart';
 import '../../models/freight_order_model.dart';
 
 class FreightOrderRepository {
@@ -18,8 +18,9 @@ class FreightOrderRepository {
 
   Future<List<FreightOrderModel>> getMyOrdersAsCustomer() async {
     final response = await _api.client.get('/api/freight-orders/customer');
-    return response.statusCode == 200 && response.data["result"] != null
-        ? (response.data["result"] as List)
+    final data = response.data["result"]?["data"] ?? response.data["result"];
+    return response.statusCode == 200 && data is List
+        ? data
             .map((e) => FreightOrderModel.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : [];
@@ -27,8 +28,9 @@ class FreightOrderRepository {
 
   Future<List<FreightOrderModel>> getMyOrdersAsProfessional() async {
     final response = await _api.client.get('/api/freight-orders/professional');
-    return response.statusCode == 200 && response.data["result"] != null
-        ? (response.data["result"] as List)
+    final data = response.data["result"]?["data"] ?? response.data["result"];
+    return response.statusCode == 200 && data is List
+        ? data
             .map((e) => FreightOrderModel.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : [];
@@ -36,8 +38,9 @@ class FreightOrderRepository {
 
   Future<FreightOrderModel?> getById(String id) async {
     final response = await _api.client.get('/api/freight-orders/$id');
-    return response.statusCode == 200 && response.data["result"] != null
-        ? FreightOrderModel.fromJson(Map<String, dynamic>.from(response.data["result"]))
+    final data = response.data["result"]?["data"] ?? response.data["result"];
+    return response.statusCode == 200 && data is Map
+        ? FreightOrderModel.fromJson(Map<String, dynamic>.from(data))
         : null;
   }
 

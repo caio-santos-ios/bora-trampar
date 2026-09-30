@@ -13,6 +13,7 @@ import { Professionals } from './pages/professionals/professionals';
 import { Settings } from './pages/settings/settings';
 import { Profile } from './pages/profile/profile';
 import { DailyWords } from './pages/daily-words/daily-words';
+import { Vehicles } from './pages/vehicles/vehicles';
 import { Login } from './pages/login/login';
 import { ResetPassword } from './pages/reset-password/reset-password';
 import { Confirmation } from './pages/confirmation/confirmation';
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard },
       { path: 'verifications', component: Verifications },
+      { path: 'vehicles', component: Vehicles },
       { path: 'categories', component: Categories },
       { path: 'services', component: Services },
       { path: 'daily-words', component: DailyWords },

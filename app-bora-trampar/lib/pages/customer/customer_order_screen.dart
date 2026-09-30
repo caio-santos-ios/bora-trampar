@@ -11,6 +11,9 @@ import '../../core/widgets/main_app_bar.dart';
 import '../../models/appointment_model.dart';
 import '../../repositories/appointment/appointment_repository.dart';
 import 'package:brasil_fields/brasil_fields.dart';
+import '../../models/freight_order_model.dart';
+import '../../repositories/freight_order/freight_order_repository.dart';
+import 'customer_freight_route_screen.dart';
 
 class CustomerOrderScreen extends StatefulWidget {
   const CustomerOrderScreen({super.key});
@@ -21,12 +24,15 @@ class CustomerOrderScreen extends StatefulWidget {
 
 class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   final AppointmentRepository _appointmentRepo = AppointmentRepository();
+  final FreightOrderRepository _freightRepo = FreightOrderRepository();
 
   final _storageService = StorageService();
 
   List<AppointmentModel> _appointments = [];
+  List<FreightOrderModel> _freightOrders = [];
   bool _isLoading = true;
   int _selectedFilterIndex = 0;
+  int _selectedCategoryTab = 0;
   Timer? _pollTimer;
 
   @override
@@ -47,27 +53,37 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   }
 
   Future<void> _reloadAppointmentsSilently() async {
-    String query =
-        "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
-    final fresh = await _appointmentRepo.getAppointments(query: query);
-    if (mounted && fresh.isNotEmpty) {
-      setState(() {
-        _appointments = fresh;
-      });
-    }
+    try {
+      String query =
+          "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+      final fresh = await _appointmentRepo.getAppointments(query: query);
+      final freshFreights = await _freightRepo.getMyOrdersAsCustomer();
+      if (mounted) {
+        setState(() {
+          if (fresh.isNotEmpty) _appointments = fresh;
+          _freightOrders = freshFreights;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    String query =
-        "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
-    final appointments = await _appointmentRepo.getAppointments(query: query);
+    try {
+      String query =
+          "customer_id=${_storageService.getCurrentUser().id}&orderBy=date";
+      final appointments = await _appointmentRepo.getAppointments(query: query);
+      final freights = await _freightRepo.getMyOrdersAsCustomer();
 
-    if (mounted) {
-      setState(() {
-        _appointments = appointments;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _appointments = appointments;
+          _freightOrders = freights;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -294,19 +310,28 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: MainAppBar(title: 'Meus Agendamentos'),
+      appBar: MainAppBar(title: 'Meus Pedidos'),
       body: SafeArea(
-        child: RefreshIndicator(
-          color: AppColors.primaryGold,
-          backgroundColor: AppColors.cardBackground,
-          onRefresh: _loadData,
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryGold,
-                  ),
-                )
-              : _buildCustomerView(),
+        child: Column(
+          children: [
+            _buildTopTabs(),
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.primaryGold,
+                backgroundColor: AppColors.cardBackground,
+                onRefresh: _loadData,
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryGold,
+                        ),
+                      )
+                    : (_selectedCategoryTab == 0
+                        ? _buildCustomerView()
+                        : _buildFreightView()),
+              ),
+            ),
+          ],
         ),
       ),
       bottomNavigationBar: (!_isLoading)
@@ -316,19 +341,32 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
                 height: 50,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const CustomerOrderTab1Screen(),
-                      ),
-                    );
+                    if (_selectedCategoryTab == 0) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CustomerOrderTab1Screen(),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CustomerFreightRouteScreen(),
+                        ),
+                      );
+                    }
                   },
-                  icon: const Icon(
-                    Icons.add_rounded,
+                  icon: Icon(
+                    _selectedCategoryTab == 0
+                        ? Icons.add_rounded
+                        : Icons.local_shipping_rounded,
                     color: AppColors.textDark,
                   ),
                   label: Text(
-                    'Agendar Novo Serviço',
+                    _selectedCategoryTab == 0
+                        ? 'Agendar Novo Serviço'
+                        : 'Solicitar Novo Frete',
                     style: GoogleFonts.inter(
                       color: AppColors.textDark,
                       fontSize: 15,
@@ -851,4 +889,443 @@ class _CustomerAppointmentScreenState extends State<CustomerOrderScreen> {
       ],
     );
   }
+
+  Widget _buildTopTabs() {
+    return Container(
+      color: AppColors.cardBackground,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildTopTabItem(
+              index: 0,
+              label: 'Serviços (${_appointments.length})',
+              icon: Icons.calendar_today_rounded,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _buildTopTabItem(
+              index: 1,
+              label: 'Fretes (${_freightOrders.length})',
+              icon: Icons.local_shipping_rounded,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopTabItem({
+    required int index,
+    required String label,
+    required IconData icon,
+  }) {
+    final isSelected = _selectedCategoryTab == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategoryTab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGold.withValues(alpha: 0.15)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : AppColors.cardBorder,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected ? AppColors.primaryGold : AppColors.textMuted,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    isSelected ? AppColors.primaryGold : AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFreightView() {
+    if (_freightOrders.isEmpty) {
+      return ListView(
+        padding: const EdgeInsets.all(32),
+        children: [
+          const SizedBox(height: 60),
+          const Icon(
+            Icons.local_shipping_outlined,
+            size: 64,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              'Você não tem pedidos de frete',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'Toque em "Solicitar Novo Frete" para calcular rota e contratar um transporte.',
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                color: AppColors.textMuted,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      itemCount: _freightOrders.length,
+      itemBuilder: (context, index) {
+        final order = _freightOrders[index];
+        return _buildFreightCard(order);
+      },
+    );
+  }
+
+  Widget _buildFreightCard(FreightOrderModel order) {
+    final dateStr = order.scheduledDate != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(order.scheduledDate!.toLocal())
+        : (order.createdAt != null
+            ? DateFormat('dd/MM/yyyy HH:mm').format(order.createdAt!.toLocal())
+            : '');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  order.cargoType.isNotEmpty ? order.cargoType : 'Frete',
+                  style: GoogleFonts.inter(
+                    color: AppColors.primaryGold,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _freightStatusColor(order.status).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  order.statusLabel,
+                  style: GoogleFonts.inter(
+                    color: _freightStatusColor(order.status),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(Icons.trip_origin_rounded,
+                  color: AppColors.success, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  order.originAddress.toString(),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.location_on_rounded,
+                  color: AppColors.errorRed, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  order.destinationAddress.toString(),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (order.cargoWeight > 0 || order.vehicleType.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                if (order.cargoWeight > 0)
+                  _freightTag(Icons.scale_rounded,
+                      '${order.cargoWeight.toStringAsFixed(0)} kg'),
+                if (order.cargoWeight > 0 && order.vehicleType.isNotEmpty)
+                  const SizedBox(width: 8),
+                if (order.vehicleType.isNotEmpty)
+                  _freightTag(Icons.local_shipping_outlined, order.vehicleType),
+              ],
+            ),
+          ],
+          if (order.description.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              order.description,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+          if (order.professionalName.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.person_outline_rounded,
+                    color: AppColors.primaryGold, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Motorista: ${order.professionalName}',
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ] else if (order.status.toLowerCase() == 'pending') ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.hourglass_top_rounded,
+                    color: Colors.orangeAccent, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Aguardando aceite de motorista...',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.orangeAccent,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 12),
+          const Divider(color: AppColors.cardBorder),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Valor Estimado',
+                    style:
+                        GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                  ),
+                  Text(
+                    UtilBrasilFields.obterReal(order.price),
+                    style: GoogleFonts.inter(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                ],
+              ),
+              if (order.status.toLowerCase() == 'pending')
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.errorRed),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  ),
+                  onPressed: () => _handleCancelFreight(order.id),
+                  child: Text(
+                    'Cancelar Frete',
+                    style: GoogleFonts.inter(
+                      color: AppColors.errorRed,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              else if (dateStr.isNotEmpty)
+                Text(
+                  dateStr,
+                  style:
+                      GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _freightStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'accepted':
+      case 'finished':
+        return AppColors.success;
+      case 'inprogress':
+      case 'in_progress':
+        return Colors.blueAccent;
+      case 'cancelled':
+        return AppColors.errorRed;
+      default:
+        return Colors.orangeAccent;
+    }
+  }
+
+  Widget _freightTag(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.cardElevated,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.primaryGold, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleCancelFreight(String orderId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.cardBackground,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Cancelar Frete',
+            style: GoogleFonts.inter(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+            ),
+          ),
+          content: Text(
+            'Tem certeza de que deseja cancelar esta solicitação de frete?',
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Voltar',
+                style: GoogleFonts.inter(color: AppColors.textMuted),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.errorRed,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'Sim, Cancelar',
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm == true) {
+      final success = await _freightRepo.delete(orderId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Frete cancelado com sucesso.'
+                  : 'Não foi possível cancelar o frete.',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            backgroundColor:
+                success ? AppColors.primaryGold : AppColors.errorRed,
+          ),
+        );
+        if (success) _loadData();
+      }
+    }
+  }
 }
+

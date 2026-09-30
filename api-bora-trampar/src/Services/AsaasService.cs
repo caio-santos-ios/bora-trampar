@@ -62,7 +62,8 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
-                if (string.IsNullOrEmpty(_apiKey)) return "cus_mock_customer";
+                if (string.IsNullOrEmpty(_apiKey))
+                    throw new InvalidOperationException("Configuração ausente: ASAAS_API_KEY não foi informada nas variáveis de ambiente da API.");
 
                 string? cleanPhone = null;
                 if (!string.IsNullOrWhiteSpace(phone))
@@ -142,12 +143,7 @@ namespace api_bora_trampar.src.Services
             try
             {
                 if (string.IsNullOrEmpty(_apiKey))
-                {
-                    var mockId = $"pay_{Guid.NewGuid().ToString("N")[..12]}";
-                    var mockImg = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=boratrampar_pix_sandbox";
-                    var mockPayload = "00020126580014br.gov.bcb.pix0136boratrampar@pix.com.br5204000053039865405";
-                    return (mockId, mockImg, mockPayload);
-                }
+                    throw new InvalidOperationException("Configuração ausente: ASAAS_API_KEY não foi informada nas variáveis de ambiente da API.");
 
                 var paymentPayload = new
                 {
@@ -225,6 +221,9 @@ namespace api_bora_trampar.src.Services
         {
             try
             {
+                if (string.IsNullOrEmpty(_apiKey))
+                    return new(null, 500, "Configuração ausente: ASAAS_API_KEY não foi informada nas variáveis de ambiente da API.");
+
                 string pix = request.PixAddressKey;
 
                 if(request.PixAddressKeyType == "CPF" || request.PixAddressKeyType == "CNPJ")

@@ -41,9 +41,14 @@ namespace api_bora_trampar.src.Services
                         {"model", 1},
                         {"year", 1},
                         {"plateNumber", new BsonDocument("$ifNull", new BsonArray { "$plateNumber", "$plate_number", "" })},
+                        {"approximateCapacityKg", new BsonDocument("$ifNull", new BsonArray { "$approximateCapacityKg", "$approximate_capacity_kg", 0.0 })},
+                        {"dimensions", new BsonDocument("$ifNull", new BsonArray { "$dimensions", "" })},
+                        {"photoUrl", new BsonDocument("$ifNull", new BsonArray { "$photoUrl", "$photo_url", "" })},
+                        {"documentUrl", new BsonDocument("$ifNull", new BsonArray { "$documentUrl", "$document_url", "" })},
                         {"isDefault", new BsonDocument("$ifNull", new BsonArray { "$isDefault", "$is_default", false })},
                         {"isActive", new BsonDocument("$ifNull", new BsonArray { "$isActive", "$is_active", true })},
-                        {"approvalStatus", new BsonDocument("$ifNull", new BsonArray { "$approvalStatus", "$approval_status", "" })},
+                        {"approvalStatus", new BsonDocument("$ifNull", new BsonArray { "$approvalStatus", "$approval_status", "Pending" })},
+                        {"approvalNotes", new BsonDocument("$ifNull", new BsonArray { "$approvalNotes", "$approval_notes", "" })},
                         {"created_at", 1}
                     })
                 ];
